@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.5"
+$Version = " -- Version: 1.6"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -15,6 +15,8 @@ $ProdList = Get-ChildItem $ADHC_ProdDir -recurse -file | Select FullName,LastWri
 
 $TxtFile = $ADHC_ProdCompareDir + $ADHC_Computer + ".txt"
 $Report = $ADHC_ProdCompareDir + "Report.txt"
+
+New-Item -ItemType Directory -Force -Path $ADHC_ProdCompareDir
 
 Set-Content $TxtFile $Scriptmsg -force
 
