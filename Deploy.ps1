@@ -158,6 +158,15 @@ foreach ($dirfound in $Dirlist) {
                                 # write $xml.task.Actions.Exec.Command `
                             }
 
+                            $PythonArguments = $xml.task.Actions.Exec.Arguments ; `
+                            if ($PythonArguments) { `
+                                # write $PythonExec.substring(0,6); `
+                                if  ($PythonArguments.substring(0,6) -eq '$ADHC_'){ `
+                                    $xml.task.Actions.Exec.Arguments = Invoke-Expression($PythonArguments); `
+                                }; `
+                                # write $xml.task.Actions.Exec.Command `
+                            }
+
                             $TaskName = $xml.Task.RegistrationInfo.URI; `
                             # write $xml.Task.Principals.Principal; `
                             # write $taskName; `

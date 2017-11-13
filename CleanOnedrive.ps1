@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.7"
+$Version = " -- Version: 1.8"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -11,7 +11,7 @@ $Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $D
 Write-Information $Scriptmsg 
 
 
-$OneDrive = "C:\Users\" + $ADHC_User + "\OneDrive"
+$OneDrive = $ADHC_OneDrive
 $FileList = Get-ChildItem $OneDrive -recurse  -name -force
 # $FileList | Out-Gridview
 

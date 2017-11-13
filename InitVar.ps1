@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.10"
+$Version = " -- Version: 1.15"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -37,29 +37,47 @@ Remove-Variable -Name "ADHC_TrustedHosts" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_TrustedHosts" -Value $TrustedHosts -Option readonly -Scope global -Description "Trusted host list" -force
 
 Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PSdir" -Value "C:\ADHC\PowerShell\" -Option readonly -Scope global -Description "Powershell production directory" -force
+Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
 
-$staging = $env:USERPROFILE + "\OneDrive\Staging Library\"
+Remove-Variable -Name "ADHC_SympaPgm" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_SympaPgm" -Value "C:/ADHC/Sympa/WMIC 3.pyw" -Option readonly -Scope global -Description "Python production SYMPA source" -force
+
+$prof = $env:USERPROFILE -split '\\'
+
+switch ($ADHC_Computer) { 
+        
+        "Ahmrdh-Netbook"{$OneDrive = "P:/" + $prof[2] + "/OneDrive/"} 
+        "Holiday"       {$OneDrive = "C:/" + $prof[1] + "/" + $prof[2] + "/OneDrive/"} 
+        
+        default         {$OneDrive = "D:/" + $prof[2] + "/OneDrive/"} 
+    }
+Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force
+
+$staging = $OneDrive + "Staging Library/"
 Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
 
 Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProdDir" -Value "C:\ADHC\" -Option readonly -Scope global -Description "Production directory" -force
+Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope global -Description "Production directory" -force
 
-$compare = $env:USERPROFILE + "\OneDrive\ProductionCompare\"
+$compare = $OneDrive + "ProductionCompare/"
 Remove-Variable -Name "ADHC_ProdCompareDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdCompareDir" -Value $compare -Option readonly -Scope global -Description "Production compare directory" -force
 
-$conflicts = $env:USERPROFILE + "\OneDrive\Conflicts\"
+$conflicts = $OneDrive + "Conflicts/"
 Remove-Variable -Name "ADHC_ConflictsDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConflictsDir" -Value $conflicts -Option readonly -Scope global -Description "Onedrive Conficts report directory" -force
 
-
+$wmicdir = $OneDrive + "WmicFiles/"
+Remove-Variable -Name "ADHC_WmicDir" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_WmicDir" -Value $wmicdir -Option readonly -Scope global -Description "Wmic files directory" -force
 
 $arg = 'name="' + $ADHC_User + '"'
 $x =Get-WmiObject -Class win32_useraccount -filter "$arg"
 Remove-Variable -Name "ADHC_SID" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_SID" -Value $x.SID -Option readonly -Scope global -Description "SID value for current user" -force
+
 Remove-Variable -Name "ADHC_Caption" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Caption" -Value $x.Caption -Option readonly -Scope global -Description "Caption value for current user" -force
 
@@ -78,25 +96,33 @@ Set-Variable -Name "ADHC_WmicAnalyze_StartTime" -Value $StartTime -Option readon
 
 switch ($ADHC_Computer)
     { 
-        "ADHC"          {$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"} 
-        "Ahmrdh-Netbook"{$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"}
-        "Holiday"       {$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"}
-        "Zolder-II"     {$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"}
-        "Laptop_AHMRDH" {$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"}
-        "Woonkamer"     {$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"} 
-        default         {$PythonExec = "C:\Program Files (x86)\Python36-32\pythonw.exe"} 
+        
+        "Ahmrdh-Netbook"{$PythonExec = "C:/Program Files/Python36-32/pythonw.exe"}
+       
+        default         {$PythonExec = "C:/Program Files (x86)/Python36-32/pythonw.exe"} 
     }
 Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
 
-$usr = $env:USERPROFILE + "\Documents\WindowsPowerShell\"
-$SourceTargetList = @([PSCustomObject]@{source="Sympa";target="C:\ADHC\Sympa\";type="Module"}, `
-                        [PSCustomObject]@{source="Java";target="C:\ADHC\Java\";type="Module"}, `
-                        [PSCustomObject]@{source="AdHC Site";target="C:\ADHC\AdHC Site\";type="Module"}, `
-                        [PSCustomObject]@{source="Visual Basic";target="C:\ADHC\Visual Basic\";type="Module"}, `
-                        [PSCustomObject]@{source="Powershell";target="C:\ADHC\Powershell\";type="Module"}, `
-                        [PSCustomObject]@{source="ContactSync";target="C:\ADHC\ContactSync\";type="Module"}, `
-                        [PSCustomObject]@{source="Windows Scheduler";target="C:\ADHC\Windows Scheduler\";type="Schedule"}, `
+$PythonArgCreate = '"' + $ADHC_Sympapgm + '" "--mode=Create" "--outputdir=' + $ADHC_WmicDir + '"'
+ 
+Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "Path to PYTHON arguments - CREATE" -force
+
+$PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + $ADHC_WmicDir + '"'
+ 
+Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+
+
+$usr = $env:USERPROFILE + "/Documents/WindowsPowerShell/"
+$SourceTargetList = @([PSCustomObject]@{source="Sympa";target="C:/ADHC/Sympa/";type="Module"}, `
+                        [PSCustomObject]@{source="Java";target="C:/ADHC/Java/";type="Module"}, `
+                        [PSCustomObject]@{source="AdHC Site";target="C:/ADHC/AdHC Site/";type="Module"}, `
+                        [PSCustomObject]@{source="Visual Basic";target="C:/ADHC/Visual Basic/";type="Module"}, `
+                        [PSCustomObject]@{source="Powershell";target="C:/ADHC/Powershell/";type="Module"}, `
+                        [PSCustomObject]@{source="ContactSync";target="C:/ADHC/ContactSync/";type="Module"}, `
+                        [PSCustomObject]@{source="Windows Scheduler";target="C:/ADHC/Windows Scheduler/";type="Schedule"}, `
                         [PSCustomObject]@{source="PowershellProfile";target="$usr";type="Module"}) 
 # write $SourceTargetList   
 # write $SourceTargetList[0].source 
@@ -104,6 +130,6 @@ Remove-Variable -Name "ADHC_SourceTargetList" -force -ErrorAction SilentlyContin
 Set-Variable -Name "ADHC_SourceTargetList" -Value $SourceTargetList -Option readonly -Scope global -Description "Source and target definition" -force 
 
 Remove-Variable -Name "ADHC_DslLocation" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DslLocation" -Value "D:\Software\DSL\"  -Option readonly -Scope global -Description "Location of DSL" -force 
+Set-Variable -Name "ADHC_DslLocation" -Value "D:/Software/DSL/"  -Option readonly -Scope global -Description "Location of DSL" -force 
 
 Return

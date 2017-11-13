@@ -1,7 +1,7 @@
 ﻿$InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.1"
+$Version = " -- Version: 1.2"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -60,7 +60,7 @@ foreach ($dirfound in $Dirlist) {
         # Create directory if necessary
         $x = Test-Path "$targetDir"
         if (!$x) {
-            $msg = "Directory " + $targetDir + " does not exist and will be created on computer " + $env:COMPUTERNAME
+            $msg = "    Directory " + $targetDir + " does not exist and will be created on computer " + $env:COMPUTERNAME
             Write-Warning $msg 
             New-Item -ItemType Directory -Force -Path "$targetDir"
         }
@@ -71,12 +71,12 @@ foreach ($dirfound in $Dirlist) {
             $timeDifference = New-TimeSpan –Start $sourceMod.LastWriteTime –End $currentDate
             If ($timeDifference.Days -ge 14) {
                 $copyme = $true
-                $msg = "Module " + $sourceMod.Name + " does not exist and will be added to computer " + $env:COMPUTERNAME
+                $msg = "        Module " + $sourceMod.Name + " does not exist and will be added to computer " + $env:COMPUTERNAME
                 Write-Warning $msg 
             }
             else {
                 $waitTime = 14 - $timeDifference.Days
-                $msg = "Module " + $sourceMod.Name + " does not exist and will be added to computer " + $env:COMPUTERNAME + " in " + $waitTime + " days."
+                $msg = "        Module " + $sourceMod.Name + " does not exist and will be added to computer " + $env:COMPUTERNAME + " in " + $waitTime + " days."
                 Write-Warning $msg 
             }
         }
@@ -84,12 +84,12 @@ foreach ($dirfound in $Dirlist) {
             # Get-ItemProperty -path "$targetPath" | Select-Object Name, LastWriteTime | Out-GridView
             $targetMod = Get-ItemProperty -path "$targetPath" 
             
-            $msg = "Processing target module " + $targetMod.Name + " with timestamp " + $targetMod.LastWriteTime
+            $msg = "    Processing target module " + $targetMod.Name + " with timestamp " + $targetMod.LastWriteTime
             Write-Information $msg 
             
 
-            if ($targetMod.LastWriteTime -eq $sourceMod.LastWriteTime) {
-                $msg = "Module " + $targetMod.Name + " is up to date on computer " + $env:COMPUTERNAME
+            if ($targetMod.LastWriteTime.ToString() -eq $sourceMod.LastWriteTime.ToString()) {
+                $msg = "        Module " + $targetMod.Name + " is up to date on computer " + $env:COMPUTERNAME
                 Write-Information $msg 
             }
             else {
@@ -97,11 +97,11 @@ foreach ($dirfound in $Dirlist) {
                 If ($timeDifference.Days -ge 14) {
                     if ($targetMod.LastWriteTime -lt $sourceMod.LastWriteTime) {
                         $copyme = $true
-                        $msg = "Module " + $targetMod.Name  + " is older and will be replaced on computer " + $env:COMPUTERNAME 
+                        $msg = "        Module " + $targetMod.Name  + " is older and will be replaced on computer " + $env:COMPUTERNAME 
                         Write-Warning $msg 
                     }
                     else {
-                        $msg = "Module " + $targetMod.Name + " should not be replaced by an older version on " + $env:COMPUTERNAME
+                        $msg = "        Module " + $targetMod.Name + " should not be replaced by an older version with timestamp " + $sourceMod.LastWriteTime + " on " + $env:COMPUTERNAME
                         Write-Warning $msg 
                     }
 
@@ -128,7 +128,7 @@ foreach ($dirfound in $Dirlist) {
             }
          }  
          if ($deleteTarget) { 
-            $msg = "Production module " + $targetMod.Name + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
+            $msg = "        Production module " + $targetMod.Name + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
             Write-Warning $msg
             $item = $targetmod.Name
             Remove-Item "$item" 
