@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.15"
+$Version = " -- Version: 1.18"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -17,7 +17,7 @@ Set-Variable -Name "ADHC_User" -Value "$env:USERNAME" -Option readonly -Scope gl
 Remove-Variable -Name "ADHC_Computer" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -Scope global -Description "Name of this computer" -force
 
-$Hostlist = "ADHC","Zolder-II","Laptop-AHMRDH","Woonkamer","Ahmrdh-Netbook","Holiday" 
+$Hostlist = "ADHC","Zolder-II","Laptop-AHMRDH","Holiday" 
 Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
 
@@ -65,6 +65,10 @@ $compare = $OneDrive + "ProductionCompare/"
 Remove-Variable -Name "ADHC_ProdCompareDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdCompareDir" -Value $compare -Option readonly -Scope global -Description "Production compare directory" -force
 
+$haveibeenpwned = $OneDrive + "HaveIBeenPwned/"
+Remove-Variable -Name "ADHC_HaveIBeenPwned" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_HaveIBeenPwned" -Value $haveibeenpwned -Option readonly -Scope global -Description "HaveIBeenPwned HTML output directory" -force
+
 $conflicts = $OneDrive + "Conflicts/"
 Remove-Variable -Name "ADHC_ConflictsDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConflictsDir" -Value $conflicts -Option readonly -Scope global -Description "Onedrive Conficts report directory" -force
@@ -86,7 +90,7 @@ switch ($ADHC_Computer)
         "ADHC"          {$StartTime = "2016-11-01T15:00:00"} 
         "Zolder-II"     {$StartTime = "2016-11-01T09:00:00"} 
         "Laptop_AHMRDH" {$StartTime = "2016-11-01T21:00:00"} 
-        "Woonkamer"     {$StartTime = "2016-11-01T12:00:00"} 
+        "empty slot"    {$StartTime = "2016-11-01T12:00:00"} 
         "Holiday"       {$StartTime = "2016-11-01T18:00:00"}
         default         {$StartTime = "2016-11-01T06:00:00"} 
     }
