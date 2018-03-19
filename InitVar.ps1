@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.18"
+$Version = " -- Version: 1.19"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -64,6 +64,10 @@ Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope glob
 $compare = $OneDrive + "ProductionCompare/"
 Remove-Variable -Name "ADHC_ProdCompareDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdCompareDir" -Value $compare -Option readonly -Scope global -Description "Production compare directory" -force
+
+$diskspace = $OneDrive + "DiskSpace/"
+Remove-Variable -Name "ADHC_DiskSpace" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_DiskSpace" -Value $diskspace -Option readonly -Scope global -Description "Disk space report directory" -force
 
 $haveibeenpwned = $OneDrive + "HaveIBeenPwned/"
 Remove-Variable -Name "ADHC_HaveIBeenPwned" -force -ErrorAction SilentlyContinue
