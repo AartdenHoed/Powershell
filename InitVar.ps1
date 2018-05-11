@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.19"
+$Version = " -- Version: 1.20"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -57,6 +57,10 @@ Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope glob
 $staging = $OneDrive + "Staging Library/"
 Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
+
+$devdir = $OneDrive + "ADHC Dev/"
+Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
 
 Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope global -Description "Production directory" -force

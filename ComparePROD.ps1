@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.6"
+$Version = " -- Version: 1.9"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -11,27 +11,63 @@ $Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $D
 Write-Information $Scriptmsg 
 
 $ProdList = Get-ChildItem $ADHC_ProdDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
-# $ProdList | Out-Gridview
+$StageLIst = Get-ChildItem $ADHC_StagingDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
+$DevLIst = Get-ChildItem $ADHC_DevelopDir -recurse -file  | Select FullName,LastWriteTime,Length | `
+Where-Object {($_.FullName -notlike "*.git*") -and `
+              ($_.FullName -notlike "*gsdata*") -and `
+              ($_.FullName -notlike "*\Sympa\Configman\*")  `
+              } | Sort-Object Fullname
 
-$TxtFile = $ADHC_ProdCompareDir + $ADHC_Computer + ".txt"
-$Report = $ADHC_ProdCompareDir + "Report.txt"
 
 New-Item -ItemType Directory -Force -Path $ADHC_ProdCompareDir
 
-Set-Content $TxtFile $Scriptmsg -force
+$ProdFile = $ADHC_ProdCompareDir + $ADHC_Computer + ".txt"
+$StageFile = $ADHC_ProdCompareDir + "NewStage_" + $ADHC_Computer + ".txt"
+$DevFile = $ADHC_ProdCompareDir + "NewDev_" + $ADHC_Computer + ".txt"
 
 
-
+Set-Content $ProdFile $Scriptmsg -force
 foreach ($FileEntry in $ProdList) {
-
-    $FileRecord = $ADHC_Computer + ";" +  $FileEntry.Fullname + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
-
-    Add-Content $TxtFile $FileRecord
-    
+    $array = $FileEntry.FullName -split "\\"
+    $comparename = $array[2..($array.Length – 1)] -join "\"
+    $FileRecord = $ADHC_Computer + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    Add-Content $ProdFile $FileRecord
+}
+Set-Content $StageFile $Scriptmsg -force
+foreach ($FileEntry in $StageList) {
+    $array = $FileEntry.FullName -split "\\"
+    $comparename = $array[4..($array.Length – 1)] -join "\"
+    $FileRecord = "Staging" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    Add-Content $StageFile $FileRecord
+}
+Set-Content $DevFile $Scriptmsg -force
+foreach ($FileEntry in $DevList) {
+    $array = $FileEntry.FullName -split "\\"
+    $comparename = $array[4..($array.Length – 1)] -join "\"
+    $FileRecord = "Development" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    Add-Content $DevFile $FileRecord
 }
 
 
-Remove-Item $Report
+# Delete old output files
+$ReportFilelist = Get-ChildItem $ADHC_ProdCompareDir -include report*.* -recurse -file | Select FullName
+foreach ($rpt in $ReportFilelist) {
+    Remove-Item $rpt.Fullname
+}
+
+$StageFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Staging*.* -recurse -file | Select FullName
+foreach ($rpt in $StageFilelist) {
+    Remove-Item $rpt.Fullname
+}
+Rename-Item -Path "$StageFile" -NewName "Staging.txt"
+
+$DevFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Dev*.* -recurse -file | Select FullName
+foreach ($rpt in $DevFilelist) {
+    Remove-Item $rpt.Fullname
+}
+Rename-Item -Path "$DevFile" -NewName "Development.txt"
+
+
 
 $CompareList = Get-ChildItem $ADHC_ProdCompareDir -file | Select FullName 
 # $CompareList | Out-Gridview
@@ -71,6 +107,8 @@ $Sortedlist = $ProdFileList | Sort-Object @{Expression={$_.Filename};Descending=
 # $Sortedlist | Out-GridView
 
 $CurFilename = " "
+
+$Report = $ADHC_ProdCompareDir + "Report.txt"
 Set-Content $Report $Scriptmsg -force
 $Anyfound = $false
 $hostlist = New-Object System.Collections.ArrayList
@@ -86,7 +124,7 @@ foreach ($hashit in $Sortedlist) {
               Add-Content $Report " "
             }
             foreach ($h in $hostlist) {
-                $msg = "File " + $CurFilename + " ** not found ** on computer " + $h
+                $msg = "File " + $CurFilename + " ** not found ** on " + $h
                 Write-Warning $msg 
                 Add-Content $Report $msg
                 $Anyfound = $true
@@ -103,6 +141,8 @@ foreach ($hashit in $Sortedlist) {
             
             [void]$hostlist.Add($c.ToUpper())
         }
+        [void]$hostlist.Add("Staging")
+        [void]$hostlist.Add("Development")
         # $hostlist
     }
     # Write-Information "remove"
@@ -121,7 +161,7 @@ foreach ($hashit in $Sortedlist) {
             Add-Content $Report $msg
             $found = $true
         }
-        $msg = "File "+ $hashit.Filename + " has timestamp " + $hashit.Lastupdate + " and filesize " + $hashit.FileSize + " on computer "+ $hashit.Computer
+        $msg = "File "+ $hashit.Filename + " has timestamp " + $hashit.Lastupdate + " and filesize " + $hashit.FileSize + " on "+ $hashit.Computer
         Write-Warning $msg
         Add-Content $Report $msg
     }    
