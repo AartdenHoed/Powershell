@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.20"
+$Version = " -- Version: 1.21"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -47,7 +47,7 @@ $prof = $env:USERPROFILE -split '\\'
 switch ($ADHC_Computer) { 
         
         "Ahmrdh-Netbook"{$OneDrive = "P:/" + $prof[2] + "/OneDrive/"} 
-        "Holiday"       {$OneDrive = "C:/" + $prof[1] + "/" + $prof[2] + "/OneDrive/"} 
+        "Holiday"       {$OneDrive = "C:/" + $prof[2] + "/OneDrive/"} 
         
         default         {$OneDrive = "D:/" + $prof[2] + "/OneDrive/"} 
     }
