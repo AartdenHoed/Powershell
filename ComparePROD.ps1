@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.9"
+$Version = " -- Version: 1.13"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -11,6 +11,13 @@ $Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $D
 Write-Information $Scriptmsg 
 
 $ProdList = Get-ChildItem $ADHC_ProdDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
+$PSUList = Get-ChildItem $ADHC_PSUDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
+$DslList = Get-ChildItem $ADHC_DslLocation -recurse -file | Select FullName,LastWriteTime,Length | `
+Where-Object {($_.FullName -notlike "*.git*") -and `
+              ($_.FullName -notlike "*gsdata*") -and `
+              ($_.FullName -notlike "*\Sympa\Configman\*")  `
+              } | Sort-Object Fullname
+
 $StageLIst = Get-ChildItem $ADHC_StagingDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
 $DevLIst = Get-ChildItem $ADHC_DevelopDir -recurse -file  | Select FullName,LastWriteTime,Length | `
 Where-Object {($_.FullName -notlike "*.git*") -and `
@@ -24,6 +31,7 @@ New-Item -ItemType Directory -Force -Path $ADHC_ProdCompareDir
 $ProdFile = $ADHC_ProdCompareDir + $ADHC_Computer + ".txt"
 $StageFile = $ADHC_ProdCompareDir + "NewStage_" + $ADHC_Computer + ".txt"
 $DevFile = $ADHC_ProdCompareDir + "NewDev_" + $ADHC_Computer + ".txt"
+$DslFile = $ADHC_ProdCompareDir + "NewDsl_" + $ADHC_Computer + ".txt"
 
 
 Set-Content $ProdFile $Scriptmsg -force
@@ -33,19 +41,32 @@ foreach ($FileEntry in $ProdList) {
     $FileRecord = $ADHC_Computer + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
     Add-Content $ProdFile $FileRecord
 }
+foreach ($FileEntry in $PSUList) {
+    $array = $FileEntry.FullName -split "\\"
+    $comparename = $array[4..($array.Length – 1)] -join "\"
+    $FileRecord = $ADHC_Computer + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    Add-Content $ProdFile $FileRecord
+}
 Set-Content $StageFile $Scriptmsg -force
 foreach ($FileEntry in $StageList) {
     $array = $FileEntry.FullName -split "\\"
     $comparename = $array[4..($array.Length – 1)] -join "\"
-    $FileRecord = "Staging" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    $FileRecord = "STAGING" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
     Add-Content $StageFile $FileRecord
 }
 Set-Content $DevFile $Scriptmsg -force
 foreach ($FileEntry in $DevList) {
     $array = $FileEntry.FullName -split "\\"
     $comparename = $array[4..($array.Length – 1)] -join "\"
-    $FileRecord = "Development" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    $FileRecord = "DEVELOPMENT" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
     Add-Content $DevFile $FileRecord
+}
+Set-Content $DslFile $Scriptmsg -force
+foreach ($FileEntry in $DslList) {
+    $array = $FileEntry.FullName -split "\\"
+    $comparename = $array[3..($array.Length – 1)] -join "\"
+    $FileRecord = "DSL" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
+    Add-Content $DslFile $FileRecord
 }
 
 
@@ -59,13 +80,19 @@ $StageFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Staging*.* -recurse
 foreach ($rpt in $StageFilelist) {
     Remove-Item $rpt.Fullname
 }
-Rename-Item -Path "$StageFile" -NewName "Staging.txt"
+Rename-Item -Path "$StageFile" -NewName "STAGING.txt"
 
 $DevFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Dev*.* -recurse -file | Select FullName
 foreach ($rpt in $DevFilelist) {
     Remove-Item $rpt.Fullname
 }
-Rename-Item -Path "$DevFile" -NewName "Development.txt"
+Rename-Item -Path "$DevFile" -NewName "DEVELOPMENT.txt"
+
+$DslFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Dsl*.* -recurse -file | Select FullName
+foreach ($rpt in $DslFilelist) {
+    Remove-Item $rpt.Fullname
+}
+Rename-Item -Path "$DslFile" -NewName "DSL.txt"
 
 
 
@@ -141,8 +168,9 @@ foreach ($hashit in $Sortedlist) {
             
             [void]$hostlist.Add($c.ToUpper())
         }
-        [void]$hostlist.Add("Staging")
-        [void]$hostlist.Add("Development")
+        [void]$hostlist.Add("STAGING")
+        [void]$hostlist.Add("DEVELOPMENT")
+        [void]$hostlist.Add("DSL")
         # $hostlist
     }
     # Write-Information "remove"

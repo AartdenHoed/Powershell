@@ -1,7 +1,7 @@
 ﻿$InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.1"
+$Version = " -- Version: 1.5"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -27,7 +27,8 @@ foreach ($record in $emaillist) {
     
     try {
         Start-Sleep -s 2
-        $em = Invoke-RestMethod -Method Get -uri "https://haveibeenpwned.com/api/v2/breachedaccount/$mailaddress" -ErrorAction SilentlyContinue
+        $em = Invoke-RestMethod -Method Get -uri "https://haveibeenpwned.com/api/v3/breachedaccount/$mailaddress" -ErrorAction SilentlyContinue `
+        -UserAgent "ADHC"  
         
         foreach ($entry in $em) {
             $DataClasses =[system.String]::Join(", ", $entry.DataClasses)
@@ -58,7 +59,7 @@ foreach ($record in $emaillist) {
         
             
     }
-    catch {
+    catch [Exception]{
         $showem = new-object psobject
         
         if ($_.Exception.Response.StatusCode.value__ -eq "404") {
@@ -68,8 +69,10 @@ foreach ($record in $emaillist) {
         }
         else {
             $RC = $_.Exception.Response.StatusCode.value__ 
-            $showem | Add-Member -MemberType NoteProperty -Name "Title" -Value "<nobr> *** ERROR *** $_.Exception.Response.StatusDescription</nobr>"
+            $msg = $_.Exception.Message
+            $showem | Add-Member -MemberType NoteProperty -Name "Title" -Value "<nobr> *** ERROR *** $msg</nobr>"
             Write-Error "ERROR in script for $mailaddress"
+            # exit
         }
         
             
@@ -91,7 +94,8 @@ foreach ($record in $emaillist) {
 
     try {
         Start-Sleep -s 2
-        $em1 = Invoke-RestMethod -Method Get -uri "https://haveibeenpwned.com/api/v2/pasteaccount/$mailaddress" -ErrorAction SilentlyContinue
+        $em1 = Invoke-RestMethod -Method Get -uri "https://haveibeenpwned.com/api/v3/pasteaccount/$mailaddress" -ErrorAction SilentlyContinue `
+        -UserAgent "ADHC" 
         
         foreach ($entry in $em1) {
             $DataClasses = "Paste with id " + $Entry.ID           
@@ -122,7 +126,7 @@ foreach ($record in $emaillist) {
         
             
     }
-    catch {
+    catch [Exception] {
         $showem = new-object psobject
         
         if ($_.Exception.Response.StatusCode.value__ -eq "404") {
@@ -132,7 +136,9 @@ foreach ($record in $emaillist) {
         }
         else {
             $RC = $_.Exception.Response.StatusCode.value__ 
-            $showem | Add-Member -MemberType NoteProperty -Name "Title" -Value "<nobr> *** ERROR *** $_.Exception.Response.StatusDescription</nobr>"
+            $msg = $_.Exception.Message
+            $resp = $_.Exception.Response
+            $showem | Add-Member -MemberType NoteProperty -Name "Title" -Value "<nobr> *** ERROR *** $msg</nobr>"
             Write-Error "ERROR in script for $mailaddress"
         }
         

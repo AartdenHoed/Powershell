@@ -1,7 +1,7 @@
 ﻿$InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.5"
+$Version = " -- Version: 1.6"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -15,7 +15,6 @@ $ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
 $ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
 & "$ADHC_InitVar"
 
-$usr = $env:USERPROFILE + "\Documents\WindowsPowerShell\"
 
 #
 # Find sources
