@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.26"
+$Version = " -- Version: 1.27"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -114,9 +114,9 @@ switch ($ADHC_Computer)
     { 
         
         "Ahmrdh-Netbook"{$PythonExec = "C:/Program Files/Python36-32/pythonw.exe"}
-        "Holiday"       {$PythonExec = "D:/Program Files/Python36/pythonw.exe"}
+        "Holiday"       {$PythonExec = "D:/Program Files/Python38/pythonw.exe"}
        
-        default         {$PythonExec = "C:/Program Files/Python36/pythonw.exe"} 
+        default         {$PythonExec = "C:/Program Files/Python38/pythonw.exe"} 
     }
 Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
