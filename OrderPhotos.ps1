@@ -131,21 +131,21 @@ foreach ($fotobestand in $metalist) {
 
         $uur = $cijfers[3] -replace '[^0-9]', ''
         $iuur = [convert]::ToInt32($uur, 10)
-        # Correctie uren
-        $uurcorrectie = -2
+        # Correctie uren ============================================================================================
+        $uurcorrectie = 0
         $iuur = $iuur + $uurcorrectie 
-        # Einde correctie
+        # Einde correctie ===========================================================================================
         
         $minuut = $cijfers[4] -replace '[^0-9]', ''
         $iminuut = [convert]::ToInt32($minuut, 10)
-        # Correctie minuten
-        $minuutcorrectie = +2
+        # Correctie minuten =========================================================================================
+        $minuutcorrectie = 0
         $imnuut = $iminuut +$minuutcorrectie
         if ($minuut -ge 60) {
             $iuur = $iuur + 1
             $iminuut = $iminuut - 60
         }
-        # Einde correctie
+        # Einde correctie ===========================================================================================
 
         $cuur = $iuur.ToString("00")
         $cminuut = $iminuut.ToString("00")
