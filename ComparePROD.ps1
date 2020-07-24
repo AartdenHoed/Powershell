@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.13"
+$Version = " -- Version: 1.14"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -15,14 +15,14 @@ $PSUList = Get-ChildItem $ADHC_PSUDir -recurse -file | Select FullName,LastWrite
 $DslList = Get-ChildItem $ADHC_DslLocation -recurse -file | Select FullName,LastWriteTime,Length | `
 Where-Object {($_.FullName -notlike "*.git*") -and `
               ($_.FullName -notlike "*gsdata*") -and `
-              ($_.FullName -notlike "*\Sympa\Configman\*")  `
+              ($_.FullName -notlike "*\SympaWeb\Configman\*")  `
               } | Sort-Object Fullname
 
 $StageLIst = Get-ChildItem $ADHC_StagingDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
 $DevLIst = Get-ChildItem $ADHC_DevelopDir -recurse -file  | Select FullName,LastWriteTime,Length | `
 Where-Object {($_.FullName -notlike "*.git*") -and `
               ($_.FullName -notlike "*gsdata*") -and `
-              ($_.FullName -notlike "*\Sympa\Configman\*")  `
+              ($_.FullName -notlike "*\SympaWeb\Configman\*")  `
               } | Sort-Object Fullname
 
 
