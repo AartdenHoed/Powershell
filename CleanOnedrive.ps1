@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.9"
+$Version = " -- Version: 1.10"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -22,20 +22,20 @@ Add-Content $TxtFile "Overview of OneDrive conficts"
 Add-Content $TxtFile " "
 
 foreach ($HostName in $ADHC_Hostlist) {
-    $SearchFor1 = "-" + $HostName + "\."
+    $SearchFor1 = "-" + $HostName.ToUpper() + "\."
     $SearchFor1
-    $SearchFor2 = "-" + $HostName + "\Z"
+    $SearchFor2 = "-" + $HostName.ToUpper() + "\Z"
     $SearchFor2
-    $SearchFor3 = "-" + $HostName + "-\d"
+    $SearchFor3 = "-" + $HostName.ToUpper() + "-\d"
     $SearchFor3
     Add-Content $TxtFile "Computer $Hostname :"
     $ConflictsFound = $false
     foreach ($FileName in $FileList) {        
-        $a = select-string -InputObject $FileName -pattern $SearchFor1 
+        $a = select-string -InputObject $FileName.ToUpper() -pattern $SearchFor1 
         $a
-        $b = select-string -InputObject $FileName -pattern $SearchFor2 
+        $b = select-string -InputObject $FileName.ToUpper() -pattern $SearchFor2 
         $b
-        $c = select-string -InputObject $FileName -pattern $SearchFor3 
+        $c = select-string -InputObject $FileName.ToUpper() -pattern $SearchFor3 
         $c
         if ($a -or $b -or $c) {
             $ConflictsFound = $true
