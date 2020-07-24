@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.27"
+$Version = " -- Version: 1.28"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -72,6 +72,10 @@ Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope glob
 $compare = $OneDrive + "ProductionCompare/"
 Remove-Variable -Name "ADHC_ProdCompareDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdCompareDir" -Value $compare -Option readonly -Scope global -Description "Production compare directory" -force
+
+$sctl = $OneDrive + "SourceControl/"
+Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_SourceControl" -Value $sctl -Option readonly -Scope global -Description "Source Control directory" -force
 
 $diskspace = $OneDrive + "DiskSpace/"
 Remove-Variable -Name "ADHC_DiskSpace" -force -ErrorAction SilentlyContinue
