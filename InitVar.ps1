@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.28"
+$Version = " -- Version: 1.29"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -35,6 +35,9 @@ foreach ($myHost in $ADHC_Hostlist) {
 # write $ADHC_TrustedHosts
 Remove-Variable -Name "ADHC_TrustedHosts" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_TrustedHosts" -Value $TrustedHosts -Option readonly -Scope global -Description "Trusted host list" -force
+
+Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
 
 Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
