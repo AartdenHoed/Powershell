@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.14"
+$Version = " -- Version: 2.0"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -10,201 +10,146 @@ $Tijd = " -- Time: " + $d.ToShortTimeString()
 $Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
 
-$ProdList = Get-ChildItem $ADHC_ProdDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
-$PSUList = Get-ChildItem $ADHC_PSUDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
-$DslList = Get-ChildItem $ADHC_DslLocation -recurse -file | Select FullName,LastWriteTime,Length | `
-Where-Object {($_.FullName -notlike "*.git*") -and `
-              ($_.FullName -notlike "*gsdata*") -and `
-              ($_.FullName -notlike "*\SympaWeb\Configman\*")  `
-              } | Sort-Object Fullname
+$FullScriptName = $MyInvocation.MyCommand.Definition
+$ScriptName = $MyInvocation.MyCommand.Name
+$ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
+$ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
+& "$ADHC_InitVar"
 
-$StageLIst = Get-ChildItem $ADHC_StagingDir -recurse -file | Select FullName,LastWriteTime,Length | Sort-Object Fullname
-$DevLIst = Get-ChildItem $ADHC_DevelopDir -recurse -file  | Select FullName,LastWriteTime,Length | `
-Where-Object {($_.FullName -notlike "*.git*") -and `
-              ($_.FullName -notlike "*gsdata*") -and `
-              ($_.FullName -notlike "*\SympaWeb\Configman\*")  `
-              } | Sort-Object Fullname
+$StageLIst = Get-ChildItem $ADHC_StagingDir -Directory | Select Name,FullName
 
-
-New-Item -ItemType Directory -Force -Path $ADHC_ProdCompareDir
-
-$ProdFile = $ADHC_ProdCompareDir + $ADHC_Computer + ".txt"
-$StageFile = $ADHC_ProdCompareDir + "NewStage_" + $ADHC_Computer + ".txt"
-$DevFile = $ADHC_ProdCompareDir + "NewDev_" + $ADHC_Computer + ".txt"
-$DslFile = $ADHC_ProdCompareDir + "NewDsl_" + $ADHC_Computer + ".txt"
-
-
-Set-Content $ProdFile $Scriptmsg -force
-foreach ($FileEntry in $ProdList) {
-    $array = $FileEntry.FullName -split "\\"
-    $comparename = $array[2..($array.Length – 1)] -join "\"
-    $FileRecord = $ADHC_Computer + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
-    Add-Content $ProdFile $FileRecord
-}
-foreach ($FileEntry in $PSUList) {
-    $array = $FileEntry.FullName -split "\\"
-    $comparename = $array[4..($array.Length – 1)] -join "\"
-    $FileRecord = $ADHC_Computer + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
-    Add-Content $ProdFile $FileRecord
-}
-Set-Content $StageFile $Scriptmsg -force
-foreach ($FileEntry in $StageList) {
-    $array = $FileEntry.FullName -split "\\"
-    $comparename = $array[4..($array.Length – 1)] -join "\"
-    $FileRecord = "STAGING" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
-    Add-Content $StageFile $FileRecord
-}
-Set-Content $DevFile $Scriptmsg -force
-foreach ($FileEntry in $DevList) {
-    $array = $FileEntry.FullName -split "\\"
-    $comparename = $array[4..($array.Length – 1)] -join "\"
-    $FileRecord = "DEVELOPMENT" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
-    Add-Content $DevFile $FileRecord
-}
-Set-Content $DslFile $Scriptmsg -force
-foreach ($FileEntry in $DslList) {
-    $array = $FileEntry.FullName -split "\\"
-    $comparename = $array[3..($array.Length – 1)] -join "\"
-    $FileRecord = "DSL" + ";" +  $comparename + ";" + $FileEntry.LastWriteTime + ";" + $FileEntry.Length
-    Add-Content $DslFile $FileRecord
-}
-
-
-# Delete old output files
-$ReportFilelist = Get-ChildItem $ADHC_ProdCompareDir -include report*.* -recurse -file | Select FullName
-foreach ($rpt in $ReportFilelist) {
-    Remove-Item $rpt.Fullname
-}
-
-$StageFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Staging*.* -recurse -file | Select FullName
-foreach ($rpt in $StageFilelist) {
-    Remove-Item $rpt.Fullname
-}
-Rename-Item -Path "$StageFile" -NewName "STAGING.txt"
-
-$DevFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Dev*.* -recurse -file | Select FullName
-foreach ($rpt in $DevFilelist) {
-    Remove-Item $rpt.Fullname
-}
-Rename-Item -Path "$DevFile" -NewName "DEVELOPMENT.txt"
-
-$DslFilelist = Get-ChildItem $ADHC_ProdCompareDir -include Dsl*.* -recurse -file | Select FullName
-foreach ($rpt in $DslFilelist) {
-    Remove-Item $rpt.Fullname
-}
-Rename-Item -Path "$DslFile" -NewName "DSL.txt"
-
-
-
-$CompareList = Get-ChildItem $ADHC_ProdCompareDir -file | Select FullName 
-# $CompareList | Out-Gridview
-
-
-$ProdFileList = New-Object System.Collections.ArrayList
-
-
-foreach ($FileEntry in $CompareList) {
-    $content = Get-Content $FileEntry.Fullname
-    # $content
-    # $a[1]
-    $i = 0;
-    foreach ($rec in $content) {
-        if ($i -ne 0) {
-        
-            $arr = $rec -split ';'
-            # $arr
-            $hashit = @{}
-            
-            $hashit.Computer=$arr[0]
-            $hashit.Filename=$arr[1]
-            $hashit.Lastupdate=[datetime]$arr[2]
-            $hashit.FileSize=[int]$arr[3]
-            [void]$ProdFileList.Add($hashit)
-        }
-       
-        $i = $i + 1
-    }
-
-}
-
-# $ProdFileList | Out-GridView
-
-$Sortedlist = $ProdFileList | Sort-Object @{Expression={$_.Filename};Descending=$false},`
-                                            @{Expression= {$_.Lastupdate};Descending=$true} 
-# $Sortedlist | Out-GridView
-
-$CurFilename = " "
-
-$Report = $ADHC_ProdCompareDir + "Report.txt"
+New-Item -ItemType Directory -Force -Path $ADHC_ProdCompareDir | Out-Null
+$Report = $ADHC_ProdCompareDir + "Report_" +  $ADHC_Computer  +  ".txt"
 Set-Content $Report $Scriptmsg -force
-$Anyfound = $false
-$hostlist = New-Object System.Collections.ArrayList
 
 
+foreach ($StageDir in $StageLIst) {
+    $configfile = $Stagedir.FullName + "\" + $ADHC_ConfigFile
+    [xml]$ConfigXML = Get-Content $configfile
 
-foreach ($hashit in $Sortedlist) {
-    if ($CurFilename -ne $hashit.Filename) {
-        
-        if ($CurFilename -ne " ") {
-            # $hostlist
-            if (($hostlist.Count -gt 0) -and (!$found)) {
-              Add-Content $Report " "
-            }
-            foreach ($h in $hostlist) {
-                $msg = "File " + $CurFilename + " ** not found ** on " + $h
-                Write-Warning $msg 
-                Add-Content $Report $msg
-                $Anyfound = $true
-            }
-        }
-        
-
-        $found = $false
-        $CurLength = $hashit.FileSize
-        $CurDatetime = $hashit.Lastupdate
-        $Curfilename = $hashit.Filename
-        $hostlist.Clear();
-        foreach ($c in $ADHC_Hostlist){
-            
-            [void]$hostlist.Add($c.ToUpper())
-        }
-        [void]$hostlist.Add("STAGING")
-        [void]$hostlist.Add("DEVELOPMENT")
-        [void]$hostlist.Add("DSL")
-        # $hostlist
+    # Get TARGET info
+    $t = $ConfigXML.ADHCinfo.Target.Directory
+    if ($t.'#text') {
+        $targetdir = $t.'#text'
     }
-    # Write-Information "remove"
-    # $hostlist
-    # $hashit.Computer + " -Computer"
-    $hostlist.Remove($hashit.Computer)
-    # $hostlist
-    # Write-Information "end remove"
+    else {
+        $targetdir = $t
+    }
+        
+    if ($targetdir.substring(0,6) -eq '$ADHC_'){ 
+        $targetdir = Invoke-Expression($targetdir); 
+    }
+    $targetnodelist = $ConfigXML.ADHCinfo.Target.Nodes
 
-    if (($CurLength -ne $hashit.FileSize) -or ($CurDatetime -ne $hashit.Lastupdate)) {
-        $Anyfound = $true
-        if (! $found) {
-            Add-Content $Report " "
-            $msg = "File "+ $CurFilename + " has timestamp " + $CurDatetime + " and filesize " + $CurLength + " on last update."
-            Write-Information $msg
-            Add-Content $Report $msg
-            $found = $true
+    # Get DSL info
+    $t = $ConfigXML.ADHCinfo.DSL.Directory
+    if ($t.'#text') {
+        $DSLdir = $t.'#text'
+    }
+    else {
+        $DSLdir = $t
+    }
+        
+    if ($DSLdir.substring(0,6) -eq '$ADHC_'){ 
+        $DSLdir = Invoke-Expression($DSLdir); 
+    }
+    $DSLnodelist = $ConfigXML.ADHCinfo.DSL.Nodes
+
+
+    $StagedContent = Get-ChildItem $Stagedir.FullName -recurse -file  | Select FullName,LastWriteTime,Length 
+    foreach ($stagedfile in $Stagedcontent) {
+        $linewritten = $false
+
+        # Check correctness of TARGET directory
+        $targetname = $stagedfile.FullName.Replace($Stagedir.FullName,$targetdir)
+
+        if (Test-Path $targetname) {
+            $targetprops = Get-ItemProperty $targetname
+            $targetfound = $true
         }
-        $msg = "File "+ $hashit.Filename + " has timestamp " + $hashit.Lastupdate + " and filesize " + $hashit.FileSize + " on "+ $hashit.Computer
-        Write-Warning $msg
-        Add-Content $Report $msg
-    }    
-}
+        else {
+            $targetfound = $false
+        }
 
-if (! $Anyfound ) {
-    $msg = "** No differences found ** "
-    Write-Information $msg
-    Add-Content $Report $msg
-}
+        if (!$targetfound) {
+            Add-Content $Report " "
+            $msg = "Staged file " + $stagedfile.FullName
+            Add-Content $Report $msg
+            $linewritten = $true
+            $msg = ">>> Target file not found: " + $targetname
+            Add-Content $Report $msg
+            
+        } 
+        else {
+            $stagedprops = Get-ItemProperty $stagedfile.FullName
+            if (($stagedprops.Length -ne $targetprops.Length) -or ($stagedprops.LastWriteTime.ToString().Trim() -ne $targetprops.LastWriteTime.ToString().Trim())) {
+                Add-Content $Report " "
+                $msg = "Staged file " + $stagedfile.FullName 
+                Add-Content $Report $msg
+                $linewritten = $true
+                $msg = "Length = " + $stagedprops.Length + " --- Last updated = " + $stagedprops.LastWriteTime
+                Add-Content $Report $msg
+                $msg = ">>> Target file " + $targetname 
+                Add-Content $Report $msg
+                $msg = ">>> Length = " + $targetprops.Length + "--- Last updated = " + $targetprops.LastWriteTime
+                Add-Content $Report $msg
+                
+               
 
 
+            }
 
-   
+        } 
+         # Check correctness of DSL directory
+        $DSLname = $stagedfile.FullName.Replace($Stagedir.FullName,$DSLdir)
+
+        if (Test-Path $DSLname) {
+            $DSLprops = Get-ItemProperty $DSLname
+            $DSLfound = $true
+        }
+        else {
+            $DSLfound = $false
+        }
+
+        if (!$DSLfound) {
+            if (!$linewritten) {
+                Add-Content $Report " "
+                $msg = "Staged file " + $stagedfile.FullName
+                Add-Content $Report $msg
+                $linewritten = $true
+            }
+            $msg = ">>> DSL file not found: " + $DSLname
+            Add-Content $Report $msg
+            
+        } 
+        else {
+            $stagedprops = Get-ItemProperty $stagedfile.FullName
+            if (($stagedprops.Length -ne $DSLprops.Length) -or ($stagedprops.LastWriteTime.ToString().Trim() -ne $DSLprops.LastWriteTime.ToString().Trim())) {
+                if (!$linewritten) {
+                    Add-Content $Report " "
+                    $msg = "Staged file " + $stagedfile.FullName 
+                    Add-Content $Report $msg
+                    $linewritten = $true
+                }
+                $msg = "Length = " + $stagedprops.Length + " --- Last updated = " + $stagedprops.LastWriteTime
+                Add-Content $Report $msg
+                $msg = ">>> DSL file " + $DSLname 
+                Add-Content $Report $msg
+                $msg = ">>> Length = " + $DSLprops.Length + "--- Last updated = " + $DSLprops.LastWriteTime
+                Add-Content $Report $msg
+                
+               
 
 
+            }
+
+        }       
+            
 
 
+    } 
+
+
+} 
+
+exit
