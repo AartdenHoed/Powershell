@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.2"
+$Version = " -- Version: 1.3"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -46,10 +46,11 @@ foreach ($gitentry in $gitdirs) {
     }
     Remove-Item $ofile
 
-    &{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
+    #&{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
+    &{git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
     $a = Get-Content $ofile
-    # $a
-    if ([string]::IsNullOrEmpty($a)) {
+    $a[0]
+    if ($a[0] -eq "git : Everything up-to-date")  {
         &{Write-Information "==> No unpushed commits"} 6>&1 5>&1 4>&1 3>&1 2>&1 >> $gitstatus
     }
     else {
