@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.3"
+$Version = " -- Version: 1.4"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -18,7 +18,7 @@ $ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
 
 
 Set-Location -Path $ADHC_DevelopDir
-$gitdirs = Get-ChildItem "*.git" -Recurse
+$gitdirs = Get-ChildItem "*.git" -Recurse -Force
 $ofile = $ADHC_SourceControl + "gitoutput.txt"
 
 $gitstatus = $ADHC_SourceControl + "gitstatus.txt"
