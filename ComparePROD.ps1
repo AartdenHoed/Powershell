@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.0"
+$Version = " -- Version: 2.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -149,7 +149,59 @@ foreach ($StageDir in $StageLIst) {
 
     } 
 
+    if (!(Test-Path $DSLdir)) {
+        Add-Content $Report " "
+        $msg = ">>> DSL directory $DSLdir niet gevonden"
+        Add-Content $Report $msg         
+    }
+    else {
 
+        $DSLContent = Get-ChildItem $DSLdir -recurse -file  | Select FullName,LastWriteTime,Length 
+        foreach ($dslfile in $DSLcontent) {
+            $linewritten = $false
+
+            # Check correctness of TARGET directory
+            $stagename = $dslfile.FullName.Replace($DSLdir,$StageDir.FullName)
+
+            if (!(Test-Path $stagename)) {
+                if (!$linewritten) {
+                    Add-Content $Report " "
+                    $msg = "DSL file " + $dslfile.FullName
+                    Add-Content $Report $msg
+                    $linewritten = $true
+                }
+                $msg = ">>> Corresponding staged file $stagename not found for DSL file " + $DSLfile.FullName 
+                Add-Content $Report $msg
+                              
+                # Write-Warning "$stagename niet gevonden"
+            }
+            else {
+                # Write-Host "$stagename wel gevonden"
+            }
+
+             $deployname = $dslfile.FullName.Replace($DSLdir,$targetdir)
+
+            if (!(Test-Path $deployname)) {
+                if (!$linewritten) {
+                    Add-Content $Report " "
+                    $msg = "DSL file " + $dslfile.FullName
+                    Add-Content $Report $msg
+                    $linewritten = $true
+                }
+                $msg = ">>> Corresponding production file $deployname not found for DSL file " + $DSLfile.FullName 
+                Add-Content $Report $msg
+                # Write-Warning "$deployname niet gevonden"
+            }
+            else {
+                # Write-Host "$deployname wel gevonden"
+            }
+        }
+
+        
+    }
+
+    
+        
 } 
 
 exit
