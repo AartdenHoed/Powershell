@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ADHCinfo>
+	<Stagelib>
+	  <Directory Process="Copy">D:\AartenHetty\OneDrive\Staging Library\WindowsPowerShell</Directory>
+	</Stagelib>
+	<Target>
+	  <Directory>$ADHC_PSUdir</Directory>
+	  <Nodes>*ALL*</Nodes>
+	</Target>
+	<DSL>
+	  <Directory>D:\Software\DSL\WindowsPowerShell</Directory>
+	  <Nodes>*ALL*</Nodes>
+	</DSL>
+</ADHCinfo>
