@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.29"
+$Version = " -- Version: 1.30"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -39,6 +39,9 @@ Set-Variable -Name "ADHC_TrustedHosts" -Value $TrustedHosts -Option readonly -Sc
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
 
+Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_DeployLog" -Value "Deploy/Deploy.log" -Option readonly -Scope global -Description "Deployment log file" -force
+
 Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
 
@@ -60,6 +63,10 @@ switch ($ADHC_Computer) {
     }
 Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force
+
+$output = $ADHC_OneDrive + "Output/"
+Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
 
 $staging = $OneDrive + "Staging Library/"
 Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
