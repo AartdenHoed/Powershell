@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.10"
+$Version = " -- Version: 1.11"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -15,7 +15,11 @@ $OneDrive = $ADHC_OneDrive
 $FileList = Get-ChildItem $OneDrive -recurse  -name -force
 # $FileList | Out-Gridview
 
-$TxtFile = $ADHC_ConflictsDir  + "NEWConflicts.txt"
+# Init reporting file
+$str = $ADHC_ConflictRpt.Split("/")
+$dir = $ADHC_OutputDirectory + $str[0]
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$TxtFile = $ADHC_OutputDirectory + $str[0] + '/NEW_'+ $str[1]
 
 Set-Content $TxtFile $Scriptmsg
 Add-Content $TxtFile "Overview of OneDrive conficts"

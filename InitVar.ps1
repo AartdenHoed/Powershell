@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.33"
+$Version = " -- Version: 1.34"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -43,7 +43,7 @@ Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DeployLog" -Value "Deploy/Deploy.log" -Option readonly -Scope global -Description "Deployment log file" -force
 
 Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ConflictRpt" -Value "Conflicts/Conflicts.txtg" -Option readonly -Scope global -Description "Conflict report file" -force
+Set-Variable -Name "ADHC_ConflictRpt" -Value "Conflicts/Conflicts.txt" -Option readonly -Scope global -Description "Conflict report file" -force
 
 Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_SourceControl" -Value "SourceControl/gitstatus.txt" -Option readonly -Scope global -Description "Status of GIT directories" -force
@@ -100,10 +100,6 @@ Set-Variable -Name "ADHC_DiskSpace" -Value $diskspace -Option readonly -Scope gl
 $haveibeenpwned = $OneDrive + "HaveIBeenPwned/"
 Remove-Variable -Name "ADHC_HaveIBeenPwned" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_HaveIBeenPwned" -Value $haveibeenpwned -Option readonly -Scope global -Description "HaveIBeenPwned HTML output directory" -force
-
-$conflicts = $OneDrive + "Conflicts/"
-Remove-Variable -Name "ADHC_ConflictsDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ConflictsDir" -Value $conflicts -Option readonly -Scope global -Description "Onedrive Conficts report directory" -force
 
 $wmicdir = $OneDrive + "WmicFiles/"
 Remove-Variable -Name "ADHC_WmicDir" -force -ErrorAction SilentlyContinue
