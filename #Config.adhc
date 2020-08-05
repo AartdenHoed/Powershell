@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ADHCinfo>
+<ADHCinfo Nodes="*ALL*">
 	<Stagelib>
-	  <Directory Process="Copy">D:\AartenHetty\OneDrive\Staging Library\WindowsPowerShell</Directory>
+	  <Directory Build="Copy">D:\AartenHetty\OneDrive\Staging Library\WindowsPowerShell</Directory>
 	</Stagelib>
 	<Target>
-	  <Directory>$ADHC_PSUdir</Directory>
-	  <Nodes>*ALL*</Nodes>
+	  <Directory Deploy="Copy" Delay="0">$ADHC_PSUdir</Directory>
 	</Target>
 	<DSL>
-	  <Directory>D:\Software\DSL\WindowsPowerShell</Directory>
-	  <Nodes>*ALL*</Nodes>
+	  <Directory Delay="14">D:\Software\DSL\WindowsPowerShell</Directory>
 	</DSL>
 </ADHCinfo>
