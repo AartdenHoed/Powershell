@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.34"
+$Version = " -- Version: 1.35"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -39,8 +39,9 @@ Set-Variable -Name "ADHC_TrustedHosts" -Value $TrustedHosts -Option readonly -Sc
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
 
+$dl = "Deploy/" + $ADHC_Computer + "_Deploy.log"
 Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DeployLog" -Value "Deploy/Deploy.log" -Option readonly -Scope global -Description "Deployment log file" -force
+Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
 
 Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConflictRpt" -Value "Conflicts/Conflicts.txt" -Option readonly -Scope global -Description "Conflict report file" -force

@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.1"
+$Version = " -- Version: 2.1.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -20,7 +20,7 @@ $ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
 $str = $ADHC_Deploylog.Split("/")
 $dir = $ADHC_OutputDirectory + $str[0]
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$ofile = $ADHC_OutputDirectory + $str[0] + "/" + $ADHC_Computer + "_"+ $str[1]
+$ofile = $ADHC_OutputDirectory + $ADHC_Deploylog
 Set-Content $ofile $Scriptmsg -force
 
 # Generic delete function
