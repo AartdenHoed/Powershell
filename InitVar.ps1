@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.35"
+$Version = " -- Version: 1.36"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -49,9 +49,9 @@ Set-Variable -Name "ADHC_ConflictRpt" -Value "Conflicts/Conflicts.txt" -Option r
 Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_SourceControl" -Value "SourceControl/gitstatus.txt" -Option readonly -Scope global -Description "Status of GIT directories" -force
 
-$pc = " Report_"+ $ADHC_Computer
+$pc = "Report_"+ $ADHC_Computer + ".txt"
 Remove-Variable -Name "ADHC_ProdCompare" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProcCompare" -Value "ProductionCompare/$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
+Set-Variable -Name "ADHC_ProdCompare" -Value "ProductionCompare/$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
 
 Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
@@ -89,18 +89,6 @@ Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope glob
 
 Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope global -Description "Production directory" -force
-
-$compare = $OneDrive + "ProductionCompare/"
-Remove-Variable -Name "ADHC_ProdCompareDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProdCompareDir" -Value $compare -Option readonly -Scope global -Description "Production compare directory" -force
-
-$diskspace = $OneDrive + "DiskSpace/"
-Remove-Variable -Name "ADHC_DiskSpace" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DiskSpace" -Value $diskspace -Option readonly -Scope global -Description "Disk space report directory" -force
-
-$haveibeenpwned = $OneDrive + "HaveIBeenPwned/"
-Remove-Variable -Name "ADHC_HaveIBeenPwned" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_HaveIBeenPwned" -Value $haveibeenpwned -Option readonly -Scope global -Description "HaveIBeenPwned HTML output directory" -force
 
 $wmicdir = $OneDrive + "WmicFiles/"
 Remove-Variable -Name "ADHC_WmicDir" -force -ErrorAction SilentlyContinue

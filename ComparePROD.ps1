@@ -1,8 +1,8 @@
-﻿
+﻿CLS
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.1"
+$Version = " -- Version: 3.2"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -17,8 +17,10 @@ $ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
 & "$ADHC_InitVar"
 
 # Init reporting file
-New-Item -ItemType Directory -Force -Path $ADHC_ProdCompareDir | Out-Null
-$Report = $ADHC_ProdCompareDir + "Report_" +  $ADHC_Computer  +  ".txt"
+$str = $ADHC_ProdCompare.Split("/")
+$dir = $ADHC_OutputDirectory + $str[0]
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$Report = $ADHC_OutputDirectory + $ADHC_ProdCompare
 Set-Content $Report $Scriptmsg -force
 
 # Proces development directories
@@ -36,7 +38,7 @@ foreach ($DevDir in $DevLIst) {
         $stagedir = $t
     }
 	$process = "COPY"
-	$c = $ConfigXML.ADHCinfo.Stagelib.Directory.Process
+	$c = $ConfigXML.ADHCinfo.Stagelib.Directory.Build
 	if ($c) {
 		$process = $c
 	}
@@ -101,7 +103,7 @@ foreach ($DevDir in $DevLIst) {
 					    $linewritten = $false
 
 					    # Check correctness of DEVELOPMENT directory
-					    $devname = $dslfile.FullName.Replace($stagedir,$DevDir.FullName)
+					    $devname = $stagefile.FullName.Replace($stagedir,$DevDir.FullName)
 
 					    if (!(Test-Path $devname)) {
 						    if (!$linewritten) {
@@ -131,7 +133,7 @@ foreach ($DevDir in $DevLIst) {
 		
 		default {
 			Add-Content $Report " "
-            $msg = ">>> Staging directory $stagedir : process $process not implemented yet"
+            $msg = ">>> Staging directory $stagedir : BUILD process $process not implemented yet, skipping this directory"
             Add-Content $Report $msg
             continue
 		}
@@ -156,7 +158,19 @@ foreach ($StageDir in $StageLIst) {
     if ($targetdir.substring(0,6) -eq '$ADHC_'){ 
         $targetdir = Invoke-Expression($targetdir); 
     }
-    $targetnodelist = $ConfigXML.ADHCinfo.Target.Nodes
+    $targetnodelist = "*ALL*" 
+    if ($ConfigXML.ADHCinfo.Nodes) {
+        $targetnodelist = $ConfigXML.ADHCinfo.Nodes
+    }
+    if ($targetnodelist.ToUpper() -eq "*ALL*") {
+        $targetnodelist = $ADHC_Hostlist
+    }
+        
+    if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
+        $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
+	    Add-Content $ofile $msg
+        Continue
+    }
 
     # Get DSL info
     $t = $ConfigXML.ADHCinfo.DSL.Directory
@@ -170,9 +184,7 @@ foreach ($StageDir in $StageLIst) {
     if ($DSLdir.substring(0,6) -eq '$ADHC_'){ 
         $DSLdir = Invoke-Expression($DSLdir); 
     }
-    $DSLnodelist = $ConfigXML.ADHCinfo.DSL.Nodes
-
-
+    
     $StagedContent = Get-ChildItem $Stagedir.FullName -recurse -file  | Select FullName,LastWriteTime,Length 
     foreach ($stagedfile in $Stagedcontent) {
         $linewritten = $false
