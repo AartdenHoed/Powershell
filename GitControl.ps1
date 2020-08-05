@@ -16,14 +16,17 @@ $ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
 $ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
 & "$ADHC_InitVar"
 
+# Init reporting file
+$str = $ADHC_SourceControl.Split("/")
+$dir = $ADHC_OutputDirectory + $str[0]
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$gitstatus = $ADHC_OutputDirectory + $ADHC_SourceControl
+
+&{Write-Information $Scriptmsg} 6>&1 5>&1 4>&1 3>&1 2>&1 > $gitstatus
 
 Set-Location -Path $ADHC_DevelopDir
 $gitdirs = Get-ChildItem "*.git" -Recurse -Force
-$ofile = $ADHC_SourceControl + "gitoutput.txt"
-
-$gitstatus = $ADHC_SourceControl + "gitstatus.txt"
-&{Write-Information $Scriptmsg} 6>&1 5>&1 4>&1 3>&1 2>&1 > $gitstatus
-
+$ofile = $ADHC_OutputDirectory + $ADHC_SourceControl + "gitoutput.txt"
 
 foreach ($gitentry in $gitdirs) {
     $dir = $gitentry.FullName

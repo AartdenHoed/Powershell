@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.30"
+$Version = " -- Version: 1.33"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -41,6 +41,16 @@ Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Sco
 
 Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DeployLog" -Value "Deploy/Deploy.log" -Option readonly -Scope global -Description "Deployment log file" -force
+
+Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_ConflictRpt" -Value "Conflicts/Conflicts.txtg" -Option readonly -Scope global -Description "Conflict report file" -force
+
+Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_SourceControl" -Value "SourceControl/gitstatus.txt" -Option readonly -Scope global -Description "Status of GIT directories" -force
+
+$pc = " Report_"+ $ADHC_Computer
+Remove-Variable -Name "ADHC_ProdCompare" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_ProcCompare" -Value "ProductionCompare/$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
 
 Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
@@ -82,10 +92,6 @@ Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope glob
 $compare = $OneDrive + "ProductionCompare/"
 Remove-Variable -Name "ADHC_ProdCompareDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdCompareDir" -Value $compare -Option readonly -Scope global -Description "Production compare directory" -force
-
-$sctl = $OneDrive + "SourceControl/"
-Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_SourceControl" -Value $sctl -Option readonly -Scope global -Description "Source Control directory" -force
 
 $diskspace = $OneDrive + "DiskSpace/"
 Remove-Variable -Name "ADHC_DiskSpace" -force -ErrorAction SilentlyContinue
