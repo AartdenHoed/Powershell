@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.0"
+$Version = " -- Version: 2.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -43,7 +43,16 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$process)
             $yyyy = $dt.Year
             $mm = “{0:d2}” -f $dt.Month
             $dd = “{0:d2}” -f $dt.Day
-            $deletename = "#ADHC_deleted_" + "$yyyy" + "$mm" + "$dd" + "_" + "$tobedeleted"  
+            $splitname = $tobedeleted.Split("/\")
+            $nrofquals = $splitname.Count
+            #nrofquals
+            $lastqual = $splitname[$nrofquals-1]
+            #astqual
+            $deleteq= "#ADHC_deleted_" + "$yyyy" + "$mm" + "$dd" + "_" + "$lastqual"
+            #deleteq
+            $deletename = $tobedeleted.Replace("$Lastqual","$deleteq")
+            #deletename
+                        
             $msg = "Module " + $tobedeleted + " will be renamed to " + $deletename + " and removed later from computer " + $ADHC_Computer
             Rename-Item "$tobedeleted" "$deletename" -force
             Add-Content $ofile $msg
@@ -78,7 +87,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$process)
               
         }
         default    {
-            $msg = "ERROR *** Wrong deploy process $deploy encountered"
+            $msg = "ERROR *** Wrong deploy process $process encountered"
             Add-Content $ofile $msg
             exit 16
         }
@@ -205,7 +214,7 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
 
         }
         default    {
-            $msg = "ERROR *** Wrong deploy process $deploy encountered"
+            $msg = "ERROR *** Wrong deploy process $process encountered"
             Add-Content $ofile $msg
             exit 16
         }
@@ -240,6 +249,21 @@ foreach ($stagingdir in $stagingdirlist) {
     } 
     else {
         [xml]$ConfigXML = Get-Content $configfile
+
+        # Skip this directory if not meant for this computer node
+        $targetnodelist = "*ALL*" 
+        if ($ConfigXML.ADHCinfo.Nodes) {
+            $targetnodelist = $ConfigXML.ADHCinfo.Nodes
+        }
+        if ($targetnodelist.ToUpper() -eq "*ALL*") {
+            $targetnodelist = $ADHC_Hostlist
+        }
+        
+        if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
+            $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
+	        Add-Content $ofile $msg
+            Continue
+        }
        
         # Get TARGET info
         $t = $ConfigXML.ADHCinfo.Target.Directory
@@ -249,6 +273,12 @@ foreach ($stagingdir in $stagingdirlist) {
         else {
             $targetdir = $t
         }
+        if ($t.Delay) {
+            $targetdelay = $t.delay
+        }
+        else {
+            $targetdelay = 1                         # Default
+        }
         $deploy = "COPY"                             # Default!!!
         if ($t.Deploy) {
             $deploy = $t.Deploy
@@ -257,15 +287,7 @@ foreach ($stagingdir in $stagingdirlist) {
         if ($targetdir.substring(0,6) -eq '$ADHC_'){ 
             $targetdir = Invoke-Expression($targetdir); 
         }
-        $targetnodelist = $ConfigXML.ADHCinfo.Target.Nodes
-        if ($targetnodelist.ToUpper() -eq "*ALL*") {
-            $targetnodelist = $ADHC_Hostlist
-        }
-        if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
-            $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
-	        Add-Content $ofile $msg
-            Continue
-        }
+        
 
         # Get DSL info
         $t = $ConfigXML.ADHCinfo.DSL.Directory
@@ -278,6 +300,13 @@ foreach ($stagingdir in $stagingdirlist) {
                
         if ($dsldir.substring(0,6) -eq '$ADHC_'){ 
             $dsldir = Invoke-Expression($dsldir); 
+        }
+        
+        if ($t.Delay) {
+            $dsldelay = $t.delay
+        }
+        else {
+            $dsldelay = 30                         # default
         }
 
         # Create production directory if it does not exits yet
@@ -323,7 +352,7 @@ foreach ($stagingdir in $stagingdirlist) {
             $prodprops = Get-ItemProperty $prodname 
             if (($prodprops.Length -ne $stagedprops.Length) -or ($prodprops.LastWriteTime.ToString().Trim() -ne $stagedprops.LastWriteTime.ToString().Trim())) {
                 Write-Warning "Difference found"
-                DeployNow "Replace" "$stagedname" "$prodname" "$deploy" 0
+                DeployNow "Replace" "$stagedname" "$prodname" "$deploy" $targetdelay
             }
             else {
                 Write-Host "No Difference found"
@@ -331,7 +360,7 @@ foreach ($stagingdir in $stagingdirlist) {
         }
         else {
             Write-Warning "File not found"
-            DeployNow "Add" "$stagedname" "$prodname" "$deploy" 0
+            DeployNow "Add" "$stagedname" "$prodname" "$deploy" $targetdelay
         }
 
         # Check if DSL differs from staged file
@@ -342,7 +371,7 @@ foreach ($stagingdir in $stagingdirlist) {
             $DSLprops = Get-ItemProperty $DSLname 
             if (($DSLprops.Length -ne $stagedprops.Length) -or ($DSLprops.LastWriteTime.ToString().Trim() -ne $stagedprops.LastWriteTime.ToString().Trim())) {
                 Write-Warning "Difference found"
-                DeployNow "Replace" "$stagedname" "$dslname" "$deploy" 14
+                DeployNow "Replace" "$stagedname" "$dslname" "COPY" $dsldelay
             }
             else {
                 Write-Host "No Difference found"
@@ -350,7 +379,7 @@ foreach ($stagingdir in $stagingdirlist) {
         }
         else {
             Write-Warning "File not found"
-            DeployNow "Add" "$stagedname" "$dslname" "$deploy" 14
+            DeployNow "Add" "$stagedname" "$dslname" "COPY" $dsldelay
         }
 
 
@@ -371,7 +400,8 @@ foreach ($stagingdir in $stagingdirlist) {
              if (Test-Path $dslname) {
                  $msg = "Production module " + $targetMod.FullName + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
                  Write-Warning $msg
-                 DeleteNow "Delete"  "$Targetmod.FullName" "$deploy" 
+                 $mod = $Targetmod.FullName
+                 DeleteNow "Delete"  "$mod" "$deploy" 
              }
 
          } 
@@ -390,9 +420,10 @@ foreach ($stagingdir in $stagingdirlist) {
          else {
              # Module has been deleted from staging, delete it from DSL as well, DELETEX will do a rename!             
              
-            $msg = "DSL module " + $DSL.FullName + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
+            $msg = "DSL module " + $DSLmod.FullName + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
             Write-Warning $msg
-            DeleteNow "DeleteX"  "$DSLMod.FullName" "$deploy" 
+            $mod = $DSLMod.FullName
+            DeleteNow "DeleteX"  "$mod" "COPY" 
             
 
          } 
