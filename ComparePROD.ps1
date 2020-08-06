@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.2"
+$Version = " -- Version: 3.2.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -36,6 +36,9 @@ foreach ($DevDir in $DevLIst) {
     }
     else {
         $stagedir = $t
+    }
+    if ($stagedir.substring(0,6) -eq '$ADHC_'){ 
+        $stagedir = Invoke-Expression($stagedir); 
     }
 	$process = "COPY"
 	$c = $ConfigXML.ADHCinfo.Stagelib.Directory.Build
