@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.11"
+$Version = " -- Version: 1.11.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -54,7 +54,7 @@ foreach ($HostName in $ADHC_Hostlist) {
 }
 
 # Delete old output files
-$ConflictFilelist = Get-ChildItem $ADHC_ConflictsDir -include conflict*.* -recurse -file | Select FullName
+$ConflictFilelist = Get-ChildItem $dir -include conflict*.* -recurse -file | Select FullName
 foreach ($rpt in $ConflictFilelist) {
     Remove-Item $rpt.Fullname
 }
