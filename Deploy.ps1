@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.1.2"
+$Version = " -- Version: 2.2"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -24,41 +24,70 @@ $ofile = $ADHC_OutputDirectory + $ADHC_Deploylog
 Set-Content $ofile $Scriptmsg -force
 
 # Generic delete function
-function DeleteNow([string]$action, [string]$tobedeleted, [string]$process)
+function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [string]$process, [int]$thisdelay)
 {
-    Write-Host "$action $tobedeleted with process $process"
+    Write-Host "$action $tobedeleted with process $process and delay $thisdelay"
 
     if ($process.ToUpper() -eq "WINDOWSSCHEDULER") {
         $xml = [xml](Get-Content "$tobedeleted") 
     }
-        
+    if ($thisdelay -gt 0) {
+        $action = "DELETEX"
+    }
+    $tobedeleted
+    if ($delname.ToUpper().Contains("#ADHC_DELETED_")) {
+        $action = "DELETED"
+    }
+    # $action
+           
     switch ($action.ToUpper()) {
         "DELETE" { 
-            $msg = "Module " + $tobedeleted + " will be deleted from computer " + $ADHC_Computer
+            $msg = "Module " + $tobedeleted + " will be deleted directly from computer " + $ADHC_Computer
             Remove-Item "$tobedeleted" -force
             Add-Content $ofile $msg
         }
-        "DELETEX" {
-            if (!($tobedeleted.ToUpper() -contains "#ADHC_DELETED_")) {
-                # Only rename ONCE!!!
-                $dt = Get-Date
-                $yyyy = $dt.Year
-                $mm = “{0:d2}” -f $dt.Month
-                $dd = “{0:d2}” -f $dt.Day
-                $splitname = $tobedeleted.Split("/\")
-                $nrofquals = $splitname.Count
-                #nrofquals
-                $lastqual = $splitname[$nrofquals-1]
-                #astqual
-                $deleteq= "#ADHC_deleted_" + "$yyyy" + "$mm" + "$dd" + "_" + "$lastqual"
-                #deleteq
-                $deletename = $tobedeleted.Replace("$Lastqual","$deleteq")
-                #deletename
-                        
-                $msg = "Module " + $tobedeleted + " will be renamed to " + $deletename + " and removed later from computer " + $ADHC_Computer
-                Rename-Item "$tobedeleted" "$deletename" -force
+        "DELETED" {            
+            $delyear = $delname.Substring(14,4)
+            $delmonth = $delname.Substring(18,2)
+            $delday = $delname.Substring(20,2)
+            # $delyear
+            # $delmonth
+            # $delday
+            $deldate = Get-Date -Year $delyear -Month $delmonth -Day $delday
+            $curdate = Get-Date
+            $diff = NEW-TIMESPAN –Start $deldate –End $curDate
+            if ($diff.Days -GE $thisdelay) {
+                # dataset kan be deleted now
+                $msg = "Renamed module " + $tobedeleted + " will be deleted directly from computer " + $ADHC_Computer + " (Delay $thisdelay has elapsed)"
+                Remove-Item "$tobedeleted" -force
                 Add-Content $ofile $msg
             }
+            else {
+                $wt = $thisdelay - $diff.Days
+                $msg = "Renamed module " + $tobedeleted + " will be deleted from computer " + $ADHC_Computer + " in $wt days"
+                Add-Content $ofile $msg
+            }
+         }
+         "DELETEX" {
+            # Only rename ONCE!!!
+            $dt = Get-Date
+            $yyyy = $dt.Year
+            $mm = “{0:d2}” -f $dt.Month
+            $dd = “{0:d2}” -f $dt.Day
+            $splitname = $tobedeleted.Split("/\")
+            $nrofquals = $splitname.Count
+            #nrofquals
+            $lastqual = $splitname[$nrofquals-1]
+            #astqual
+            $deleteq= "#ADHC_deleted_" + "$yyyy" + "$mm" + "$dd" + "_" + "$lastqual"
+            #deleteq
+            $deletename = $tobedeleted.Replace("$Lastqual","$deleteq")
+            #deletename
+                        
+            $msg = "Module " + $tobedeleted + " will be renamed to " + $deletename + " and removed later from computer " + $ADHC_Computer
+            Rename-Item "$tobedeleted" "$deletename" -force
+            Add-Content $ofile $msg
+          
                         
         }
         Default {
@@ -390,7 +419,7 @@ foreach ($stagingdir in $stagingdirlist) {
 
     # Determine deletions in target directory
     Set-Location "$targetDir"
-    $TargetList = Get-ChildItem -file | select-object FullName 
+    $TargetList = Get-ChildItem -file | select-object FullName,Name 
     foreach ($targetMod in $TargetList) {
          $stagename = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $staginglocation)
          $stagename
@@ -404,7 +433,8 @@ foreach ($stagingdir in $stagingdirlist) {
                  $msg = "Production module " + $targetMod.FullName + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
                  Write-Warning $msg
                  $mod = $Targetmod.FullName
-                 DeleteNow "Delete"  "$mod" "$deploy" 
+                 $sname = $Targetmod.Name
+                 DeleteNow "Delete"  "$mod" "$sname""$deploy" $targetdelay
              }
 
          } 
@@ -413,7 +443,7 @@ foreach ($stagingdir in $stagingdirlist) {
     
     # Determine deletions in DSL directory
     Set-Location "$DSLDir"
-    $DSLList = Get-ChildItem -file | select-object FullName 
+    $DSLList = Get-ChildItem -file | select-object FullName, Name 
     foreach ($DSLMod in $DSLList) {
          $stagename = $DSLMod.Fullname.ToUpper().Replace($DSLDir.ToUpper(), $staginglocation)
          $stagename
@@ -426,8 +456,9 @@ foreach ($stagingdir in $stagingdirlist) {
             $msg = "DSL module " + $DSLmod.FullName + " is obsolete and will be deleted on computer " + $env:COMPUTERNAME
             Write-Warning $msg
             $mod = $DSLMod.FullName
-            DeleteNow "DeleteX"  "$mod" "COPY" 
-            
+            $sname = $DSLmod.Name
+            DeleteNow "Delete"  "$mod" "$sname" "COPY" $dsldelay 
+         
 
          } 
  
