@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.1.1"
+$Version = " -- Version: 2.1.2"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -39,23 +39,26 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$process)
             Add-Content $ofile $msg
         }
         "DELETEX" {
-            $dt = Get-Date
-            $yyyy = $dt.Year
-            $mm = “{0:d2}” -f $dt.Month
-            $dd = “{0:d2}” -f $dt.Day
-            $splitname = $tobedeleted.Split("/\")
-            $nrofquals = $splitname.Count
-            #nrofquals
-            $lastqual = $splitname[$nrofquals-1]
-            #astqual
-            $deleteq= "#ADHC_deleted_" + "$yyyy" + "$mm" + "$dd" + "_" + "$lastqual"
-            #deleteq
-            $deletename = $tobedeleted.Replace("$Lastqual","$deleteq")
-            #deletename
+            if (!($tobedeleted.ToUpper() -contains "#ADHC_DELETED_")) {
+                # Only rename ONCE!!!
+                $dt = Get-Date
+                $yyyy = $dt.Year
+                $mm = “{0:d2}” -f $dt.Month
+                $dd = “{0:d2}” -f $dt.Day
+                $splitname = $tobedeleted.Split("/\")
+                $nrofquals = $splitname.Count
+                #nrofquals
+                $lastqual = $splitname[$nrofquals-1]
+                #astqual
+                $deleteq= "#ADHC_deleted_" + "$yyyy" + "$mm" + "$dd" + "_" + "$lastqual"
+                #deleteq
+                $deletename = $tobedeleted.Replace("$Lastqual","$deleteq")
+                #deletename
                         
-            $msg = "Module " + $tobedeleted + " will be renamed to " + $deletename + " and removed later from computer " + $ADHC_Computer
-            Rename-Item "$tobedeleted" "$deletename" -force
-            Add-Content $ofile $msg
+                $msg = "Module " + $tobedeleted + " will be renamed to " + $deletename + " and removed later from computer " + $ADHC_Computer
+                Rename-Item "$tobedeleted" "$deletename" -force
+                Add-Content $ofile $msg
+            }
                         
         }
         Default {
