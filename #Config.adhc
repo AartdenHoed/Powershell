@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ADHCinfo Nodes="*ALL*">
 	<Stagelib>
-	  <Directory Build="Copy">D:\AartenHetty\OneDrive\Staging Library\WindowsPowerShell</Directory>
+	  <Directory Build="Copy">$ADHC_Onedrive + 'Staging Library\WindowsPowerShell'</Directory>
 	</Stagelib>
 	<Target>
 	  <Directory Deploy="Copy" Delay="0">$ADHC_PSUdir</Directory>
