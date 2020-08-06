@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.2.1"
+$Version = " -- Version: 3.3"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -288,44 +288,52 @@ foreach ($StageDir in $StageLIst) {
     }
     else {
 
-        $DSLContent = Get-ChildItem $DSLdir -recurse -file  | Select FullName,LastWriteTime,Length 
+        $DSLContent = Get-ChildItem $DSLdir -recurse -file  | Select FullName,LastWriteTime,Length,Name 
         foreach ($dslfile in $DSLcontent) {
             $linewritten = $false
 
-            # Check correctness of TARGET directory
-            $stagename = $dslfile.FullName.Replace($DSLdir,$StageDir.FullName)
-
-            if (!(Test-Path $stagename)) {
-                if (!$linewritten) {
-                    Add-Content $Report " "
-                    $msg = "DSL file " + $dslfile.FullName
-                    Add-Content $Report $msg
-                    $linewritten = $true
-                }
-                $msg = ">>> Corresponding staged file $stagename not found for DSL file " + $DSLfile.FullName 
+            if ($dslfile.Name.ToUpper().Contains("#ADHC_DELETED_")) {
+                Add-Content $Report " "
+                $msg = "DSL file " + $dslfile.FullName + " will be deleted on after programmed delay"
                 Add-Content $Report $msg
+                $linewritten = $true
+            } 
+            else {
+                # Check correctness of TARGET directory
+                $stagename = $dslfile.FullName.Replace($DSLdir,$StageDir.FullName)
+
+                if (!(Test-Path $stagename)) {
+                    if (!$linewritten) {
+                        Add-Content $Report " "
+                        $msg = "DSL file " + $dslfile.FullName
+                        Add-Content $Report $msg
+                        $linewritten = $true
+                    }
+                    $msg = ">>> Corresponding staged file $stagename not found for DSL file " + $DSLfile.FullName 
+                    Add-Content $Report $msg
                               
-                # Write-Warning "$stagename niet gevonden"
-            }
-            else {
-                # Write-Host "$stagename wel gevonden"
-            }
-
-             $deployname = $dslfile.FullName.Replace($DSLdir,$targetdir)
-
-            if (!(Test-Path $deployname)) {
-                if (!$linewritten) {
-                    Add-Content $Report " "
-                    $msg = "DSL file " + $dslfile.FullName
-                    Add-Content $Report $msg
-                    $linewritten = $true
+                    # Write-Warning "$stagename niet gevonden"
                 }
-                $msg = ">>> Corresponding production file $deployname not found for DSL file " + $DSLfile.FullName 
-                Add-Content $Report $msg
-                # Write-Warning "$deployname niet gevonden"
-            }
-            else {
-                # Write-Host "$deployname wel gevonden"
+                else {
+                    # Write-Host "$stagename wel gevonden"
+                }
+
+                 $deployname = $dslfile.FullName.Replace($DSLdir,$targetdir)
+
+                if (!(Test-Path $deployname)) {
+                    if (!$linewritten) {
+                        Add-Content $Report " "
+                        $msg = "DSL file " + $dslfile.FullName
+                        Add-Content $Report $msg
+                        $linewritten = $true
+                    }
+                    $msg = ">>> Corresponding production file $deployname not found for DSL file " + $DSLfile.FullName 
+                    Add-Content $Report $msg
+                    # Write-Warning "$deployname niet gevonden"
+                }
+                else {
+                    # Write-Host "$deployname wel gevonden"
+                }
             }
         }
 
