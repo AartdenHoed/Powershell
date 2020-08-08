@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.3"
+$Version = " -- Version: 3.3.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -171,7 +171,7 @@ foreach ($StageDir in $StageLIst) {
         
     if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
         $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
-	    Add-Content $ofile $msg
+	    Add-Content $report $msg
         Continue
     }
 
