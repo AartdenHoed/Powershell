@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.2"
+$Version = " -- Version: 2.2.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -419,7 +419,7 @@ foreach ($stagingdir in $stagingdirlist) {
 
     # Determine deletions in target directory
     Set-Location "$targetDir"
-    $TargetList = Get-ChildItem -file | select-object FullName,Name 
+    $TargetList = Get-ChildItem -file -recurse | select-object FullName,Name 
     foreach ($targetMod in $TargetList) {
          $stagename = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $staginglocation)
          $stagename
@@ -443,7 +443,7 @@ foreach ($stagingdir in $stagingdirlist) {
     
     # Determine deletions in DSL directory
     Set-Location "$DSLDir"
-    $DSLList = Get-ChildItem -file | select-object FullName, Name 
+    $DSLList = Get-ChildItem -file -recurse| select-object FullName, Name 
     foreach ($DSLMod in $DSLList) {
          $stagename = $DSLMod.Fullname.ToUpper().Replace($DSLDir.ToUpper(), $staginglocation)
          $stagename
