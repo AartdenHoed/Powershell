@@ -2,7 +2,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.11.1"
+$Version = " -- Version: 1.12"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -19,7 +19,7 @@ $FileList = Get-ChildItem $OneDrive -recurse  -name -force
 $str = $ADHC_ConflictRpt.Split("/")
 $dir = $ADHC_OutputDirectory + $str[0]
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$TxtFile = $ADHC_OutputDirectory + $str[0] + '/NEW_'+ $str[1]
+$TxtFile = $ADHC_OutputDirectory + $ADHC_ConflictRpt
 
 Set-Content $TxtFile $Scriptmsg
 Add-Content $TxtFile "Overview of OneDrive conficts"
@@ -53,9 +53,7 @@ foreach ($HostName in $ADHC_Hostlist) {
     
 }
 
-# Delete old output files
-$ConflictFilelist = Get-ChildItem $dir -include conflict*.* -recurse -file | Select FullName
-foreach ($rpt in $ConflictFilelist) {
-    Remove-Item $rpt.Fullname
-}
-Rename-Item -Path "$TxtFile" -NewName "Conflicts.txt"
+$msg = ">>> Script ended" 
+Add-Content $Txtfile " "
+Add-Content $Txtfile $msg
+exit 0
