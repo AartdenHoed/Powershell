@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.4"
+$Version = " -- Version: 1.5"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -36,11 +36,12 @@ foreach ($gitentry in $gitdirs) {
     &{Write-Information "Directory $dir"} 6>&1 5>&1 4>&1 3>&1 2>&1 >> $gitstatus
 
     Set-Location $dir
-    # $dir
+    Write-Host ">>> $dir"
     
     &{git status} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
     $a = Get-Content $ofile
-    # $a[1]
+    $x = $a[1]
+    Write-Host "    $x"
     if ($a[1] -eq "nothing to commit, working tree clean") {
         &{Write-Information "==> No uncommitted changes"} 6>&1 5>&1 4>&1 3>&1 2>&1 >> $gitstatus
     }
@@ -52,7 +53,8 @@ foreach ($gitentry in $gitdirs) {
     #&{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
     &{git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
     $a = Get-Content $ofile
-    $a[0]
+    $x = $a[0]
+    Write-Host "    $x"
     if ($a[0] -eq "git : Everything up-to-date")  {
         &{Write-Information "==> No unpushed commits"} 6>&1 5>&1 4>&1 3>&1 2>&1 >> $gitstatus
     }
