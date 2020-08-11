@@ -3,13 +3,22 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.38"
+$Version = " -- Version: 1.41"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
-$Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $Datum + $Tijd +$Node
+$myname = $MyInvocation.MyCommand.Name
+$Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
+
+Remove-Variable -Name "ADHC_InitVar" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_Initvar" -Value "$myname" -Option readonly -Scope global -Description "Name of INIT script" -force
+
+$FullScriptName = $MyInvocation.MyCommand.Definition
+$mypath = $FullScriptName.Replace($MyName, "")
+Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
 
 Remove-Variable -Name "ADHC_User" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_User" -Value "$env:USERNAME" -Option readonly -Scope global -Description "Current user" -force
@@ -51,9 +60,13 @@ $gs = "SourceControl/" + $ADHC_Computer + "_GitStatus.txt"
 Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
 
-$pc = "Report_"+ $ADHC_Computer + ".txt"
+$pc = "ProductionCompare/"+ $ADHC_Computer + "_Compare.txt"
 Remove-Variable -Name "ADHC_ProdCompare" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProdCompare" -Value "ProductionCompare/$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
+Set-Variable -Name "ADHC_ProdCompare" -Value "$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
+
+$vx = "VariableXref/"+ $ADHC_Computer + "_VariableXref.txt"
+Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
 Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
