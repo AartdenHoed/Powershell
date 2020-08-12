@@ -1,20 +1,26 @@
-﻿CLS
+﻿$Version = " -- Version: 1.6"
 
+# COMMON coding
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.5"
+
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
-$Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $Datum + $Tijd +$Node
 
+$myname = $MyInvocation.MyCommand.Name
 $FullScriptName = $MyInvocation.MyCommand.Definition
-$ScriptName = $MyInvocation.MyCommand.Name
-$ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
-$ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
-& "$ADHC_InitVar"
+$mypath = $FullScriptName.Replace($MyName, "")
+
+$Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+Write-Information $Scriptmsg 
+
+$LocalInitVar = $mypath + "InitVar.PS1"
+& "$LocalInitVar"
+
+# END OF COMMON CODING
 
 # Init reporting file
 $str = $ADHC_SourceControl.Split("/")

@@ -1,15 +1,26 @@
-﻿
+﻿$Version = " -- Version: 1.13"
+
+# COMMON coding
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.12"
+
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
-$Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $Datum + $Tijd +$Node
+
+$myname = $MyInvocation.MyCommand.Name
+$FullScriptName = $MyInvocation.MyCommand.Definition
+$mypath = $FullScriptName.Replace($MyName, "")
+
+$Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
 
+$LocalInitVar = $mypath + "InitVar.PS1"
+& "$LocalInitVar"
+
+# END OF COMMON CODING
 
 $OneDrive = $ADHC_OneDrive
 $FileList = Get-ChildItem $OneDrive -recurse  -name -force
