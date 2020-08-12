@@ -1,18 +1,26 @@
-﻿CLS
+﻿$Version = " -- Version: 2.4.1"
+
+# COMMON coding
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.3"
+
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
+
 $myname = $MyInvocation.MyCommand.Name
-$Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+$FullScriptName = $MyInvocation.MyCommand.Definition
+$mypath = $FullScriptName.Replace($MyName, "")
+
+$Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
 
-$LocalInitVar = $ADHC_PsPath + "InitVar.PS1"
+$LocalInitVar = $mypath + "InitVar.PS1"
 & "$LocalInitVar"
+
+# END OF COMMON CODING
 
 # Init reporting file
 $str = $ADHC_DeployReport.Split("/")
@@ -50,7 +58,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
             Remove-Item "$tobedeleted" -force
             Add-Content $ofile $msg
             $logdate = Get-Date
-            $logrec = $logdate + "*** Directly DELETED *** "+ $tobedeleted
+            $logrec = $logdate.ToSTring() + " *** Directly DELETED *** ".Padright(40," ")+ $tobedeleted
             Add-Content $log $logrec
         }
         "DELETED" {            
@@ -69,7 +77,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
                 Remove-Item "$tobedeleted" -force
                 Add-Content $ofile $msg
                 $logdate = Get-Date
-                $logrec = $logdate + "*** Deferred DELETED *** "+ $tobedeleted
+                $logrec = $logdate.ToString() + " *** Deferred DELETED *** ".Padright(40," ")+ $tobedeleted
                 Add-Content $log $logrec
             }
             else {
@@ -98,7 +106,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
             Rename-Item "$tobedeleted" "$deletename" -force
             Add-Content $ofile $msg
             $logdate = Get-Date
-            $logrec = $logdate + "*** Staged for DELETION *** "+ $tobedeleted
+            $logrec = $logdate.ToString() + " *** Staged for DELETION *** ".Padright(40," ")+ $tobedeleted
             Add-Content $log $logrec
           
                         
@@ -130,7 +138,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
             Write-Warning $msg
             Add-Content $ofile $msg
             $logdate = Get-Date
-            $logrec = $logdate + "*** UNREGISTERED *** "+ $TaskName
+            $logrec = $logdate.ToString() + " *** UNREGISTERED *** ".Padright(40," ")+ $TaskName
             Add-Content $log $logrec
               
         }
@@ -164,7 +172,7 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
                 Copy-Item "$from" "$to" -force
                 Add-Content $ofile $msg
                 $logdate = Get-Date
-                $logrec = $logdate + "*** ADDED *** "+ $to
+                $logrec = $logdate.ToString() + " *** ADDED *** ".Padright(40," ")+ $to
                 Add-Content $log $logrec
             }
             else {
@@ -179,7 +187,7 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
                 Copy-Item "$from" "$to" -force
                 Add-Content $ofile $msg
                 $logdate = Get-Date
-                $logrec = $logdate + "*** REPLACED *** "+ $to
+                $logrec = $logdate.ToString() + " *** REPLACED *** ".Padright(40," ")+ $to
                 Add-Content $log $logrec
             }
             else {
@@ -265,7 +273,7 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
             $msg = 'Scheduled task "' + $taskName + '" registered now.';
             Add-Content $ofile $msg
             $logdate = Get-Date
-            $logrec = $logdate + "*** REGISTERED *** "+ $taskname
+            $logrec = $logdate.ToString() + " *** REGISTERED *** ".Padright(40," ")+ $taskname
             Add-Content $log $logrec
 
 
