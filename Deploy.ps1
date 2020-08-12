@@ -2,26 +2,30 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.2.1"
+$Version = " -- Version: 2.3"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
-$Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $Datum + $Tijd +$Node
+$myname = $MyInvocation.MyCommand.Name
+$Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
 
-$FullScriptName = $MyInvocation.MyCommand.Definition
-$ScriptName = $MyInvocation.MyCommand.Name
-$ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
-$ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
-& "$ADHC_InitVar"
+$LocalInitVar = $ADHC_PsPath + "InitVar.PS1"
+& "$LocalInitVar"
 
 # Init reporting file
-$str = $ADHC_Deploylog.Split("/")
+$str = $ADHC_DeployReport.Split("/")
 $dir = $ADHC_OutputDirectory + $str[0]
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$ofile = $ADHC_OutputDirectory + $ADHC_Deploylog
+$ofile = $ADHC_OutputDirectory + $ADHC_DeployReport
 Set-Content $ofile $Scriptmsg -force
+
+# Init log
+$str = $ADHC_DeployLog.Split("/")
+$dir = $ADHC_OutputDirectory + $str[0]
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$log = $ADHC_OutputDirectory + $ADHC_Deploylog
 
 # Generic delete function
 function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [string]$process, [int]$thisdelay)
@@ -45,6 +49,9 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
             $msg = "Module " + $tobedeleted + " will be deleted directly from computer " + $ADHC_Computer
             Remove-Item "$tobedeleted" -force
             Add-Content $ofile $msg
+            $logdate = Get-Date
+            $logrec = $logdate + "*** Directly DELETED *** "+ $tobedeleted
+            Add-Content $log $logrec
         }
         "DELETED" {            
             $delyear = $delname.Substring(14,4)
@@ -61,6 +68,9 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
                 $msg = "Renamed module " + $tobedeleted + " will be deleted directly from computer " + $ADHC_Computer + " (Delay $thisdelay has elapsed)"
                 Remove-Item "$tobedeleted" -force
                 Add-Content $ofile $msg
+                $logdate = Get-Date
+                $logrec = $logdate + "*** Deferred DELETED *** "+ $tobedeleted
+                Add-Content $log $logrec
             }
             else {
                 $wt = $thisdelay - $diff.Days
@@ -87,6 +97,9 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
             $msg = "Module " + $tobedeleted + " will be renamed to " + $deletename + " and removed later from computer " + $ADHC_Computer
             Rename-Item "$tobedeleted" "$deletename" -force
             Add-Content $ofile $msg
+            $logdate = Get-Date
+            $logrec = $logdate + "*** Staged for DELETION *** "+ $tobedeleted
+            Add-Content $log $logrec
           
                         
         }
@@ -116,6 +129,9 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [str
             $msg = 'Scheduled task "' + $TaskName + '" unregistered now.'
             Write-Warning $msg
             Add-Content $ofile $msg
+            $logdate = Get-Date
+            $logrec = $logdate + "*** UNREGISTERED *** "+ $TaskName
+            Add-Content $log $logrec
               
         }
         default    {
@@ -147,6 +163,9 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
                 $msg = "Module " + $to + " does not exist and will be added to computer " + $ADHC_Computer
                 Copy-Item "$from" "$to" -force
                 Add-Content $ofile $msg
+                $logdate = Get-Date
+                $logrec = $logdate + "*** ADDED *** "+ $to
+                Add-Content $log $logrec
             }
             else {
                 $msg = "Module " + $from + " will be copied to " + $to + " in " + $waitTime + " days"
@@ -159,6 +178,9 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
                 $msg = "Module " + $to + " has been updated and will be replaced on computer " + $ADHC_Computer
                 Copy-Item "$from" "$to" -force
                 Add-Content $ofile $msg
+                $logdate = Get-Date
+                $logrec = $logdate + "*** REPLACED *** "+ $to
+                Add-Content $log $logrec
             }
             else {
                 $msg = "Module " + $from + " will replace " + $to + " in " + $waitTime + " days"
@@ -242,6 +264,9 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
             Register-ScheduledTask -Xml $xml.OuterXml -TaskName $TaskName -Force; 
             $msg = 'Scheduled task "' + $taskName + '" registered now.';
             Add-Content $ofile $msg
+            $logdate = Get-Date
+            $logrec = $logdate + "*** REGISTERED *** "+ $taskname
+            Add-Content $log $logrec
 
 
         }
