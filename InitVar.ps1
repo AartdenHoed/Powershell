@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.42"
+$Version = " -- Version: 1.43"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -72,8 +72,8 @@ $vx = "VariableXref/"+ $ADHC_Computer + "_VariableXref.txt"
 Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
-Remove-Variable -Name "ADHC_PSdir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PSdir" -Value "C:/ADHC/PowerShell/" -Option readonly -Scope global -Description "Powershell production directory" -force
+Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus/" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
 $usr = $env:USERPROFILE + "/Documents/WindowsPowerShell/"
 Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
