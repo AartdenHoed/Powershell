@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.43"
+$Version = " -- Version: 1.45"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -73,7 +73,10 @@ Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
 Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus/" -Option readonly -Scope global -Description "XREF between sources and variables" -force
+Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus/" -Option readonly -Scope global -Description "Jobs status directory" -force
+
+Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs/" -Option readonly -Scope global -Description "PRTG log directory" -force
 
 $usr = $env:USERPROFILE + "/Documents/WindowsPowerShell/"
 Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
@@ -88,7 +91,7 @@ switch ($ADHC_Computer) {
         
         "Ahmrdh-Netbook"{$OneDrive = "P:/" + $prof[2] + "/OneDrive/"} 
         "Holiday"       {$OneDrive = "D:/" + $prof[2] + "/OneDrive/"} 
-        
+        "ADHC"          {$OneDrive = "D:/AartenHetty" + "/OneDrive/"}
         default         {$OneDrive = "D:/" + $prof[2] + "/OneDrive/"} 
     }
 Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
