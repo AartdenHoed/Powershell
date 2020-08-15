@@ -10,7 +10,7 @@ $scriptchange = $false
 
 try {
 
-    $Version = " -- Version: 4.0"
+    $Version = " -- Version: 4.0.1"
 
     # COMMON coding
 
@@ -383,9 +383,10 @@ finally {
     # Init jobstatus file
     $dir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Myname + ".jst" 
     $p = $myname.Split(".")
     $process = $p[0]
+    $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
+    
     Add-Content $Report " "
 
         
