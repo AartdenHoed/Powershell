@@ -1,19 +1,13 @@
-﻿CLS
+﻿$Version = " -- Version: 4.1"
+
+# COMMON coding
+CLS
+
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
-$scripterror = $false
-$scriptaction = $false
-$scriptchange = $false
-
-
 try {
-
-    $Version = " -- Version: 4.0.1"
-
-    # COMMON coding
-
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -29,7 +23,13 @@ try {
     $LocalInitVar = $mypath + "InitVar.PS1"
     & "$LocalInitVar"
 
-    # END OF COMMON CODING
+# END OF COMMON CODING
+
+    # init flags
+    $scripterror = $false
+    $scriptaction = $false
+    $scriptchange = $false
+
     # Init reporting file
     $str = $ADHC_ProdCompare.Split("/")
     $dir = $ADHC_OutputDirectory + $str[0]
@@ -394,7 +394,7 @@ finally {
         $msg = ">>> Script ended abnormally"
         Add-Content $Report $msg
         $dt = Get-Date
-        $jobline = $ADHC_Computer + "~" + $process + "~" + "9" + "~" + $dt.ToString()
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
        
         Add-Content $jobstatus "Failed item = $FailedItem"
@@ -406,7 +406,7 @@ finally {
         $msg = ">>> Script ended normally with action required"
         Add-Content $Report $msg
         $dt = Get-Date
-        $jobline = $ADHC_Computer + "~" + $process + "~" + "6" + "~" + $dt.ToString()
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
        
         exit 8
@@ -416,7 +416,7 @@ finally {
         $msg = ">>> Script ended normally with reported changes, but no action required"
         Add-Content $Report $msg
         $dt = Get-Date
-        $jobline = $ADHC_Computer + "~" + $process + "~" + "3" + "~" + $dt.ToString()
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
        
         exit 4
@@ -425,7 +425,7 @@ finally {
     $msg = ">>> Script ended normally without reported changes, and no action required"
     Add-Content $Report $msg
     $dt = Get-Date
-    $jobline = $ADHC_Computer + "~" + $process + "~" + "0" + "~" + $dt.ToString()
+    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString()
     Set-Content $jobstatus $jobline
        
     exit 0
