@@ -207,7 +207,7 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
     switch ($process.ToUpper()) {
         "COPY"   { } 
         "WINDOWSSCHEDULER" {
-            $xml = [xml](Get-Content "$targetPath"); 
+            $xml = [xml](Get-Content "$from"); 
                     
             $Author = $xml.task.RegistrationInfo.Author; 
             if ($Author) { 
@@ -273,7 +273,7 @@ function DeployNow([string]$action, [string]$from, [string]$to, [string]$process
             $msg = 'Scheduled task "' + $taskName + '" registered now.';
             Add-Content $ofile $msg
             $logdate = Get-Date
-            $logrec = $logdate.ToString() + " *** REGISTERED *** ".Padright(40," ")+ $taskname
+            $logrec = $logdate.ToString() + " *** REGISTERED *** ".Padright(40," ") + $taskname
             Add-Content $log $logrec
 
 
