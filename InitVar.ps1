@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.45"
+$Version = " -- Version: 2.0"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -29,21 +29,6 @@ Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -
 $Hostlist = "ADHC","Laptop-AHMRDH","Holiday" 
 Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
-
-$TrustedHosts = ""
-$i = 1
-foreach ($myHost in $ADHC_Hostlist) {
-    if ($I -eq 1) {
-        $TrustedHosts = $TrustedHosts + $myHost
-    }
-    else { 
-        $TrustedHosts = $TrustedHosts + "," + $myHost
-    }
-    $i = $i + 1
-}
-# write $ADHC_TrustedHosts
-Remove-Variable -Name "ADHC_TrustedHosts" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_TrustedHosts" -Value $TrustedHosts -Option readonly -Scope global -Description "Trusted host list" -force
 
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
@@ -82,9 +67,6 @@ $usr = $env:USERPROFILE + "/Documents/WindowsPowerShell/"
 Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
 
-Remove-Variable -Name "ADHC_SympaPgm" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_SympaPgm" -Value "C:/ADHC/Sympa/WMIC 3.pyw" -Option readonly -Scope global -Description "Python production SYMPA source" -force
-
 $prof = $env:USERPROFILE -split '\\'
 
 switch ($ADHC_Computer) { 
@@ -108,13 +90,6 @@ Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope glo
 $devdir = $OneDrive + "ADHC Dev/"
 Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
-
-Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProdDir" -Value "C:/ADHC/" -Option readonly -Scope global -Description "Production directory" -force
-
-$wmicdir = $OneDrive + "WmicFiles/"
-Remove-Variable -Name "ADHC_WmicDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_WmicDir" -Value $wmicdir -Option readonly -Scope global -Description "Wmic files directory" -force
 
 $arg = 'name="' + $ADHC_User + '"'
 $x =Get-WmiObject -Class win32_useraccount -filter "$arg"
@@ -157,23 +132,5 @@ $PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + 
  
 Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
-
-
-
-$SourceTargetList = @([PSCustomObject]@{source="Sympa";target="C:/ADHC/Sympa/";type="Module"}, `
-                        [PSCustomObject]@{source="Java";target="C:/ADHC/Java/";type="Module"}, `
-                        [PSCustomObject]@{source="AdHC Site";target="C:/ADHC/AdHC Site/";type="Module"}, `
-                        [PSCustomObject]@{source="Visual Basic";target="C:/ADHC/Visual Basic/";type="Module"}, `
-                        [PSCustomObject]@{source="Powershell";target="C:/ADHC/Powershell/";type="Module"}, `
-                        [PSCustomObject]@{source="ContactSync";target="C:/ADHC/ContactSync/";type="Module"}, `
-                        [PSCustomObject]@{source="Windows Scheduler";target="C:/ADHC/Windows Scheduler/";type="Schedule"}, `
-                        [PSCustomObject]@{source="WindowsPowerShell";target="$ADHC_PSUdir";type="Module"}) 
-# write $SourceTargetList   
-# write $SourceTargetList[0].source 
-Remove-Variable -Name "ADHC_SourceTargetList" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_SourceTargetList" -Value $SourceTargetList -Option readonly -Scope global -Description "Source and target definition" -force 
-
-Remove-Variable -Name "ADHC_DslLocation" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DslLocation" -Value "D:/Software/DSL/"  -Option readonly -Scope global -Description "Location of DSL" -force 
 
 Return
