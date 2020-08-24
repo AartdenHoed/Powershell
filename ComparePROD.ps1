@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.1"
+﻿$Version = " -- Version: 4.1.1"
 
 # COMMON coding
 CLS
@@ -189,6 +189,9 @@ try {
         }
         
         if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
+            Add-Content $report " "
+            $msg = "Directory $targetdir : "
+            Add-Content $report $msg
             $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
 	        Add-Content $report $msg
             Continue
