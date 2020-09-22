@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.0"
+﻿$Version = " -- Version: 3.1"
 
 # COMMON coding
 CLS
@@ -49,7 +49,15 @@ try {
         Write-Host "$action $tobedeleted with process $process and delay $thisdelay"
 
         if ($process.ToUpper() -eq "WINDOWSSCHEDULER") {
-            $xml = [xml](Get-Content "$tobedeleted") 
+            $xmlext = [System.IO.Path]::GetExtension("$tobedeleted")
+            if ($xmlext.ToUpper() -eq ".XML") {
+                $xmlvalid = $true
+                $xml = [xml](Get-Content "$tobedeleted") 
+            }
+            else {
+                $xmlvalid = $false
+                $xmlname = $tobedeleted
+            }
         }
         if ($thisdelay -gt 0) {
             $action = "DELETEX"
@@ -134,25 +142,32 @@ try {
         switch ($process.ToUpper()) {
             "COPY"   { } 
             "WINDOWSSCHEDULER" {
-                $TaskName = $xml.Task.RegistrationInfo.URI
-                $i = $TaskName.LastIndexOf("\")
-                $len = $TaskName.Length
-                $TaskID = $TaskName.Substring($i+1,$len-$i-1)
-                # write $TaskID
-                $TaskPath = $TaskName.Substring(0,$i+1)
-                # write $TaskPath
-                # write $xml.Task.Principals.Principal; 
-                # write $taskName; 
-                # write $sourceMod.Name; 
-                # write $xml.OuterXml; 
-                Unregister-ScheduledTask -TaskName $TaskID -TaskPath $TaskPath -Confirm:$false
-                $scriptchange = $true
-                $msg = 'Scheduled task "' + $TaskName + '" unregistered now.'
-                Write-Warning $msg
-                Add-Content $ofile $msg
-                $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** UNREGISTERED *** ".Padright(40," ")+ $TaskName
-                Add-Content $log $logrec
+                if ($xmlvalid) {
+                    $TaskName = $xml.Task.RegistrationInfo.URI
+                    $i = $TaskName.LastIndexOf("\")
+                    $len = $TaskName.Length
+                    $TaskID = $TaskName.Substring($i+1,$len-$i-1)
+                    # write $TaskID
+                    $TaskPath = $TaskName.Substring(0,$i+1)
+                    # write $TaskPath
+                    # write $xml.Task.Principals.Principal; 
+                    # write $taskName; 
+                    # write $sourceMod.Name; 
+                    # write $xml.OuterXml; 
+                    Unregister-ScheduledTask -TaskName $TaskID -TaskPath $TaskPath -Confirm:$false
+                    $scriptchange = $true
+                    $msg = 'Scheduled task "' + $TaskName + '" unregistered now.'
+                    Write-Warning $msg
+                    Add-Content $ofile $msg
+                    $logdate = Get-Date
+                    $logrec = $logdate.ToString() + " *** UNREGISTERED *** ".Padright(40," ")+ $TaskName
+                    Add-Content $log $logrec
+                }
+                else {
+                    $logrec = "$xmlname is not an valid XML file, $process processing skipped"
+                    Add-Content $log $logrec
+
+                }
               
             }
             default    {
@@ -222,76 +237,88 @@ try {
         switch ($process.ToUpper()) {
             "COPY"   { } 
             "WINDOWSSCHEDULER" {
-                $xml = [xml](Get-Content "$from"); 
-                    
-                $Author = $xml.task.RegistrationInfo.Author; 
-                if ($Author) { 
-                    # write $Author.substring(0,6); 
-                    if  ($Author.substring(0,6) -eq '$ADHC_'){ 
-                        $xml.task.RegistrationInfo.Author = Invoke-Expression($Author); 
-                    }; 
-                    # write $xml.task.RegistrationInfo.Author 
+                $xmlext = [System.IO.Path]::GetExtension("$from")
+                if ($xmlext.ToUpper() -eq ".XML") {
+                    $validxml = $true
+                    $xml = [xml](Get-Content "$from"); 
                 }
-
-
-                $Userid = $xml.task.Triggers.LogonTrigger.UserId ; 
-                if ($Userid) { 
-                    # write $Userid.substring(0,6); 
-                    if  ($Userid.substring(0,6) -eq '$ADHC_'){ 
-                        $xml.task.Triggers.LogonTrigger.UserId = Invoke-Expression($Userid); 
-                    }; 
-                    # write $xml.task.RegistrationInfo.Userid 
+                else {
+                    $validxml = $false
                 }
+                if ($validxml) {       
+                    $Author = $xml.task.RegistrationInfo.Author; 
+                    if ($Author) { 
+                        # write $Author.substring(0,6); 
+                        if  ($Author.substring(0,6) -eq '$ADHC_'){ 
+                            $xml.task.RegistrationInfo.Author = Invoke-Expression($Author); 
+                        }; 
+                        # write $xml.task.RegistrationInfo.Author 
+                    }
 
-                $Userid = $xml.task.Principals.Principal.Userid ; 
-                if ($Userid) { 
-                    # write $Userid.substring(0,6); 
-                    if  ($Userid.substring(0,6) -eq '$ADHC_'){ 
-                        $xml.task.Principals.Principal.Userid = Invoke-Expression($Userid); 
-                    }; 
-                    # write $xml.task.Principals.Principal.Userid 
+
+                    $Userid = $xml.task.Triggers.LogonTrigger.UserId ; 
+                    if ($Userid) { 
+                        # write $Userid.substring(0,6); 
+                        if  ($Userid.substring(0,6) -eq '$ADHC_'){ 
+                            $xml.task.Triggers.LogonTrigger.UserId = Invoke-Expression($Userid); 
+                        }; 
+                        # write $xml.task.RegistrationInfo.Userid 
+                    }
+
+                    $Userid = $xml.task.Principals.Principal.Userid ; 
+                    if ($Userid) { 
+                        # write $Userid.substring(0,6); 
+                        if  ($Userid.substring(0,6) -eq '$ADHC_'){ 
+                            $xml.task.Principals.Principal.Userid = Invoke-Expression($Userid); 
+                        }; 
+                        # write $xml.task.Principals.Principal.Userid 
+                    }
+
+                    $StartTime = $xml.task.Triggers.CalendarTrigger.StartBoundary ; 
+                    if ($StartTime) { 
+                        # write $StartTime.substring(0,6); 
+                        if  ($StartTime.substring(0,6) -eq '$ADHC_'){ 
+                            $xml.task.Triggers.CalendarTrigger.StartBoundary = Invoke-Expression($StartTime); 
+                        }; 
+                        # write $xml.task.Triggers.CalendarTrigger.StartBoundary 
+                    }
+
+                    $PythonExec = $xml.task.Actions.Exec.Command ; 
+                    if ($PythonExec) { 
+                        # write $PythonExec.substring(0,6); 
+                        if  ($PythonExec.substring(0,6) -eq '$ADHC_'){ 
+                            $xml.task.Actions.Exec.Command = Invoke-Expression($PythonExec); 
+                        }; 
+                        # write $xml.task.Actions.Exec.Command 
+                    }
+
+                    $PythonArguments = $xml.task.Actions.Exec.Arguments ; 
+                    if ($PythonArguments) { 
+                        # write $PythonExec.substring(0,6); 
+                        if  ($PythonArguments.substring(0,6) -eq '$ADHC_'){ 
+                            $xml.task.Actions.Exec.Arguments = Invoke-Expression($PythonArguments); 
+                        }; 
+                        # write $xml.task.Actions.Exec.Command 
+                    }
+
+                    $TaskName = $xml.Task.RegistrationInfo.URI; 
+                    # write $xml.Task.Principals.Principal; 
+                    # write $taskName; 
+                    # write $sourceMod.Name; 
+                    # write $xml.OuterXml; 
+                    Register-ScheduledTask -Xml $xml.OuterXml -TaskName $TaskName -Force; 
+                    $scriptchange = $true
+                    $msg = 'Scheduled task "' + $taskName + '" registered now.';
+                    Add-Content $ofile $msg
+                    $logdate = Get-Date
+                    $logrec = $logdate.ToString() + " *** REGISTERED *** ".Padright(40," ") + $taskname
+                    Add-Content $log $logrec
                 }
+                else {
+                    $logrec = "$from is not an valid XML file, $process processing skipped"
+                    Add-Content $log $logrec
 
-                $StartTime = $xml.task.Triggers.CalendarTrigger.StartBoundary ; 
-                if ($StartTime) { 
-                    # write $StartTime.substring(0,6); 
-                    if  ($StartTime.substring(0,6) -eq '$ADHC_'){ 
-                        $xml.task.Triggers.CalendarTrigger.StartBoundary = Invoke-Expression($StartTime); 
-                    }; 
-                    # write $xml.task.Triggers.CalendarTrigger.StartBoundary 
                 }
-
-                $PythonExec = $xml.task.Actions.Exec.Command ; 
-                if ($PythonExec) { 
-                    # write $PythonExec.substring(0,6); 
-                    if  ($PythonExec.substring(0,6) -eq '$ADHC_'){ 
-                        $xml.task.Actions.Exec.Command = Invoke-Expression($PythonExec); 
-                    }; 
-                    # write $xml.task.Actions.Exec.Command 
-                }
-
-                $PythonArguments = $xml.task.Actions.Exec.Arguments ; 
-                if ($PythonArguments) { 
-                    # write $PythonExec.substring(0,6); 
-                    if  ($PythonArguments.substring(0,6) -eq '$ADHC_'){ 
-                        $xml.task.Actions.Exec.Arguments = Invoke-Expression($PythonArguments); 
-                    }; 
-                    # write $xml.task.Actions.Exec.Command 
-                }
-
-                $TaskName = $xml.Task.RegistrationInfo.URI; 
-                # write $xml.Task.Principals.Principal; 
-                # write $taskName; 
-                # write $sourceMod.Name; 
-                # write $xml.OuterXml; 
-                Register-ScheduledTask -Xml $xml.OuterXml -TaskName $TaskName -Force; 
-                $scriptchange = $true
-                $msg = 'Scheduled task "' + $taskName + '" registered now.';
-                Add-Content $ofile $msg
-                $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** REGISTERED *** ".Padright(40," ") + $taskname
-                Add-Content $log $logrec
-
 
             }
             default    {
