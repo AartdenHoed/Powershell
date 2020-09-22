@@ -1,24 +1,34 @@
-﻿
+﻿# Rename photos so they can easily be sorted by date
+$Version = " -- Version: 1.2"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
 Write-Warning "Er kan ook een correctie worden aagebracht op het timestamp 'GENOMEN OP'"
-$InformationPreference  = "Continue"
-$WarningPreference = "Continue"
 
-$Version = " -- Version: 1.1"
+# COMMON coding
+CLS
+
+$InformationPreference = "Continue"
+$WarningPreference = "Continue"
+$ErrorActionPreference = "Stop"
+
+
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
-$Scriptmsg = "PowerShell script " + $MyInvocation.MyCommand.Name + $Version + $Datum + $Tijd +$Node
+
+$myname = $MyInvocation.MyCommand.Name
+$FullScriptName = $MyInvocation.MyCommand.Definition
+$mypath = $FullScriptName.Replace($MyName, "")
+
+$Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
 
-$FullScriptName = $MyInvocation.MyCommand.Definition
-$ScriptName = $MyInvocation.MyCommand.Name
-$ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
-$ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
-& "$ADHC_InitVar"
+$LocalInitVar = $mypath + "InitVar.PS1"
+& "$LocalInitVar"
+
+# END OF COMMON CODING
 
 
 #
