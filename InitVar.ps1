@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.0"
+$Version = " -- Version: 2.1.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -29,6 +29,17 @@ Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -
 $Hostlist = "ADHC","Laptop-AHMRDH","Holiday" 
 Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
+
+$hoststring = ""
+foreach ($h in $Hostlist) {
+    $hoststring = $hoststring + "~" + $h + "~"
+} 
+$hoststring = $hoststring.Replace("~~", "," )
+$hoststring = $hoststring.Replace("~", "" )
+
+Remove-Variable -Name "ADHC_Hoststring" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope global -Description "List of known hosts (string)" -force
+
 
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
@@ -63,7 +74,7 @@ Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus/" -Option readonly -Scope 
 Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs/" -Option readonly -Scope global -Description "PRTG log directory" -force
 
-$usr = $env:USERPROFILE + "/Documents/WindowsPowerShell/"
+$usr = $env:USERPROFILE + "/Documents/"
 Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
 
@@ -83,13 +94,19 @@ $output = $ADHC_OneDrive + "Output/"
 Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
 
-$staging = $OneDrive + "Staging Library/"
+$staging = $OneDrive + "ADHC StagingLibrary/"
 Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
 
-$devdir = $OneDrive + "ADHC Dev/"
+$devdir = $OneDrive + "ADHC Development/"
 Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
+
+Remove-Variable -Name "ADHC_DSLDir" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_DSLDir" -Value "D:\Software\DSL\" -Option readonly -Scope global -Description "DSL root directory" -force
+
+Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_ProdDir" -Value "C:\ADHC\" -Option readonly -Scope global -Description "Production root directory" -force
 
 $arg = 'name="' + $ADHC_User + '"'
 $x =Get-WmiObject -Class win32_useraccount -filter "$arg"
@@ -132,5 +149,8 @@ $PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + 
  
 Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+
+Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_MasterXml" -Value "D:\AartenHetty\OneDrive\ADHC Dev\ADHCmaster\ADHCmaster.xml" -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
 
 Return
