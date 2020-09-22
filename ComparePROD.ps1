@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.1.1"
+﻿$Version = " -- Version: 4.2"
 
 # COMMON coding
 CLS
@@ -40,8 +40,16 @@ try {
     # Proces development directories
     $DevList = Get-ChildItem $ADHC_DevelopDir -Directory | Select Name,FullName
     foreach ($DevDir in $DevLIst) {
-        $configfile = $DevDir.FullName + "\" + $ADHC_ConfigFile
-        [xml]$ConfigXML = Get-Content $configfile
+        $configfile = $ADHC_StagingDir + $DevDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THGE CONFIG FILE IN THE STAGING DIRECTORY
+        if (Test-Path $configfile) {
+            [xml]$ConfigXML = Get-Content $configfile
+        }
+        else {
+            $scriptaction = $true
+            $msg = ">>> Configuration file $configfile not found, skipping directory"
+            Add-Content $Report $msg
+            continue
+        }
 
         # Get Staging info
         $t = $ConfigXML.ADHCinfo.Stagelib.Directory
@@ -394,6 +402,8 @@ finally {
 
         
     if ($scripterror) {
+        Add-Content $Report "Failed item = $FailedItem"
+        Add-Content $Report "Errormessage = $ErrorMessage"
         $msg = ">>> Script ended abnormally"
         Add-Content $Report $msg
         $dt = Get-Date
@@ -401,7 +411,7 @@ finally {
         Set-Content $jobstatus $jobline
        
         Add-Content $jobstatus "Failed item = $FailedItem"
-        Add-Content $jobstatus "Ërrormessage = $ErrorMessage"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
         exit 16        
     }
    
