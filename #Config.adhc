@@ -4,7 +4,7 @@
 	  <Directory Build="Copy">$ADHC_Onedrive + 'Staging Library\WindowsPowerShell'</Directory>
 	</Stagelib>
 	<Target>
-	  <Directory Deploy="Copy" Delay="0">$ADHC_PSUdir</Directory>
+	  <Directory Deploy="Copy" Delay="0">$ADHC_PSUdir\WindowsPowerShell</Directory>
 	</Target>
 	<DSL>
 	  <Directory Delay="14">D:\Software\DSL\WindowsPowerShell</Directory>
