@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.0"
+﻿$Version = " -- Version: 3.0"
 
 # COMMON coding
 CLS
@@ -43,6 +43,7 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
     $ofile = $odir + "/gitoutput.txt"
+    $line = "==========================================================================================================="
 
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
@@ -57,6 +58,11 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         & {git status} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
         
         $a = Get-Content $ofile
+               
+        Add-Content $gitstatus $line
+        Add-Content $gitstatus $a
+        Add-Content $gitstatus $line
+        
         $x = $a[1]
         Write-Host "    $x"
         if ($a[1] -eq "nothing to commit, working tree clean") {
@@ -73,6 +79,9 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         & {git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
 
         $a = Get-Content $ofile
+        Add-Content $gitstatus $line
+        Add-Content $gitstatus $a
+        Add-Content $gitstatus $line
         $x = $a[0]
         Write-Host "    $x"
         if ($a[0] -eq "git : Everything up-to-date")  {
@@ -82,6 +91,8 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
             Add-Content $gitstatus "==> Unpushed commits       ***"
             $scriptaction = $true
         }
+        Add-Content $gitstatus $line
+        Add-Content $gitstatus " "
         Remove-Item $ofile
     }
 #}
