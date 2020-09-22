@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.0"
+﻿$Version = " -- Version: 2.1"
 
 # COMMON coding
 CLS
@@ -94,20 +94,22 @@ finally {
 
         
     if ($scripterror) {
+        Add-Content $TxtFile "Failed item = $FailedItem"
+        Add-Content $TxtFile "Errormessage = $ErrorMessage"
         $msg = ">>> Script ended abnormally"
-        Add-Content $Report $msg
+        Add-Content $TxtFile $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
        
         Add-Content $jobstatus "Failed item = $FailedItem"
-        Add-Content $jobstatus "Ërrormessage = $ErrorMessage"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
         exit 16        
     }
    
     if ($scriptaction) {
         $msg = ">>> Script ended normally with action required"
-        Add-Content $Report $msg
+        Add-Content $TxtFile $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
@@ -117,7 +119,7 @@ finally {
 
     if ($scriptchange) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Add-Content $Report $msg
+        Add-Content $TxtFile $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
