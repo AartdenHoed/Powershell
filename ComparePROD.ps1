@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.2"
+﻿$Version = " -- Version: 5.1"
 
 # COMMON coding
 CLS
@@ -38,9 +38,19 @@ try {
     Set-Content $Report $Scriptmsg -force
 
     # Proces development directories
+    $msg = " "
+    Add-Content $Report $msg
+    $msg = "##########                                         ##########"
+    Add-Content $Report $msg
+    $msg = "########## Checking D E V E L O P M E N T directoy ##########"
+    Add-Content $Report $msg
+    $msg = "##########                                         ##########"
+    Add-Content $Report $msg
+
     $DevList = Get-ChildItem $ADHC_DevelopDir -Directory | Select Name,FullName
     foreach ($DevDir in $DevLIst) {
-        $configfile = $ADHC_StagingDir + $DevDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THGE CONFIG FILE IN THE STAGING DIRECTORY
+        $configfile = $ADHC_StagingDir + $DevDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THE CONFIG FILE IN THE STAGING DIRECTORY
+        # $configfile = $ADHC_DevelopDir + $DevDir.Name + "\" + $ADHC_ConfigFile  # TEST TEST TEST TEST
         if (Test-Path $configfile) {
             [xml]$ConfigXML = Get-Content $configfile
         }
@@ -52,18 +62,10 @@ try {
         }
 
         # Get Staging info
-        $t = $ConfigXML.ADHCinfo.Stagelib.Directory
-        if ($t.'#text') {
-            $stagedir = $t.'#text'
-        }
-        else {
-            $stagedir = $t
-        }
-        if ($stagedir.substring(0,6) -eq '$ADHC_'){ 
-            $stagedir = Invoke-Expression($stagedir); 
-        }
-	    $process = "COPY"
-	    $c = $ConfigXML.ADHCinfo.Stagelib.Directory.Build
+        $stagedir = $ConfigXML.ADHCinfo.StageLib.Root + $ConfigXML.ADHCinfo.StageLib.SubRoot
+        
+        $process = "COPY"
+	    $c = $ConfigXML.ADHCinfo.Stagelib.Build
 	    if ($c) {
 		    $process = $c
 	    }
@@ -78,7 +80,8 @@ try {
 				    $linewritten = $false
 		
 				    # Check correctness of Staging directory
-				    $stagename = $devfile.FullName.Replace($Devdir.FullName,$Stagedir)
+                    $repname =  $Devdir.FullName + "\"
+				    $stagename = $devfile.FullName.Replace($repname,$Stagedir)
 
 				    if (Test-Path $stagename) {
 					    $stageprops = Get-ItemProperty $stagename
@@ -131,7 +134,8 @@ try {
 					        $linewritten = $false
 
 					        # Check correctness of DEVELOPMENT directory
-					        $devname = $stagefile.FullName.Replace($stagedir,$DevDir.FullName)
+                            $repname = $DevDir.FullName + "\"
+					        $devname = $stagefile.FullName.Replace($stagedir,$repname)
 
 					        if (!(Test-Path $devname)) {
 						        if (!$linewritten) {
@@ -171,32 +175,28 @@ try {
     }
 
     # Proces staging directories
+    $msg = " "
+    Add-Content $Report $msg
+    $msg = "##########                                 ##########"
+    Add-Content $Report $msg
+    $msg = "########## Checking S T A G I N G directoy ##########"
+    Add-Content $Report $msg
+    $msg = "##########                                 ##########"
+    Add-Content $Report $msg
+
     $StageLIst = Get-ChildItem $ADHC_StagingDir -Directory | Select Name,FullName
     foreach ($StageDir in $StageLIst) {
-        $configfile = $Stagedir.FullName + "\" + $ADHC_ConfigFile
+        $configfile = $ADHC_StagingDir + $StageDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THE CONFIG FILE IN THE STAGING DIRECTORY
+        # $configfile = $ADHC_DevelopDir + $StageDir.Name + "\" + $ADHC_ConfigFile  # TEST TEST TEST TEST
+        
         [xml]$ConfigXML = Get-Content $configfile
 
         # Get TARGET info
-        $t = $ConfigXML.ADHCinfo.Target.Directory
-        if ($t.'#text') {
-            $targetdir = $t.'#text'
-        }
-        else {
-            $targetdir = $t
-        }
+        $targetdir = $ConfigXML.ADHCinfo.Target.Root + $ConfigXML.ADHCinfo.Target.SubRoot
         
-        if ($targetdir.substring(0,6) -eq '$ADHC_'){ 
-            $targetdir = Invoke-Expression($targetdir); 
-        }
-        $targetnodelist = "*ALL*" 
-        if ($ConfigXML.ADHCinfo.Nodes) {
-            $targetnodelist = $ConfigXML.ADHCinfo.Nodes
-        }
-        if ($targetnodelist.ToUpper() -eq "*ALL*") {
-            $targetnodelist = $ADHC_Hostlist
-        }
-        
-        if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
+        $targetnodelist = $ConfigXML.ADHCinfo.Nodes.ToUpper().Split(",")      
+                
+        if (!($targetnodelist -contains $ADHC_Computer.ToUpper())) {
             Add-Content $report " "
             $msg = "Directory $targetdir : "
             Add-Content $report $msg
@@ -206,24 +206,15 @@ try {
         }
 
         # Get DSL info
-        $t = $ConfigXML.ADHCinfo.DSL.Directory
-        if ($t.'#text') {
-            $DSLdir = $t.'#text'
-        }
-        else {
-            $DSLdir = $t
-        }
-        
-        if ($DSLdir.substring(0,6) -eq '$ADHC_'){ 
-            $DSLdir = Invoke-Expression($DSLdir); 
-        }
+        $DSLdir = $ConfigXML.ADHCinfo.DSL.Root + $ConfigXML.ADHCinfo.DSL.SubRoot
     
         $StagedContent = Get-ChildItem $Stagedir.FullName -recurse -file  | Select FullName,LastWriteTime,Length 
         foreach ($stagedfile in $Stagedcontent) {
             $linewritten = $false
 
             # Check correctness of TARGET directory
-            $targetname = $stagedfile.FullName.Replace($Stagedir.FullName,$targetdir)
+            $repname = $Stagedir.FullName + "\"
+            $targetname = $stagedfile.FullName.Replace($repname,$targetdir)
 
             if (Test-Path $targetname) {
                 $targetprops = Get-ItemProperty $targetname
@@ -265,7 +256,8 @@ try {
 
             } 
              # Check correctness of DSL directory
-            $DSLname = $stagedfile.FullName.Replace($Stagedir.FullName,$DSLdir)
+            $repname = $Stagedir.FullName + "\"
+            $DSLname = $stagedfile.FullName.Replace($repname,$DSLdir)
 
             if (Test-Path $DSLname) {
                 $DSLprops = Get-ItemProperty $DSLname
@@ -335,7 +327,8 @@ try {
                 } 
                 else {
                     # Check correctness of TARGET directory
-                    $stagename = $dslfile.FullName.Replace($DSLdir,$StageDir.FullName)
+                    $repname = $StageDir.FullName + "\"
+                    $stagename = $dslfile.FullName.Replace($DSLdir,$repname)
 
                     if (!(Test-Path $stagename)) {
                         if (!$linewritten) {
