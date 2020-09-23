@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.1"
+﻿$Version = " -- Version: 4.0"
 
 # COMMON coding
 CLS
@@ -31,14 +31,14 @@ try {
 # END OF COMMON CODING   
 
     # Init reporting file
-    $str = $ADHC_DeployReport.Split("/")
+    $str = $ADHC_DeployReport.Split("\")
     $dir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $ofile = $ADHC_OutputDirectory + $ADHC_DeployReport
     Set-Content $ofile $Scriptmsg -force
 
     # Init log
-    $str = $ADHC_DeployLog.Split("/")
+    $str = $ADHC_DeployLog.Split("\")
     $dir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $log = $ADHC_OutputDirectory + $ADHC_Deploylog
@@ -110,7 +110,7 @@ try {
                 $yyyy = $dt.Year
                 $mm = “{0:d2}” -f $dt.Month
                 $dd = “{0:d2}” -f $dt.Day
-                $splitname = $tobedeleted.Split("/\")
+                $splitname = $tobedeleted.Split("\")
                 $nrofquals = $splitname.Count
                 #nrofquals
                 $lastqual = $splitname[$nrofquals-1]
@@ -164,8 +164,8 @@ try {
                     Add-Content $log $logrec
                 }
                 else {
-                    $logrec = "$xmlname is not an valid XML file, $process processing skipped"
-                    Add-Content $log $logrec
+                    $msg = "$xmlname is not an valid XML file, $process processing skipped"
+                    Add-Content $ofile $msg
 
                 }
               
@@ -239,13 +239,13 @@ try {
             "WINDOWSSCHEDULER" {
                 $xmlext = [System.IO.Path]::GetExtension("$from")
                 if ($xmlext.ToUpper() -eq ".XML") {
-                    $validxml = $true
+                    $xmlvalid = $true
                     $xml = [xml](Get-Content "$from"); 
                 }
                 else {
-                    $validxml = $false
+                    $xmlvalid = $false
                 }
-                if ($validxml) {       
+                if ($xmlvalid) {       
                     $Author = $xml.task.RegistrationInfo.Author; 
                     if ($Author) { 
                         # write $Author.substring(0,6); 
@@ -315,8 +315,8 @@ try {
                     Add-Content $log $logrec
                 }
                 else {
-                    $logrec = "$from is not an valid XML file, $process processing skipped"
-                    Add-Content $log $logrec
+                    $msg = "$from is not an valid XML file, $process processing skipped"
+                    Add-Content $ofile $msg
 
                 }
 
@@ -343,13 +343,13 @@ try {
     foreach ($stagingdir in $stagingdirlist) {
     
         # Get all modules in this staging directory
-        $staginglocation = $stagingdir.FullName        
+        $staginglocation = $stagingdir.FullName + "\"        
        
         Add-Content $ofile " "
 	    $msg = "==> Staging directory: "+ $staginglocation
 	    Add-Content $ofile $msg
 
-        $configfile = $staginglocation + "\" + $ADHC_ConfigFile
+        $configfile = $staginglocation + $ADHC_ConfigFile
         if (!(Test-Path $configfile)) {
             $msg = "==> Configfile $configfile not found, directory skipped"
 	        Add-Content $ofile $msg
@@ -359,64 +359,24 @@ try {
             [xml]$ConfigXML = Get-Content $configfile
 
             # Skip this directory if not meant for this computer node
-            $targetnodelist = "*ALL*" 
-            if ($ConfigXML.ADHCinfo.Nodes) {
-                $targetnodelist = $ConfigXML.ADHCinfo.Nodes
-            }
-            if ($targetnodelist.ToUpper() -eq "*ALL*") {
-                $targetnodelist = $ADHC_Hostlist
-            }
+            $targetnodelist = $ConfigXML.ADHCinfo.Nodes.ToUpper().Split(",")
+           
         
-            if (!($targetnodelist.ToUpper() -contains $ADHC_Computer.ToUpper())) {
+            if (!($targetnodelist -contains $ADHC_Computer.ToUpper())) {
                 $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
 	            Add-Content $ofile $msg
                 Continue
             }
        
             # Get TARGET info
-            $t = $ConfigXML.ADHCinfo.Target.Directory
-            if ($t.'#text') {
-                $targetdir = $t.'#text'
-            }
-            else {
-                $targetdir = $t
-            }
-            if ($t.Delay) {
-                $targetdelay = $t.delay
-            }
-            else {
-                $targetdelay = 1                         # Default
-            }
-            $deploy = "COPY"                             # Default!!!
-            if ($t.Deploy) {
-                $deploy = $t.Deploy
-            }
-        
-            if ($targetdir.substring(0,6) -eq '$ADHC_'){ 
-                $targetdir = Invoke-Expression($targetdir); 
-            }
-        
-
+            $targetdir = $ConfigXML.ADHCinfo.Target.Root + $ConfigXML.ADHCinfo.Target.SubRoot
+            $targetdelay = $ConfigXML.ADHCinfo.Target.Delay
+            $deploy = $ConfigXML.ADHCinfo.Target.Deploy
+            
             # Get DSL info
-            $t = $ConfigXML.ADHCinfo.DSL.Directory
-            if ($t.'#text') {
-                $dsldir = $t.'#text'
-            }
-            else {
-                $dsldir = $t
-            }
-               
-            if ($dsldir.substring(0,6) -eq '$ADHC_'){ 
-                $dsldir = Invoke-Expression($dsldir); 
-            }
-        
-            if ($t.Delay) {
-                $dsldelay = $t.delay
-            }
-            else {
-                $dsldelay = 30                         # default
-            }
-
+            $dsldir = $ConfigXML.ADHCinfo.DSL.Root + $ConfigXML.ADHCinfo.DSL.SubRoot
+            $dsldelay = $ConfigXML.ADHCinfo.DSL.Delay
+            
             # Create production directory if it does not exits yet
             $x = Test-Path $targetdir
             if (!$x) {
