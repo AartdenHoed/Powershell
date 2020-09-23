@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 2.1.2"
+$Version = " -- Version: 3.0"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -44,37 +44,37 @@ Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope 
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
 
-$dl = "Deploy/" + $ADHC_Computer + "_Deploy.log"
+$dl = "Deploy\" + $ADHC_Computer + "_Deploy.log"
 Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
 
-$dt = "Deploy/" + $ADHC_Computer + "_DeployReport.txt"
+$dt = "Deploy\" + $ADHC_Computer + "_DeployReport.txt"
 Remove-Variable -Name "ADHC_DeployReport" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DeployReport" -Value "$dt" -Option readonly -Scope global -Description "Deployment report file" -force
 
-$cf = "Conflicts/" + $ADHC_Computer + "_Conflicts.txt"
+$cf = "Conflicts\" + $ADHC_Computer + "_Conflicts.txt"
 Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConflictRpt" -Value "$cf" -Option readonly -Scope global -Description "Conflict report file" -force
 
-$gs = "SourceControl/" + $ADHC_Computer + "_GitStatus.txt"
+$gs = "SourceControl\" + $ADHC_Computer + "_GitStatus.txt"
 Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
 
-$pc = "ProductionCompare/"+ $ADHC_Computer + "_Compare.txt"
+$pc = "ProductionCompare\"+ $ADHC_Computer + "_Compare.txt"
 Remove-Variable -Name "ADHC_ProdCompare" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ProdCompare" -Value "$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
 
-$vx = "VariableXref/"+ $ADHC_Computer + "_VariableXref.txt"
+$vx = "VariableXref\"+ $ADHC_Computer + "_VariableXref.txt"
 Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
 Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus/" -Option readonly -Scope global -Description "Jobs status directory" -force
+Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force
 
 Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs/" -Option readonly -Scope global -Description "PRTG log directory" -force
+Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
 
-$usr = $env:USERPROFILE + "/Documents/"
+$usr = $env:USERPROFILE + "\Documents\"
 Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
 
@@ -82,23 +82,23 @@ $prof = $env:USERPROFILE -split '\\'
 
 switch ($ADHC_Computer) { 
         
-        "Ahmrdh-Netbook"{$OneDrive = "P:/" + $prof[2] + "/OneDrive/"} 
-        "Holiday"       {$OneDrive = "D:/" + $prof[2] + "/OneDrive/"} 
-        "ADHC"          {$OneDrive = "D:/AartenHetty" + "/OneDrive/"}
-        default         {$OneDrive = "D:/" + $prof[2] + "/OneDrive/"} 
+        "Ahmrdh-Netbook"{$OneDrive = "P:\" + $prof[2] + "\OneDrive\"} 
+        "Holiday"       {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
+        "ADHC"          {$OneDrive = "D:\AartenHetty" + "\OneDrive\"}
+        default         {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
     }
 Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force
 
-$output = $ADHC_OneDrive + "Output/"
+$output = $ADHC_OneDrive + "ADHC Output\"
 Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
 
-$staging = $OneDrive + "ADHC StagingLibrary/"
+$staging = $OneDrive + "ADHC StagingLibrary\"
 Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
 
-$devdir = $OneDrive + "ADHC Development/"
+$devdir = $OneDrive + "ADHC Development\"
 Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
 
@@ -132,10 +132,10 @@ Set-Variable -Name "ADHC_WmicAnalyze_StartTime" -Value $StartTime -Option readon
 switch ($ADHC_Computer)
     { 
         
-        "Ahmrdh-Netbook"{$PythonExec = "C:/Program Files/Python36-32/pythonw.exe"}
-        "Holiday"       {$PythonExec = "D:/Program Files/Python38/pythonw.exe"}
+        "Ahmrdh-Netbook"{$PythonExec = "C:\Program Files\Python36-32\pythonw.exe"}
+        "Holiday"       {$PythonExec = "D:\Program Files\Python38\pythonw.exe"}
        
-        default         {$PythonExec = "C:/Program Files/Python38/pythonw.exe"} 
+        default         {$PythonExec = "C:\Program Files\Python38\pythonw.exe"} 
     }
 Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
