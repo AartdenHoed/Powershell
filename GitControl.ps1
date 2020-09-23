@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.0"
+﻿$Version = " -- Version: 3.1"
 
 # COMMON coding
 CLS
@@ -33,7 +33,7 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
 
 
     # Init reporting file
-    $str = $ADHC_SourceControl.Split("/")
+    $str = $ADHC_SourceControl.Split("\")
     $odir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
     $gitstatus = $ADHC_OutputDirectory + $ADHC_SourceControl
@@ -42,7 +42,7 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
 
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
-    $ofile = $odir + "/gitoutput.txt"
+    $ofile = $odir + "\gitoutput.txt"
     $line = "==========================================================================================================="
 
     foreach ($gitentry in $gitdirs) {
