@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.0"
+﻿$Version = " -- Version: 2.1"
 
 # COMMON coding
 CLS
@@ -74,7 +74,8 @@ try {
     
                  
         foreach ($myvar in $ADHCvars) {
-            $nrofhits = 0   
+            $nrofhits = 0  
+            $fvalue = $myvar.Value
             foreach ($line in $lines) {
                 $matchme = $myvar.Name.ToUpper()
                 if ($line.ToUpper() -match $matchme) {
@@ -84,8 +85,9 @@ try {
             }
             if ($nrofhits -gt 0 ) {
                 $fname = $sourcefile.FullName
+                
                 # Write-Host "$matchme found in $fname"
-                $TargetObject = [PSCustomObject] [ordered]  @{Sourcefile = $fname; Searchstring = $matchme ; NrofHits = $nrofhits}  
+                $TargetObject = [PSCustomObject] [ordered]  @{Sourcefile = $fname; Searchstring = $matchme ; NrofHits = $nrofhits ; Value = $fvalue}  
                                                                           
                 $Resultlist += $TargetObject
             }
@@ -105,12 +107,12 @@ try {
         $varname = $hit.Searchstring
         if ($varname -ne $curname) {
             Add-Content $Report " "
-            $rptline = $varname.Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile
+            $rptline = $varname.Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile.PadRight(100," ") + "Value = '"+ $hit.Value + "'"
             Add-Content $Report $rptline
             $curname = $varname
         }
         else {
-            $rptline = " ".Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile
+            $rptline = " ".Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile.PadRight(100," ") 
             Add-Content $Report $rptline
         }
      
