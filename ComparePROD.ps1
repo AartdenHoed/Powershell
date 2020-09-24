@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 5.1"
+﻿$Version = " -- Version: 6.0"
 
 # COMMON coding
 CLS
@@ -46,9 +46,15 @@ try {
     Add-Content $Report $msg
     $msg = "##########                                         ##########"
     Add-Content $Report $msg
+    
+    Add-Content $Report " "
 
     $DevList = Get-ChildItem $ADHC_DevelopDir -Directory | Select Name,FullName
     foreach ($DevDir in $DevLIst) {
+        
+        Add-Content $Report " "
+        $msg = "----------"+ $Devdir.FullName.PadRight(100,"-") 
+        Add-Content $Report $msg
         $configfile = $ADHC_StagingDir + $DevDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THE CONFIG FILE IN THE STAGING DIRECTORY
         # $configfile = $ADHC_DevelopDir + $DevDir.Name + "\" + $ADHC_ConfigFile  # TEST TEST TEST TEST
         if (Test-Path $configfile) {
@@ -56,8 +62,9 @@ try {
         }
         else {
             $scriptaction = $true
-            $msg = ">>> Configuration file $configfile not found, skipping directory"
+            $msg = "Warning *".Padright(10," ") + "Configuration file $configfile not found, skipping directory"
             Add-Content $Report $msg
+            Add-Content $Report " "
             continue
         }
 
@@ -71,14 +78,14 @@ try {
 	    }
     
 	    switch ($process.ToUpper()) {
+            # Check for each development file te corrsponding staging file
 
 		    "COPY" {
 			    $DevContent = Get-ChildItem $Devdir.FullName -recurse -file  | `
                                     Where-Object {($_.FullName -notlike "*.git*") -and ($_.FullName -notlike "*MyExample*") } | `
                                     Select FullName,LastWriteTime,Length 
 			    foreach ($devfile in $devcontent) {
-				    $linewritten = $false
-		
+				   		
 				    # Check correctness of Staging directory
                     $repname =  $Devdir.FullName + "\"
 				    $stagename = $devfile.FullName.Replace($repname,$Stagedir)
@@ -92,82 +99,93 @@ try {
 				    }
 
 				    if (!$stagefound) {
-					    Add-Content $Report " "
-					    $msg = "Development file " + $devfile.FullName + " (Process = $process)"
+					    $msg = "Info    *".Padright(10," ") + "Staged file not found"
+                        Add-Content $Report $msg
+					    $msg = " ".Padright(10," ") + "Development file = ".Padright(20," ") + $devfile.FullName.Padright(90," ") 
 					    Add-Content $Report $msg
-					    $linewritten = $true
-					    $msg = ">>> Staged file not found: " + $stagename
+					    $msg = " ".Padright(10," ") + "Development file = ".Padright(20," ") + $stagename.PadRight(90," ") + "NOT FOUND!"
 					    Add-Content $Report $msg
+                        Add-Content $Report " "
+                        
                         $scriptchange = $true
             
 				    } 
 				    else {
 					    $devprops = Get-ItemProperty $devfile.FullName
 					    if (($devprops.Length -ne $stageprops.Length) -or ($devprops.LastWriteTime.ToString().Trim() -ne $stageprops.LastWriteTime.ToString().Trim())) {
-						    Add-Content $Report " "
-						    $msg = "Development file " + $devfile.FullName 
+                            if ($devprops.LastWriteTime -lt $stageprops.LastWriteTime) {
+                                $msg = "Warning *".Padright(10," ") + "Development file is OLDER than staging file"
+                                $scriptaction = $true
+                            }
+                            else {
+                                $msg = "Info    *".Padright(10," ") + "Development file differs from staging file"
+                                $scriptchange = $true
+                            }
+
+                            Add-Content $Report $msg
+						    $msg = " ".Padright(10," ") + "Development file = ".Padright(20," ") + $devfile.FullName.Padright(90," ") + 
+                                    "Length = ".PadRight(10," ") + $devprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $devprops.LastWriteTime 
 						    Add-Content $Report $msg
-						    $linewritten = $true
-						    $msg = "Length = " + $devprops.Length + " --- Last updated = " + $devprops.LastWriteTime
+                            $msg = " ".Padright(10," ") + "Stage file = ".Padright(20," ") + $stagename.Padright(90," ") + 
+                                    "Length = ".PadRight(10," ") + $stageprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $stageprops.LastWriteTime 
 						    Add-Content $Report $msg
-						    $msg = ">>> Staged file " + $stagename 
-						    Add-Content $Report $msg
-						    $msg = ">>> Length = " + $stageprops.Length + "--- Last updated = " + $stageprops.LastWriteTime
-						    Add-Content $Report $msg
-                            $scriptchange = $true
+                            Add-Content $Report " "
+						   
+                            
                   
 					    }
 
 				    } 
 				
 
-				    if (!(Test-Path $stagedir)) {
-					    Add-Content $Report " "
-					    $msg = ">>> Staging directory $stagedir niet gevonden"
-					    Add-Content $Report $msg 
-                        $scriptaction = $true        
-				    }
-				    else {
-
-					    $stagecontent = Get-ChildItem $stagedir -recurse -file  | Select FullName,LastWriteTime,Length 
-					    foreach ($stagefile in $stagecontent) {
-					        $linewritten = $false
-
-					        # Check correctness of DEVELOPMENT directory
-                            $repname = $DevDir.FullName + "\"
-					        $devname = $stagefile.FullName.Replace($stagedir,$repname)
-
-					        if (!(Test-Path $devname)) {
-						        if (!$linewritten) {
-							        Add-Content $Report " "
-							        $msg = "Staging file " + $stagefile.FullName
-							        Add-Content $Report $msg
-							        $linewritten = $true
-						        }
-						        $msg = ">>> Corresponding development file $devname not found for staged file " + $stagefile.FullName 
-						        Add-Content $Report $msg
-                                $scriptaction = $true
-                              
-						        # Write-Warning "$devname niet gevonden"
-					        }
-					        else {
-						        # Write-Host "$devname wel gevonden"
-					        }
-
-					
-				        }
-
-        
-			        }
+				   
 
     
-                }      
+                } 
+                
+                # Check for each staging file whether a development file exists 
+                if (!(Test-Path $stagedir)) {
+                    $msg = "Warning *".Padright(10," ") + "Staging directory $stagedir niet gevonden"
+					Add-Content $Report $msg 
+					Add-Content $Report " "
+					
+                    $scriptaction = $true        
+				}
+				else {
+
+					$stagecontent = Get-ChildItem $stagedir -recurse -file  | Select FullName,LastWriteTime,Length 
+					foreach ($stagefile in $stagecontent) {
+					  
+
+					    # Check correctness of DEVELOPMENT directory
+                        $repname = $DevDir.FullName + "\"
+					    $devname = $stagefile.FullName.Replace($stagedir,$repname)
+
+					    if (!(Test-Path $devname)) {
+						   
+						    $msg = "Warning *".Padright(10," ") + "Development file $devname not found for staged file " + $stagefile.FullName 
+						    Add-Content $Report $msg
+                            Add-Content $Report " "
+                            $scriptaction = $true
+                              
+						    # Write-Warning "$devname niet gevonden"
+					    }
+					    else {
+						    # Write-Host "$devname wel gevonden"
+					    }
+
+					
+				    }
+
+        
+			    }    
 		    } 
 		
 		    default {
-			    Add-Content $Report " "
-                $msg = ">>> Staging directory $stagedir : BUILD process $process not implemented yet, skipping this directory"
+			    
+                $msg = "Info    *".Padright(10," ") + "Staging directory $stagedir : BUILD process $process not implemented yet, skipping this directory"
                 Add-Content $Report $msg
+                Add-Content $Report " "
                
                 continue
 		    }
@@ -183,25 +201,34 @@ try {
     Add-Content $Report $msg
     $msg = "##########                                 ##########"
     Add-Content $Report $msg
+    Add-Content $Report " "
 
     $StageLIst = Get-ChildItem $ADHC_StagingDir -Directory | Select Name,FullName
     foreach ($StageDir in $StageLIst) {
-        $configfile = $ADHC_StagingDir + $StageDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THE CONFIG FILE IN THE STAGING DIRECTORY
-        # $configfile = $ADHC_DevelopDir + $StageDir.Name + "\" + $ADHC_ConfigFile  # TEST TEST TEST TEST
-        
-        [xml]$ConfigXML = Get-Content $configfile
+        $msg = "----------"+ $Stagedir.FullName.PadRight(100,"-") 
+        Add-Content $Report $msg
 
+        $configfile = $ADHC_StagingDir + $StageDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THE CONFIG FILE IN THE STAGING DIRECTORY
+        if (Test-Path $configfile) {
+            [xml]$ConfigXML = Get-Content $configfile
+        }
+        else {
+            $scriptaction = $true
+            $msg = "Warning *".Padright(10," ") + "Configuration file $configfile not found, skipping directory"
+            Add-Content $Report $msg
+            Add-Content $Report " "
+            continue
+        }
+        
         # Get TARGET info
         $targetdir = $ConfigXML.ADHCinfo.Target.Root + $ConfigXML.ADHCinfo.Target.SubRoot
         
         $targetnodelist = $ConfigXML.ADHCinfo.Nodes.ToUpper().Split(",")      
                 
         if (!($targetnodelist -contains $ADHC_Computer.ToUpper())) {
-            Add-Content $report " "
-            $msg = "Directory $targetdir : "
+            $msg = "Info    *".Padright(10," ") + "Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
             Add-Content $report $msg
-            $msg = "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
-	        Add-Content $report $msg
+            Add-Content $report " "
             Continue
         }
 
@@ -210,8 +237,7 @@ try {
     
         $StagedContent = Get-ChildItem $Stagedir.FullName -recurse -file  | Select FullName,LastWriteTime,Length 
         foreach ($stagedfile in $Stagedcontent) {
-            $linewritten = $false
-
+            
             # Check correctness of TARGET directory
             $repname = $Stagedir.FullName + "\"
             $targetname = $stagedfile.FullName.Replace($repname,$targetdir)
@@ -225,34 +251,40 @@ try {
             }
 
             if (!$targetfound) {
+                $msg = "Info    *".Padright(10," ") + "Production file not found"
+                Add-Content $Report $msg
+				$msg = " ".Padright(10," ") + "Staged file = ".Padright(20," ") + $stagedfile.FullName.Padright(90," ") 
+				Add-Content $Report $msg
+				$msg = " ".Padright(10," ") + "Production file = ".Padright(20," ") + $targetname.PadRight(90," ") + "NOT FOUND!"
+				Add-Content $Report $msg
                 Add-Content $Report " "
-                $msg = "Staged file " + $stagedfile.FullName
-                Add-Content $Report $msg
-                $linewritten = $true
-                $msg = ">>> Target file not found: " + $targetname
-                Add-Content $Report $msg
-                $scriptaction = $true
+                
+                $scriptchange = $true
             
             } 
             else {
-                $stagedprops = Get-ItemProperty $stagedfile.FullName
-                if (($stagedprops.Length -ne $targetprops.Length) -or ($stagedprops.LastWriteTime.ToString().Trim() -ne $targetprops.LastWriteTime.ToString().Trim())) {
+                $stageprops = Get-ItemProperty $stagedfile.FullName
+                if (($stageprops.Length -ne $targetprops.Length) -or ($stageprops.LastWriteTime.ToString().Trim() -ne $targetprops.LastWriteTime.ToString().Trim())) {
+                    
+                    if ($stageprops.LastWriteTime -lt $targetprops.LastWriteTime) {
+                        $msg = "Warning *".Padright(10," ") + "Staged file is OLDER than production file"
+                        $scriptaction = $true
+                    }
+                    else {
+                        $msg = "Info    *".Padright(10," ") + "Staging file differs from production file"
+                        $scriptchange = $true
+                    }
+
+                    Add-Content $Report $msg
+					$msg = " ".Padright(10," ") + "Staged file = ".Padright(20," ") + $stagedfile.FullName.Padright(90," ") + 
+                            "Length = ".PadRight(10," ") + $stageprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $stageprops.LastWriteTime 
+					Add-Content $Report $msg
+                    $msg = " ".Padright(10," ") + "Stage file = ".Padright(20," ") + $targetname.Padright(90," ") + 
+                            "Length = ".PadRight(10," ") + $targetprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $targetprops.LastWriteTime 
+					Add-Content $Report $msg
                     Add-Content $Report " "
-                    $msg = "Staged file " + $stagedfile.FullName 
-                    Add-Content $Report $msg
-                    $linewritten = $true
-                    $msg = "Length = " + $stagedprops.Length + " --- Last updated = " + $stagedprops.LastWriteTime
-                    Add-Content $Report $msg
-                    $msg = ">>> Target file " + $targetname 
-                    Add-Content $Report $msg
-                    $msg = ">>> Length = " + $targetprops.Length + "--- Last updated = " + $targetprops.LastWriteTime
-                    Add-Content $Report $msg
-                    $scriptchange = $true
-                
-               
-
-
-                }
+                                       
+                 }
 
             } 
              # Check correctness of DSL directory
@@ -268,37 +300,39 @@ try {
             }
 
             if (!$DSLfound) {
-                if (!$linewritten) {
-                    Add-Content $Report " "
-                    $msg = "Staged file " + $stagedfile.FullName
-                    Add-Content $Report $msg
-                    $linewritten = $true
-                }
-                $msg = ">>> DSL file not found: " + $DSLname
+                $msg = "Info    *".Padright(10," ") + "DSL file not found"
                 Add-Content $Report $msg
+				$msg = " ".Padright(10," ") + "Staged file = ".Padright(20," ") + $stagedfile.FullName.Padright(90," ") 
+				Add-Content $Report $msg
+				$msg = " ".Padright(10," ") + "DSL file = ".Padright(20," ") + $DSLname.PadRight(90," ") + "NOT FOUND!"
+				Add-Content $Report $msg
+                Add-Content $Report " "
+                
                 $scriptchange = $true
-            
+                            
             } 
             else {
-                $stagedprops = Get-ItemProperty $stagedfile.FullName
-                if (($stagedprops.Length -ne $DSLprops.Length) -or ($stagedprops.LastWriteTime.ToString().Trim() -ne $DSLprops.LastWriteTime.ToString().Trim())) {
-                    if (!$linewritten) {
-                        Add-Content $Report " "
-                        $msg = "Staged file " + $stagedfile.FullName 
-                        Add-Content $Report $msg
-                        $linewritten = $true
+                $stageprops = Get-ItemProperty $stagedfile.FullName
+                if (($stageprops.Length -ne $DSLprops.Length) -or ($stageprops.LastWriteTime.ToString().Trim() -ne $DSLprops.LastWriteTime.ToString().Trim())) {
+                    
+                    if ($stageprops.LastWriteTime -lt $DSLprops.LastWriteTime) {
+                        $msg = "Warning *".Padright(10," ") + "Staged file is OLDER than DSL file"
+                        $scriptaction = $true
                     }
-                    $msg = "Length = " + $stagedprops.Length + " --- Last updated = " + $stagedprops.LastWriteTime
-                    Add-Content $Report $msg
-                    $msg = ">>> DSL file " + $DSLname 
-                    Add-Content $Report $msg
-                    $msg = ">>> Length = " + $DSLprops.Length + "--- Last updated = " + $DSLprops.LastWriteTime
-                    Add-Content $Report $msg
-                    $scriptchange = $true
-                
-               
+                    else {
+                        $msg = "Info    *".Padright(10," ") + "Staged file differs from DSL file"
+                        $scriptchange = $true
+                    }
 
-
+                    Add-Content $Report $msg
+					$msg = " ".Padright(10," ") + "Staged file = ".Padright(20," ") + $stagedfile.FullName.Padright(90," ") + 
+                            "Length = ".PadRight(10," ") + $stageprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $stageprops.LastWriteTime 
+					Add-Content $Report $msg
+                    $msg = " ".Padright(10," ") + "DSL file = ".Padright(20," ") + $DSLname.Padright(90," ") + 
+                            "Length = ".PadRight(10," ") + $DSLprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $DSLprops.LastWriteTime 
+					Add-Content $Report $msg
+                    Add-Content $Report " "
+                    
                 }
 
             }       
@@ -306,24 +340,28 @@ try {
 
 
         } 
+    
+
+        # CHECK DSL directory backwards
 
         if (!(Test-Path $DSLdir)) {
-            Add-Content $Report " "
-            $msg = ">>> DSL directory $DSLdir niet gevonden"
+            
+            $msg = "Warning *".Padright(10," ") +  "DSL directory $DSLdir niet gevonden"
             Add-Content $Report $msg 
+            Add-Content $Report " "
             $scriptaction = $true        
         }
         else {
 
             $DSLContent = Get-ChildItem $DSLdir -recurse -file  | Select FullName,LastWriteTime,Length,Name 
             foreach ($dslfile in $DSLcontent) {
-                $linewritten = $false
-
+                
                 if ($dslfile.Name.ToUpper().Contains("#ADHC_DELETED_")) {
-                    Add-Content $Report " "
-                    $msg = "DSL file " + $dslfile.FullName + " will be deleted on after programmed delay"
+                    
+                    $msg = "Info    *".Padright(10," ") + "DSL file " + $dslfile.FullName + " will be deleted on after programmed delay"
                     Add-Content $Report $msg
-                    $linewritten = $true
+                    Add-Content $Report " "
+                   
                 } 
                 else {
                     # Check correctness of TARGET directory
@@ -331,34 +369,35 @@ try {
                     $stagename = $dslfile.FullName.Replace($DSLdir,$repname)
 
                     if (!(Test-Path $stagename)) {
-                        if (!$linewritten) {
-                            Add-Content $Report " "
-                            $msg = "DSL file " + $dslfile.FullName
-                            Add-Content $Report $msg
-                            $linewritten = $true
-                        }
-                        $msg = ">>> Corresponding staged file $stagename not found for DSL file " + $DSLfile.FullName 
+                        $msg = "Warning *".Padright(10," ") + "Staged file not found"
                         Add-Content $Report $msg
+				        $msg = " ".Padright(10," ") + "DSL file = ".Padright(20," ") + $dslfile.FullName.Padright(90," ") 
+				        Add-Content $Report $msg
+				        $msg = " ".Padright(10," ") + "Staged file = ".Padright(20," ") + $stagename.PadRight(90," ") + "NOT FOUND!"
+				        Add-Content $Report $msg
+                        Add-Content $Report " "
+                
                         $scriptaction = $true
-                              
+                                                                              
                         # Write-Warning "$stagename niet gevonden"
                     }
                     else {
                         # Write-Host "$stagename wel gevonden"
                     }
 
-                     $deployname = $dslfile.FullName.Replace($DSLdir,$targetdir)
+                    $deployname = $dslfile.FullName.Replace($DSLdir,$targetdir)
 
                     if (!(Test-Path $deployname)) {
-                        if (!$linewritten) {
-                            Add-Content $Report " "
-                            $msg = "DSL file " + $dslfile.FullName
-                            Add-Content $Report $msg
-                            $linewritten = $true
-                        }
-                        $msg = ">>> Corresponding production file $deployname not found for DSL file " + $DSLfile.FullName 
+                        $msg = "Warning *".Padright(10," ") + "Production file not found"
                         Add-Content $Report $msg
+				        $msg = " ".Padright(10," ") + "DSL file = ".Padright(20," ") + $dslfile.FullName.Padright(90," ") 
+				        Add-Content $Report $msg
+				        $msg = " ".Padright(10," ") + "Production file = ".Padright(20," ") + $deployname.PadRight(90," ") + "NOT FOUND!"
+				        Add-Content $Report $msg
+                        Add-Content $Report " "
+                
                         $scriptaction = $true
+                       
                         # Write-Warning "$deployname niet gevonden"
                     }
                     else {
@@ -368,11 +407,12 @@ try {
             }
 
         
-        }
+       
 
     
         
-    } 
+        } 
+    }
 
 
    
