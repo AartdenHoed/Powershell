@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 1.0"
+$Version = " -- Version: 2.0"
 
 # COMMON coding
 CLS
@@ -47,15 +47,16 @@ Write-Host "Master XML version = $version"
 write-host " "
 
 foreach ($factory in $factorylist) {
-    $devdir = $factory.Root
+    
+    $factroot = $factory.Root
+    $factroot = Set_Value($factroot)
+    
     $subdevdir = $factory.SubRoot
-    $devdir = Set_Value($devdir) 
-    Write-Host "Development directory = $devdir"
-    Write-Host "Development subdirectory = $subdevdir"
+    Write-Host "Factory = $subdevdir"
    
     $nodes = $factory.ADHCinfo.Nodes
-    $nodes = Set_Value($nodes) 
-    
+    $nodes = Set_Value($nodes)  
+    write-host "Target nodes = $nodes"
 
     [xml]$xmldoc = New-Object System.Xml.XmlDocument
     $decl = $xmldoc.CreateXmlDeclaration('1.0','UTF-8',$null)
@@ -64,88 +65,114 @@ foreach ($factory in $factorylist) {
     $adhcinfo = $xmldoc.CreateElement("ADHCinfo")
     $adhcinfo.SetAttribute("Version",$version)
     $adhcinfo.SetAttribute("Nodes", $nodes)
+    $adhcinfo.SetAttribute("Factory", $factroot)
+    $adhcinfo.SetAttribute("SubRoot", $subdevdir)
     
 
     $liblist = $factory.ADHCinfo.CHildNodes
     Write-Host "Libnames: "
     foreach ($lib in $liblist) {
         $Naam = $lib.Name        Write-Host "Naam =   $Naam"
+
         $root = $lib.Root
         $root = Set_Value($root)
         Write-Host "Root = $root"
+
         $subroot = $lib.SubRoot
         If ($subroot -eq "*") {
             $subroot = $subdevdir
         }
         Write-Host "Subroot = $subroot"
-        $modules = $lib.Modules
-        switch ($Naam.ToUpper()) {
+
+        $Process = $lib.Process
+        Write-Host "Process = $Process"
+
+        $Delay = $lib.Delay
+        Write-Host "Delay = $Delay"
+                
+        $ModulesList = $lib.ChildNodes
+        $cnt = $lib.ChildNodes.Count
+        Write-Host "Aantal MODULES entries: $cnt"
+
+        
+        switch ($Naam.ToUpper().Trim()) {
             "STAGELIB" {
-                $build = $lib.Build
-                Write-Host "Build = $build"
-                $stagelib = $xmldoc.CreateElement("StageLib")
-                $stagelib.SetAttribute("Root",$root)
-                $stagelib.SetAttribute("SubRoot", $subroot)
-                $stagelib.SetAttribute("Build", $build)
-
-                $m = $xmldoc.CreateElement("Modules")
-                $m.InnerText = $modules
-                [void]$stagelib.AppendChild($m)
-                [void]$adhcinfo.AppendChild($stagelib)
-
-               
+                $thischild = $xmldoc.CreateElement("StageLib")
             }
             "TARGET" { 
-                $deploy = $lib.Deploy
-                Write-Host "Deploy = $deploy"
-                $tdelay = $lib.Delay
-                Write-Host "Delay = $tdelay"
-                $target = $xmldoc.CreateElement("Target")
-                $target.SetAttribute("Root",$root)
-                $target.SetAttribute("SubRoot", $subroot)
-                $target.SetAttribute("Deploy", $deploy)
-                $target.SetAttribute("Delay", $tdelay)
-
-                $m = $xmldoc.CreateElement("Modules")
-                $m.InnerText = $modules
-                [void]$target.AppendChild($m)
-                [void]$adhcinfo.AppendChild($target)
+                $thischild = $xmldoc.CreateElement("Target") 
             }
             "DSL" { 
-                $ddelay = $lib.Delay
-                Write-Host "Delay = $ddelay"
-                $dsl = $xmldoc.CreateElement("DSL")
-                $dsl.SetAttribute("Root",$root)
-                $dsl.SetAttribute("SubRoot", $subroot)
-                $dsl.SetAttribute("Delay", $ddelay)
-
-                $m = $xmldoc.CreateElement("Modules")
-                $m.InnerText = $modules
-                [void]$dsl.AppendChild($m)
-                [void]$adhcinfo.AppendChild($dsl)
+                $thischild = $xmldoc.CreateElement("DSL") 
             }
             default {
                 Write-Error "$Naam niet herkend"
                 Exit 16
             } 
         }
+        $thischild.SetAttribute("Root",$root)
+        $thischild.SetAttribute("SubRoot", $subroot)     
+                               
+        foreach ($modentry in $ModulesList) {
+            $m = $xmldoc.CreateElement("Modules")
 
-    } 
+            $p = $modentry.Process
+            if ($p) {
+                if ($p -eq "*") {
+                    $mprocess = $Process
+            }
+                else {
+                    $mprocess = $p
+                }
+            }
+            else {
+                $mprocess = $Process
+            }
+            $m.SetAttribute("Process",$mprocess)
+
+            $dly = $modentry.Delay
+            if ($dly) {
+                $mdelay= $dly
+            }
+            else {
+                $mdelay = $Delay 
+            }    
+            $m.SetAttribute("Delay",$mdelay)
+
+            $Include = $modentry.Include
+            if (!$Include) {
+                $Include = "*ALL*"
+            } 
+            $Exclude = $modentry.Exclude
+            if (!$Exclude) {
+                $Exclude = "*None*"
+            } 
+
+            $i = $xmldoc.CreateElement("Include")
+            $i.InnerText = $Include
+               
+            $e = $xmldoc.CreateElement("Exclude")
+            $e.InnerText = $Exclude
+
+            [void]$m.AppendChild($i)
+            [void]$m.AppendChild($e)
+                
+            [void]$thischild.AppendChild($m)
+        }
+
+        [void]$adhcinfo.AppendChild($thischild)
+    }
+     
     [void]$xmldoc.AppendChild($adhcinfo)
 
     # Write xml to config dataset
-    $outdir = $devdir + $subdevdir
+    $outdir = $ADHC_DevelopDir + $subdevdir
     
     New-Item -ItemType Directory -Force -Path $outdir | Out-Null
-    $fullname = $devdir + $subdevdir + $ADHC_configfile
+    $fullname = $ADHC_StagingDir + $subdevdir + $ADHC_configfile
     $xmlDoc.Save($fullName)
 
-
-
+    write-host " "
     
-     write-host " "
-    
-
-
 }
 
