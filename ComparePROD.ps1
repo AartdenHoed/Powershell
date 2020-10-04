@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 6.0"
+﻿$Version = " -- Version: 6.1"
 
 # COMMON coding
 CLS
@@ -37,7 +37,7 @@ try {
     $Report = $ADHC_OutputDirectory + $ADHC_ProdCompare
     Set-Content $Report $Scriptmsg -force
 
-    # Proces development directories
+    # Proces development directories ==> COMPARE with staging
     $msg = " "
     Add-Content $Report $msg
     $msg = "##########                                         ##########"
@@ -56,7 +56,7 @@ try {
         $msg = "----------"+ $Devdir.FullName.PadRight(100,"-") 
         Add-Content $Report $msg
         $configfile = $ADHC_StagingDir + $DevDir.Name + "\" + $ADHC_ConfigFile   # ATTENTION, WE USE THE CONFIG FILE IN THE STAGING DIRECTORY
-        # $configfile = $ADHC_DevelopDir + $DevDir.Name + "\" + $ADHC_ConfigFile  # TEST TEST TEST TEST
+        
         if (Test-Path $configfile) {
             [xml]$ConfigXML = Get-Content $configfile
         }
@@ -130,17 +130,8 @@ try {
                                     "Length = ".PadRight(10," ") + $stageprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $stageprops.LastWriteTime 
 						    Add-Content $Report $msg
                             Add-Content $Report " "
-						   
-                            
-                  
 					    }
-
 				    } 
-				
-
-				   
-
-    
                 } 
                 
                 # Check for each staging file whether a development file exists 
@@ -162,8 +153,8 @@ try {
 					    $devname = $stagefile.FullName.Replace($stagedir,$repname)
 
 					    if (!(Test-Path $devname)) {
-						   
-						    $msg = "Warning *".Padright(10," ") + "Development file $devname not found for staged file " + $stagefile.FullName 
+
+                            $msg = "Warning *".Padright(10," ") + "Development file $devname not found for staged file " + $stagefile.FullName 
 						    Add-Content $Report $msg
                             Add-Content $Report " "
                             $scriptaction = $true
@@ -192,7 +183,7 @@ try {
 	    }
     }
 
-    # Proces staging directories
+    # Proces staging directories ==> COMPARE with PROD + DSL
     $msg = " "
     Add-Content $Report $msg
     $msg = "##########                                 ##########"
