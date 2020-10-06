@@ -10,6 +10,17 @@ $global:scriptchange = $false
 function CheckModule ([string]$direction, [string]$shortname, [string]$from, [string]$to, [System.Collections.ArrayList]$filter) {
     # $r = "$direction"+ " ~ " + $from + " ~ " +  $to
     # write-host $r
+    $direction = $direction.ToUpper()
+
+    if (($from.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "FORWARD")) {
+        Report "I" "File $from will be deleted in the future depending on DELAY parameter"
+        return
+    }
+    
+    if (($to.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "BACKWARD")) {
+        Report "I" "File $to will be deleted in the future depending on DELAY parameter"
+        return
+    }
    
     $currentdate = Get-Date
     $included = $false
@@ -56,11 +67,10 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             $shouldbedone = $false
             $timeleap = $mydelay - $timeDifference.Days
                            
-        }
-        
+        }        
     }
    
-    $direction = $direction.ToUpper()
+    
 
     if ($myprocess.ToUpper() -eq "WINDOWSSCHEDULER") { 
         $situation = $direction + "-" + "COPY"
