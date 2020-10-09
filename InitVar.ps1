@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.1"
+$Version = " -- Version: 3.2"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -59,10 +59,6 @@ Set-Variable -Name "ADHC_ConflictRpt" -Value "$cf" -Option readonly -Scope globa
 $gs = "SourceControl\" + $ADHC_Computer + "_GitStatus.txt"
 Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
-
-$pc = "ProductionCompare\"+ $ADHC_Computer + "_Compare.txt"
-Remove-Variable -Name "ADHC_ProdCompare" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProdCompare" -Value "$pc" -Option readonly -Scope global -Description "Check correctness deployments" -force
 
 $ng = "BuildDeployCheck\"+ $ADHC_Computer + "_BuildDeployCheck.txt"
 Remove-Variable -Name "ADHC_BuildDeployCheck" -force -ErrorAction SilentlyContinue
