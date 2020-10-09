@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1"
+﻿$Version = " -- Version: 1.1.3"
 
 # COMMON coding
 CLS
@@ -12,16 +12,23 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     # write-host $r
     $direction = $direction.ToUpper()
 
-    if (($from.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "FORWARD")) {
-        Report "I" "File $from will be deleted in the future depending on DELAY parameter"
-        return
+    if ($shortname.ToUpper().Contains("#ADHC_DELETED_")) {
+        $searchname = $shortname.Replace("^#ADHC_DELETED_\d{8}$", "")
+        $deletion = $true
+        $delyear = $shortname.Substring(14,4)
+        $delmonth = $shortname.Substring(18,2)
+        $delday = $shortname.Substring(20,2)
+            # $delyear
+            # $delmonth
+            # $delday
+        $deldate = Get-Date -Year $delyear -Month $delmonth -Day $delday
+        
     }
-    
-    if (($to.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "BACKWARD")) {
-        Report "I" "File $to will be deleted in the future depending on DELAY parameter"
-        return
+    else {
+        $searchname = $shortname
+        $deletion = $false
     }
-   
+
     $currentdate = Get-Date
     $included = $false
     $modulefound = $false
@@ -29,10 +36,10 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
         if ($entry.includes.ToUpper() -contains "*ALL*") {
             $included = $true
         }
-        if ($entry.includes.ToUpper() -contains $shortname.ToUpper()) {
+        if ($entry.includes.ToUpper() -contains $searchname.ToUpper()) {
             $included = $true
         }
-        if ($entry.excludes.ToUpper() -contains $shortname.ToUpper()) {
+        if ($entry.excludes.ToUpper() -contains $searchname.ToUpper()) {
             $included = $false
         }
         if ($included) {
@@ -44,10 +51,10 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             
     }
     if (!$modulefound) {
-        Report "W" "Module $shortname has no corresponding INCLUDE statement"
+        Report "A" "Module '$shortname' has no corresponding INCLUDE statement"
         return
-    } 
-
+    }     
+        
     $existfrom = Test-Path $from
     $existto = Test-Path $To
     if ($existto) {
@@ -55,7 +62,6 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     }
     if ($existfrom) {
         $fromprops = Get-ItemProperty $from
-
         
         $timeDifference = New-TimeSpan –Start $fromprops.LastWriteTime –End $currentDate
         
@@ -69,8 +75,41 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                            
         }        
     }
-   
+    else {
+        if ($deletion) {
+             $timeDifference = New-TimeSpan –Start $deldate –End $currentDate
+        
+            If ($timeDifference.Days -ge $mydelay) {
+                $shouldbedone = $true
+                $timeleap = 0
+            }
+            else {
+                $shouldbedone = $false
+                $timeleap = $mydelay - $timeDifference.Days
+                           
+            }        
+         
+        }
+
+    }
     
+
+    if (($from.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "FORWARD")) {
+        # Report "I" "File $from will be deleted in the future depending on DELAY parameter of target library"
+        # reporting already takes place checking backward
+        return
+    }
+    
+    if (($to.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "BACKWARD")) {
+        if ($shouldbedone) {
+            Report "W" "File $to should have been deleted by now"
+            return
+        }
+        else {
+            Report "I" "File $to will be deleted in $timeleap days"
+            return
+        }
+    }
 
     if ($myprocess.ToUpper() -eq "WINDOWSSCHEDULER") { 
         $situation = $direction + "-" + "COPY"
@@ -93,7 +132,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                     return
                 }
                 else {
-                    Report "I" "Target file $to does not exist yet but should be added in $timeleap days"
+                    Report "I" "Target file $to does not exist yet but will be added in $timeleap days"
                     return
                 }
             }
@@ -109,7 +148,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                         $attention = $true                      
                     }
                     else {
-                        Report "I" "Target file differs from sourcefile but should be replaced in $timeleap days"  
+                        Report "I" "Target file differs from sourcefile but will be replaced in $timeleap days"  
                         $attention = $true                     
                     }
                 }
@@ -140,15 +179,9 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                 return
             }
             if (!$existfrom) {
-                
-                if ($from.ToUpper().Contains("#ADHC_DELETED_")) {
-                    Report "I" "Target file $from should be deleted after programmed delay"
-                    return
-                } 
-                else {
-                    Report "W" "Target file $To does not have a corresponding source file $from"
-                    return 
-                }               
+                Report "W" "Target file $To does not have a corresponding source file $from"
+                return 
+                               
             }
         }
         
@@ -163,7 +196,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                     return
                 }
                 else {
-                    Report "I" "Target file $to does not exist yet and should be added in $timeleap days"
+                    Report "C" "Target file $to does not exist yet and should be added in $timeleap days"
                     return
                 }
             }
@@ -179,7 +212,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                         $attention = $true                      
                     }
                     else {
-                        Report "I" "Target file differs from sourcefile and should be replaced in $timeleap days"  
+                        Report "C" "Target file differs from sourcefile and should be replaced in $timeleap days"  
                         $attention = $true                     
                     }
                 }
@@ -205,7 +238,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             if (!$existfrom) {
                 
                 if ($from.ToUpper().Contains("#ADHC_DELETED_")) {
-                    Report "I" "Target file $from should be deleted after programmed delay"
+                    Report "I" "Target file $from will be deleted after programmed delay"
                     return
                 } 
                 else {
