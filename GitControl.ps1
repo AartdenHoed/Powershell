@@ -1,7 +1,44 @@
-﻿$Version = " -- Version: 3.1"
+﻿$Version = " -- Version: 4.0"
 
 # COMMON coding
 CLS
+# init flags
+$global:scripterror = $false
+$global:scriptaction = $false
+$global:scriptchange = $false
+
+function Report ([string]$level, [string]$line) {
+    switch ($level) {
+        ("N") {$rptline = $line}
+        ("I") {
+            $rptline = "Info    *".Padright(10," ") + $line
+        }
+        ("A") {
+            $rptline = "Caution *".Padright(10," ") + $line
+        }
+        ("B") {
+            $rptline = "        *".Padright(10," ") + $line
+        }
+        ("C") {
+            $rptline = "Change  *".Padright(10," ") + $line
+            $global:scriptchange = $true
+        }
+        ("W") {
+            $rptline = "Warning *".Padright(10," ") + $line
+            $global:scriptaction = $true
+        }
+        ("E") {
+            $rptline = "Error   *".Padright(10," ") + $line
+            $global:scripterror = $true
+        }
+        default {
+            $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
+            $global:scripterror = $true
+        }
+    }
+    Add-Content $gitstatus $rptline
+
+}
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
@@ -21,16 +58,9 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
-
-    # init flags
-    $scripterror = $false
-    $scriptaction = $false
-    $scriptchange = $false
+    & "$LocalInitVar"   
 
 # END OF COMMON CODING
-
-
 
     # Init reporting file
     $str = $ADHC_SourceControl.Split("\")
@@ -43,14 +73,15 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
     $ofile = $odir + "\gitoutput.txt"
-    $line = "==========================================================================================================="
+    $line = "=".PadRight(120,"=")
 
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
    
         $gdir = $gdir.replace(".git","")
-        Add-Content $gitstatus ""
-        Add-Content $gitstatus "Directory $gdir"
+        Report "N" ""
+        $msg = "----------Directory $gdir".PadRight(120,"-") 
+        Report "N" $msg
 
         Set-Location $gdir
         Write-Host ">>> $gdir"
@@ -59,18 +90,20 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         
         $a = Get-Content $ofile
                
-        Add-Content $gitstatus $line
-        Add-Content $gitstatus $a
-        Add-Content $gitstatus $line
+        Report "N" $line
+        foreach ($l in $a) {
+            Report "B" $l
+        }   
+        Report "N" $line
         
         $x = $a[1]
         Write-Host "    $x"
         if ($a[1] -eq "nothing to commit, working tree clean") {
-            Add-Content $gitstatus "==> No uncommitted changes"
+            Report "I" "==> No uncommitted changes"
         }
         else {
-            Add-Content $gitstatus "==> Uncommitted changes    ***"
-            $scriptchange = $true
+            Report "C" "==> Uncommitted changes    ***"
+            
         }
         Remove-Item $ofile
 
@@ -79,25 +112,27 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         & {git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
 
         $a = Get-Content $ofile
-        Add-Content $gitstatus $line
-        Add-Content $gitstatus $a
-        Add-Content $gitstatus $line
+        Report "N" $line
+        foreach ($l in $a) {
+            Report "B" $l
+        }        
+        Report "N" $line
         $x = $a[0]
         Write-Host "    $x"
         if ($a[0] -eq "git : Everything up-to-date")  {
-            Add-Content $gitstatus "==> No unpushed commits"
+            Report "I" "==> No unpushed commits"
         }
         else {
-            Add-Content $gitstatus "==> Unpushed commits       ***"
-            $scriptaction = $true
+            Report "W" "==> Unpushed commits       ***"
+            
         }
-        Add-Content $gitstatus $line
-        Add-Content $gitstatus " "
+        Report "N" $line
+        Report "N" " "
         Remove-Item $ofile
     }
 #}
 #catch {
-#    $scripterror = $true
+#    $global:scripterror = $true
 #    $ErrorMessage = $_.Exception.Message
 #    $FailedItem = $_.Exception.ItemName
 #}
@@ -109,12 +144,12 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Add-Content $Gitstatus " "
+    Report "N" " "
 
         
-    if ($scripterror) {
+    if ($global:scripterror) {
         $msg = ">>> Script ended abnormally"
-        Add-Content $gitstatus $msg
+        Report "E" $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
@@ -124,9 +159,9 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         exit 16        
     }
    
-    if ($scriptaction) {
+    if ($global:scriptaction) {
         $msg = ">>> Script ended normally with action required"
-        Add-Content $gitstatus $msg
+        Report "W" $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
@@ -134,9 +169,9 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         exit 8
     }
 
-    if ($scriptchange) {
+    if ($global:scriptchange) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Add-Content $gitstatus $msg
+        Report "C" $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
@@ -145,7 +180,7 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     }
 
     $msg = ">>> Script ended normally without reported changes, and no action required"
-    Add-Content $gitstatus $msg
+    Report "I" $msg
     $dt = Get-Date
     $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString()
     Set-Content $jobstatus $jobline
