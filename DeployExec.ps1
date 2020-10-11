@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0.3"
+﻿$Version = " -- Version: 1.0.4"
 
 # COMMON coding
 CLS
@@ -78,7 +78,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
             Report "C" "Module $tobedeleted will be deleted directly from computer $ADHC_Computer"
             Remove-Item "$tobedeleted" -force
             $logdate = Get-Date
-            $logrec = $logdate.ToSTring() + " *** Directly DELETED *** ".Padright(40," ")+ $tobedeleted
+            $logrec = $logdate.ToSTring().PadRight(24," ") + " *** Directly DELETED *** ".Padright(40," ")+ $tobedeleted
             Add-Content $log $logrec
         }
         "DELETED" {            
@@ -97,7 +97,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                 Remove-Item "$tobedeleted" -force
                     
                 $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** Deferred DELETED *** ".Padright(40," ")+ $tobedeleted
+                $logrec = $logdate.ToString().PadRight(24," ") + " *** Deferred DELETED *** ".Padright(40," ")+ $tobedeleted
                 Add-Content $log $logrec
             }
             else {
@@ -126,7 +126,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
             Rename-Item "$tobedeleted" "$deletename" -force
                
             $logdate = Get-Date
-            $logrec = $logdate.ToString() + " *** Staged for DELETION *** ".Padright(40," ")+ $tobedeleted
+            $logrec = $logdate.ToString().PadRight(24," ") + " *** Staged for DELETION *** ".Padright(40," ")+ $tobedeleted
             Add-Content $log $logrec
           
                         
@@ -161,7 +161,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                 Report "C" $msg
 
                 $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** UNREGISTERED *** ".Padright(40," ")+ $TaskName
+                $logrec = $logdate.ToString().PadRight(24," ") + " *** UNREGISTERED *** ".Padright(40," ")+ $TaskName
                 Add-Content $log $logrec
             }
             else {
@@ -231,7 +231,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 Copy-Item "$from" "$to" -force
                     
                 $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** ADDED *** ".Padright(40," ")+ $to
+                $logrec = $logdate.ToString().PadRight(24," ") + " *** ADDED *** ".Padright(40," ")+ $to
                 Add-Content $log $logrec
             }
             else {
@@ -250,7 +250,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 Copy-Item "$from" "$to" -force
                    
                 $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** REPLACED *** ".Padright(40," ")+ $to
+                $logrec = $logdate.ToString().PadRight(24," ") + " *** REPLACED *** ".Padright(40," ")+ $to
                 Add-Content $log $logrec
             }
             else {
@@ -344,7 +344,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 Report "C" $msg
                     
                 $logdate = Get-Date
-                $logrec = $logdate.ToString() + " *** REGISTERED *** ".Padright(40," ") + $taskname
+                $logrec = $logdate.ToString().PadRight(24," ") + " *** REGISTERED *** ".Padright(40," ") + $taskname
                 Add-Content $log $logrec
             }
             else {
