@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.1"
+﻿$Version = " -- Version: 2.2"
 
 # COMMON coding
 CLS
@@ -52,9 +52,9 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         }
     } 
     else {
-        $w = "Gotcha delname '" +  $delname + "'"
-        write-warning $w
-        exit
+        $w = "Delname validation failed '" +  $delname + "'"
+        write-error $w
+        
     }
     
     Write-Host "$action $tobedeleted with process $process and delay $thisdelay"
@@ -219,6 +219,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
         }
             
     }
+    
     if (($shortname -match "\w+\.?\w*" ) -or ($shortname -match "#\w+\.?\w*")) {
         if (!$modulefound) {
             Report "W" "Module $shortname ($to)has no corresponding INCLUDE statement - processing wil be SKIPPED"
@@ -229,9 +230,9 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
         }
     }         
     else {
-        $w = "Gotcha shortname '" +  $shortname + "'"
-        write-warning $w
-        exit
+        $w = "Shortname validation failed '" +  $shortname + "'"
+        write-error $w
+        
     }    
 
     if ($from.ToUpper().Contains("#ADHC_DELETED_")) {
