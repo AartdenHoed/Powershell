@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0.4"
+﻿$Version = " -- Version: 2.1"
 
 # COMMON coding
 CLS
@@ -28,6 +28,11 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         }
         if ($entry.excludes.ToUpper() -contains $delname.ToUpper()) {
             $included = $false
+            $modulefound = $true
+        }
+        if ($entry.excludes.ToUpper() -contains "*ALL*") {
+            $included = $false
+            $modulefound = $true
         }
         if ($included) {
             $process = $entry.process.ToUpper()
@@ -37,10 +42,20 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         }
             
     }
-    if (!$modulefound) {
-        Report "W" "Module $delname has no corresponding INCLUDE statement - processing wil be SKIPPED"
-        return
+    if (($delname -match "\w+\.?\w*" ) -or ($delname -match "#\w+\.?\w*")) {
+        if (!$modulefound) {
+            Report "W" "Module $delname ($tobedeleted) has no corresponding INCLUDE statement - processing wil be SKIPPED"
+            return
+        }
+        else {
+            if (!$included) {return}
+        }
     } 
+    else {
+        $w = "Gotcha delname '" +  $delname + "'"
+        write-warning $w
+        exit
+    }
     
     Write-Host "$action $tobedeleted with process $process and delay $thisdelay"
 
@@ -190,6 +205,11 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
         }
         if ($entry.excludes.ToUpper() -contains $shortname.ToUpper()) {
             $included = $false
+            $modulefound = $true
+        }
+        if ($entry.excludes.ToUpper() -contains "*ALL*") {
+            $included = $false
+            $modulefound = $true
         }
         if ($included) {
             $process = $entry.process.ToUpper()
@@ -199,10 +219,20 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
         }
             
     }
-    if (!$modulefound) {
-        Report "W" "Module $shortname has no corresponding INCLUDE statement - processing wil be SKIPPED"
-        return
-    } 
+    if (($shortname -match "\w+\.?\w*" ) -or ($shortname -match "#\w+\.?\w*")) {
+        if (!$modulefound) {
+            Report "W" "Module $shortname ($to)has no corresponding INCLUDE statement - processing wil be SKIPPED"
+            return
+        }
+        else {
+            if (!$included) {return} 
+        }
+    }         
+    else {
+        $w = "Gotcha shortname '" +  $shortname + "'"
+        write-warning $w
+        exit
+    }    
 
     if ($from.ToUpper().Contains("#ADHC_DELETED_")) {
         Report "I" "No $action action taken for deleted file $from"
@@ -365,6 +395,9 @@ function Report ([string]$level, [string]$line) {
         ("I") {
             $rptline = "Info    *".Padright(10," ") + $line
         }
+        ("H") {
+            $rptline = "-------->".Padright(10," ") + $line
+        }
         ("A") {
             $rptline = "Caution *".Padright(10," ") + $line
         }
@@ -441,8 +474,8 @@ try {
         $staginglocation = $stagingdir.FullName + "\"        
        
         Report "N" " "
-	    $msg = "---------- Staging directory: " +  $staginglocation.PadRight(100,"-")
-	    Report "N" $msg
+	    $msg = "Staging directory: " +  $staginglocation.PadRight(100,"-")
+	    Report "H" $msg
        
 
         $configfile = $staginglocation + $ADHC_ConfigFile
@@ -450,103 +483,36 @@ try {
             Report "W" "Configfile $configfile not found, directory skipped"
 	        Continue
         } 
-        else {
-            [xml]$ConfigXML = Get-Content $configfile
 
-            $configversion = $ConfigXML.ADHCinfo.Version
-            Report "B" "Configuration file version = $configversion"
+        [xml]$ConfigXML = Get-Content $configfile
 
-            # Skip this directory if not meant for this computer node
-            $targetnodelist = $ConfigXML.ADHCinfo.Nodes.ToUpper().Split(",")
+        $configversion = $ConfigXML.ADHCinfo.Version
+        Report "B" "Configuration file version = $configversion"
 
-            if (!($targetnodelist -contains $ADHC_Computer.ToUpper())) {
-                Report "I" "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
-	            
-                Continue
-            }
+        # Skip this directory if not meant for this computer node
+        $targetnodelist = $ConfigXML.ADHCinfo.Nodes.ToUpper().Split(",")
 
-             # Get Staging info
-        
-            $sModules = $ConfigXml.ADHCinfo.StageLib.Childnodes
-            $stagingfilter = @()
-            foreach ($moduleentry in $sModules) {
-                $process = $moduleentry.Process
-                $delay = $moduleentry.Delay
-                $includes = $moduleentry.Include.SPlit(",")
-                $excludes = $moduleentry.Exclude.Split(",")
-                $filter = [PSCustomObject] [ordered] @{process = $process;
-                                                delay = $delay;    
-                                                includes = $includes 
-                                                excludes = $excludes}
-                $stagingfilter += $filter 
-            
-            }
-       
-            # Get TARGET info
-            $targetdir = $ConfigXML.ADHCinfo.Target.Root + $ConfigXML.ADHCinfo.Target.SubRoot
-            
-            $tModules = $ConfigXml.ADHCinfo.Target.Childnodes
-            $targetfilter = @()
-            foreach ($moduleentry in $tModules) {
-                $process = $moduleentry.Process
-                $delay = $moduleentry.Delay
-                $includes = $moduleentry.Include.SPlit(",")
-                $excludes = $moduleentry.Exclude.Split(",")
-                $filter = [PSCustomObject] [ordered] @{process = $process;
-                                                delay = $delay;    
-                                                includes = $includes 
-                                                excludes = $excludes}
-                $targetfilter += $filter 
-            
-            }
-            
-            # Get DSL info
-            $dsldir = $ConfigXML.ADHCinfo.DSL.Root + $ConfigXML.ADHCinfo.DSL.SubRoot
-
-            $dModules = $ConfigXml.ADHCinfo.DSL.Childnodes
-            $dslfilter = @()
-            foreach ($moduleentry in $dModules) {
-                $process = $moduleentry.Process
-                $delay = $moduleentry.Delay
-                $includes = $moduleentry.Include.SPlit(",")
-                $excludes = $moduleentry.Exclude.Split(",")
-                $filter = [PSCustomObject] [ordered] @{process = $process;
-                                                delay = $delay;    
-                                                includes = $includes 
-                                                excludes = $excludes}
-                $dslfilter += $filter 
-            
-            }
-
-            
-            
-            # Create production directory if it does not exits yet
-            $x = Test-Path $targetdir
-            if (!$x) {
-                Report "C" "Directory $targetdir does not exist and will be created on computer $ADHC_COmputer"
-                
-                New-Item -ItemType Directory -Force -Path "$targetdir"
-               
-            }
-            else {
-                Report "B" "Processing production directory $targetdir"
-                
-            }
-        
-            # Create DSL directory if it does not exits yet
-            $x = Test-Path $dsldir
-            if (!$x) {
-                Report "C" "Directory $dsldir does not exist and will be created on computer $ADHC_Computer"
-               
-                New-Item -ItemType Directory -Force -Path "$dsldir"
-                
-            }
-             else {
-                Report "B" "Processing DSL directory $dsldir"
-                
-            }
+        if (!($targetnodelist -contains $ADHC_Computer.ToUpper())) {
+            Report "I" "==> Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"	          
+            Continue
         }
 
+            # Get Staging info and process staging directory
+        
+        $sModules = $ConfigXml.ADHCinfo.StageLib.Childnodes
+        $stagingfilter = @()
+        foreach ($moduleentry in $sModules) {
+            $process = $moduleentry.Process
+            $delay = $moduleentry.Delay
+            $includes = $moduleentry.Include.SPlit(",")
+            $excludes = $moduleentry.Exclude.Split(",")
+            $filter = [PSCustomObject] [ordered] @{process = $process;
+                                            delay = $delay;    
+                                            includes = $includes; 
+                                            excludes = $excludes}
+            $stagingfilter += $filter 
+            
+        }
         $StageContent = Get-ChildItem $staginglocation -recurse -file  | Select Name,FullName
         foreach ($stagedfile in $stageContent) {
             $mod = $stagedfile.FullName
@@ -554,81 +520,184 @@ try {
             DeleteNow "CheckNone"  "$mod" "$sname" $stagingfilter           # Check if module should be here at all 
         }
 
-        $StageContent = Get-ChildItem $staginglocation -recurse -file  | Select Name,FullName, Length, LastWriteTime
-        foreach ($stagedfile in $StageContent) {
-            $stagedprops = Get-ItemProperty $stagedfile.FullName
-            $stagedname = $stagedfile.FullName
+        $x = 0
+        
+        $targetlist = $ConfigXml.ADHCinfo.SelectNodes("//Target")
 
-            # Check if production differs from staged file
-            $prodname = $stagedfile.FullName.ToUpper().Replace($staginglocation.ToUpper(),$targetdir)
-            $sname = $Stagedfile.Name
-            # $prodname
-            if (Test-Path $prodname) {
-                $prodprops = Get-ItemProperty $prodname 
-                if (($prodprops.Length -ne $stagedprops.Length) -or ($prodprops.LastWriteTime.ToString().Trim() -ne $stagedprops.LastWriteTime.ToString().Trim())) {
-                    # Write-Warning "Difference found"
-                    
-                    DeployNow "Replace" "$sname" "$stagedname"  "$prodname" $targetfilter
-                }
-                else {
-                    # Write-Host "No Difference found"
-                }
+        # Create production directory if it does not exits yet
+        foreach ($targetentry in $targetlist) {
+            $x = $x + 1
+            $targetdir = $targetentry.Root + $targetentry.SubRoot 
+            $tst = Test-Path $targetdir
+            if (!$tst) {
+                Report "C" "Directory $targetdir does not exist and will be created on computer $ADHC_COmputer"
+                
+                New-Item -ItemType Directory -Force -Path "$targetdir"
+               
+            }
+            if ($x -le 1) { 
+                Report "N" " "
+                Report "H" "Processing production directory $targetdir ($x)"
             }
             else {
-                # Write-Warning "File not found"
-                DeployNow "Add" "$sname" "$stagedname" "$prodname" $targetfilter
+                Report "B" "Processing production directory $targetdir ($x)"
+            }
+                
+        }
+        
+        $StageContent = Get-ChildItem $staginglocation -recurse -file  | Select Name,FullName, Length, LastWriteTime
+       
+        foreach ($stagedfile in $StageContent) {
+            $stagedprops = Get-ItemProperty $stagedfile.FullName
+            $stagedname = $stagedfile.FullName  
+            $sname = $Stagedfile.Name         
+
+            # Proces TARGET directory (multiple possible) #########################################
+          
+            foreach ($targetentry in $targetlist) {
+              
+                $titletarget = $false
+                $targetdir = $targetentry.Root + $targetentry.SubRoot
+            
+                $tModules = $targetentry.Childnodes
+                $targetfilter = @()
+                foreach ($moduleentry in $tModules) {
+                    $process = $moduleentry.Process
+                    $delay = $moduleentry.Delay
+                    $includes = $moduleentry.Include.SPlit(",")
+                    $excludes = $moduleentry.Exclude.Split(",")
+                    $filter = [PSCustomObject] [ordered] @{process = $process;
+                                                    delay = $delay;    
+                                                    includes = $includes; 
+                                                    excludes = $excludes}
+                    $targetfilter += $filter 
+            
+                }
+                
+
+                # Check if production differs from staged file
+                $prodname = $stagedfile.FullName.ToUpper().Replace($staginglocation.ToUpper(),$targetdir)
+                
+                # $prodname
+                if (Test-Path $prodname) {
+                    $prodprops = Get-ItemProperty $prodname 
+                    if (($prodprops.Length -ne $stagedprops.Length) -or ($prodprops.LastWriteTime.ToString().Trim() -ne $stagedprops.LastWriteTime.ToString().Trim())) {
+                        #Report "A" "Difference found"
+                    
+                        DeployNow "Replace" "$sname" "$stagedname"  "$prodname" $targetfilter
+                    }
+                    else {
+                        #Report "A" "No Difference found"
+                    }
+                }
+                else {
+                    #Report "A" "File not found"
+                    DeployNow "Add" "$sname" "$stagedname" "$prodname" $targetfilter
+                }
+
+
+
+            }
+            # END Target directories  ###################################
+
+            
+        }
+
+         # Determine deletions in target directory (multiple possible)
+        $x = 0
+        foreach ($targetentry in $targetlist) {
+            $x = $x + 1
+            $targetdir = $targetentry.Root + $targetentry.SubRoot
+
+            Set-Location "$targetDir"
+            $TargetModList = Get-ChildItem -file -recurse | select-object FullName,Name 
+        
+            foreach ($targetMod in $TargetModList) {
+                $mod = $Targetmod.FullName
+                $sname = $Targetmod.Name
+                $stagename = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $staginglocation)
+                # $stagename
+                if (Test-Path $stagename) {
+                    DeleteNow "CheckNone"  "$mod" "$sname" $targetfilter           # Check if module should be here at all 
+                }
+                else {
+                    # Module has been deleted from staging, delete it from target as well, but ONLY if it ALSO STILL exists in DSL!!!!
+                    # Reason: DSL is filled with a DELAY!!!!
+                    $dslname = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $dsldir)
+                    if (Test-Path $dslname) {
+                     
+                        Report "C" "Production module $targetMod.FullName is obsolete and will be deleted on computer $ADHC_Computer"
+                        DeleteNow "Delete"  "$mod" "$sname" $targetfilter
+                    }
+
+                } 
+ 
             }
 
-            # Check if DSL differs from staged file
+        }
+
+
+        # Get DSL info en process DSL directory (just ONE!)
+        $dsldir = $ConfigXML.ADHCinfo.DSL.Root + $ConfigXML.ADHCinfo.DSL.SubRoot
+
+        $dModules = $ConfigXml.ADHCinfo.DSL.Childnodes
+        $dslfilter = @()
+        foreach ($moduleentry in $dModules) {
+            $process = $moduleentry.Process
+            $delay = $moduleentry.Delay
+            $includes = $moduleentry.Include.SPlit(",")
+            $excludes = $moduleentry.Exclude.Split(",")
+            $filter = [PSCustomObject] [ordered] @{process = $process;
+                                            delay = $delay;    
+                                            includes = $includes; 
+                                            excludes = $excludes}
+            $dslfilter += $filter 
+            
+        }
+       
+        $tst = Test-Path $dsldir
+        if (!$tst) {
+            Report "C" "Directory $dsldir does not exist and will be created on computer $ADHC_COmputer"
+                
+            New-Item -ItemType Directory -Force -Path "$dsldir"
+               
+        }
+        Report "N" " "
+        Report "H" "Processing DSL directory $dsldir"       
+
+        foreach ($stagedfile in $StageContent) {
+            $stagedprops = Get-ItemProperty $stagedfile.FullName
+            $stagedname = $stagedfile.FullName           
+                       
+            # Check if DSL differs from staged file ################################################
             $DSLname = $stagedfile.FullName.ToUpper().Replace($staginglocation.ToUpper(),$dsldir)
                
             if (Test-Path $DSLname) {
                 $DSLprops = Get-ItemProperty $DSLname 
                 if (($DSLprops.Length -ne $stagedprops.Length) -or ($DSLprops.LastWriteTime.ToString().Trim() -ne $stagedprops.LastWriteTime.ToString().Trim())) {
-                    # Write-Warning "Difference found"
+                    #Write-Warning "Difference found"
                     DeployNow "Replace" "$sname" "$stagedname" "$dslname" $dslfilter
                 }
                 else {
-                    # Write-Host "No Difference found"
+                    #Write-Host "No Difference found"
                 }
             }
             else {
                 # Write-Warning "File not found"
                 DeployNow "Add" "$sname" "$stagedname" "$dslname" $dslfilter
             }
+            # END DSL #############################################################################
         }
 
-        # Determine deletions in target directory
-        Set-Location "$targetDir"
-        $TargetList = Get-ChildItem -file -recurse | select-object FullName,Name 
-        
-        foreach ($targetMod in $TargetList) {
-            $mod = $Targetmod.FullName
-            $sname = $Targetmod.Name
-            $stagename = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $staginglocation)
-            # $stagename
-            if (Test-Path $stagename) {
-                DeleteNow "CheckNone"  "$mod" "$sname" $targetfilter           # Check if module should be here at all 
-            }
-            else {
-                # Module has been deleted from staging, delete it from target as well, but ONLY if it ALSO STILL exists in DSL!!!!
-                # Reason: DSL is filled with a DELAY!!!!
-                $dslname = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $dsldir)
-                if (Test-Path $dslname) {
-                     
-                    Report "C" "Production module $targetMod.FullName is obsolete and will be deleted on computer $ADHC_Computer"
-                    DeleteNow "Delete"  "$mod" "$sname" $targetfilter
-                }
+       
 
-            } 
- 
-        }
-    
         # Determine deletions in DSL directory
         Set-Location "$DSLDir"
+      
         $DSLList = Get-ChildItem -file -recurse| select-object FullName, Name 
-        
+        $title = $false
         foreach ($DSLMod in $DSLList) {
+            
             $mod = $DSLMod.FullName
             $sname = $DSLmod.Name
             $stagename = $DSLMod.Fullname.ToUpper().Replace($DSLDir.ToUpper(), $staginglocation)
@@ -654,6 +723,7 @@ catch {
     $global:scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
+    $Dump = $_.Exception.ToString()
 }
 finally {
     # Init jobstatus file
@@ -674,7 +744,12 @@ finally {
         Set-Content $jobstatus $jobline
        
         Add-Content $jobstatus "Failed item = $FailedItem"
-        Add-Content $jobstatus "Ërrormessage = $ErrorMessage"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $dump"
+
+        Add-Content $report "Failed item = $FailedItem"
+        Add-Content $report "Errormessage = $ErrorMessage"
+        Add-Content $report "Dump info = $dump"
         exit 16        
     }
    
@@ -710,6 +785,4 @@ finally {
 } 
 
 
-
-
-
+ 
