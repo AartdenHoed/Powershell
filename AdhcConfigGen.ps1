@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 2.0"
+$Version = " -- Version: 3.0"
 
 # COMMON coding
 CLS
@@ -95,6 +95,7 @@ foreach ($factory in $factorylist) {
         Write-Host "Aantal MODULES entries: $cnt"
 
         
+        $comment = $false
         switch ($Naam.ToUpper().Trim()) {
             "STAGELIB" {
                 $thischild = $xmldoc.CreateElement("StageLib")
@@ -105,59 +106,67 @@ foreach ($factory in $factorylist) {
             "DSL" { 
                 $thischild = $xmldoc.CreateElement("DSL") 
             }
+            "#COMMENT" {
+                $txt = $lib.InnerText 
+                $thischild = $xmldoc.CreateComment($txt) 
+                $comment = $true
+            }
             default {
                 Write-Error "$Naam niet herkend"
                 Exit 16
             } 
         }
-        $thischild.SetAttribute("Root",$root)
-        $thischild.SetAttribute("SubRoot", $subroot)     
-                               
-        foreach ($modentry in $ModulesList) {
-            $m = $xmldoc.CreateElement("Modules")
+        
+            
+        if (!$comment) {  
+            $thischild.SetAttribute("Root",$root)
+            $thischild.SetAttribute("SubRoot", $subroot)                      
+            foreach ($modentry in $ModulesList) {
+                $m = $xmldoc.CreateElement("Modules")
 
-            $p = $modentry.Process
-            if ($p) {
-                if ($p -eq "*") {
-                    $mprocess = $Process
-            }
-                else {
-                    $mprocess = $p
+                $p = $modentry.Process
+                if ($p) {
+                    if ($p -eq "*") {
+                        $mprocess = $Process
                 }
-            }
-            else {
-                $mprocess = $Process
-            }
-            $m.SetAttribute("Process",$mprocess)
+                    else {
+                        $mprocess = $p
+                    }
+                }
+                else {
+                    $mprocess = $Process
+                }
+                $m.SetAttribute("Process",$mprocess)
 
-            $dly = $modentry.Delay
-            if ($dly) {
-                $mdelay= $dly
-            }
-            else {
-                $mdelay = $Delay 
-            }    
-            $m.SetAttribute("Delay",$mdelay)
+                $dly = $modentry.Delay
+                if ($dly) {
+                    $mdelay= $dly
+                }
+                else {
+                    $mdelay = $Delay 
+                }    
+                $m.SetAttribute("Delay",$mdelay)
 
-            $Include = $modentry.Include
-            if (!$Include) {
-                $Include = "*ALL*"
-            } 
-            $Exclude = $modentry.Exclude
-            if (!$Exclude) {
-                $Exclude = "*None*"
-            } 
+                $Include = $modentry.Include
+                if (!$Include) {
+                    $Include = "*ALL*"
+                } 
+                $Exclude = $modentry.Exclude
+                if (!$Exclude) {
+                    $Exclude = "*None*"
+                } 
 
-            $i = $xmldoc.CreateElement("Include")
-            $i.InnerText = $Include
+                $i = $xmldoc.CreateElement("Include")
+                $i.InnerText = $Include
                
-            $e = $xmldoc.CreateElement("Exclude")
-            $e.InnerText = $Exclude
+                $e = $xmldoc.CreateElement("Exclude")
+                $e.InnerText = $Exclude
 
-            [void]$m.AppendChild($i)
-            [void]$m.AppendChild($e)
+                [void]$m.AppendChild($i)
+                [void]$m.AppendChild($e)
                 
-            [void]$thischild.AppendChild($m)
+                [void]$thischild.AppendChild($m)
+            }
         }
 
         [void]$adhcinfo.AppendChild($thischild)
