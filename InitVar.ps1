@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.2"
+$Version = " -- Version: 3.3"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -150,7 +150,7 @@ $PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + 
 Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
 
-$master = $devdir + "ADHCmaster\ADHCmaster.xml"
+$master = $staging + "ADHCmaster\ADHCmaster.xml"
 Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
 
