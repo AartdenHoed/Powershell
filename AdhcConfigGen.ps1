@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 3.0"
+$Version = " -- Version: 3.1"
 
 # COMMON coding
 CLS
