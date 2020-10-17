@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1.3"
+﻿$Version = " -- Version: 2.0"
 
 # COMMON coding
 CLS
@@ -11,6 +11,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     # $r = "$direction"+ " ~ " + $from + " ~ " +  $to
     # write-host $r
     $direction = $direction.ToUpper()
+    
 
     if ($shortname.ToUpper().Contains("#ADHC_DELETED_")) {
         $searchname = $shortname.Replace("^#ADHC_DELETED_\d{8}$", "")
@@ -30,28 +31,42 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     }
 
     $currentdate = Get-Date
-    $included = $false
-    $modulefound = $false
+
     foreach ($entry in $filter) {
-        if ($entry.includes.ToUpper() -contains "*ALL*") {
-            $included = $true
+        $included = $false
+        $excluded = $false
+        
+        if (($entry.includes.ToUpper() -contains "*ALL*")  -or ($entry.includes.ToUpper() -contains $searchname.ToUpper())) {
+            if ($entry.excludes.ToUpper() -contains $searchname.ToUpper()) {
+                $excluded = $true
+                
+            }
+            else {
+                $included = $true
+            }
+            
         }
-        if ($entry.includes.ToUpper() -contains $searchname.ToUpper()) {
-            $included = $true
+        else {
+            if ($entry.excludes.ToUpper() -contains "*ALL*") {
+                
+                $excluded = $true
+             
+            }
         }
-        if ($entry.excludes.ToUpper() -contains $searchname.ToUpper()) {
-            $included = $false
-        }
-        if ($included) {
+        if ($included -or $excluded) {
             $myprocess = $entry.process.ToUpper()
             $mydelay = $entry.delay
-            $modulefound = $true
+            
             break
         }
-            
+                    
     }
-    if (!$modulefound) {
-        Report "A" "Module '$shortname' has no corresponding INCLUDE statement"
+    if ($excluded) { return } 
+    
+    if (!$included) {
+        $m = "Module '" + "$shortname" + "' has no corresponding INCLUDE/EXCLUDE statement"
+        Report "A" $m 
+        
         return
     }     
         
@@ -451,7 +466,7 @@ try {
             $excludes = $moduleentry.Exclude.Split(",")
             $filter = [PSCustomObject] [ordered] @{process = $process;
                                             delay = $delay;    
-                                            includes = $includes 
+                                            includes = $includes; 
                                             excludes = $excludes}
             $modulefilter += $filter 
             
@@ -499,57 +514,93 @@ try {
 
 #=========================================================================================================
         
-        $targetroot = $ConfigXml.ADHCinfo.Target.Root
-        $targetsubroot = $ConfigXml.ADHCinfo.Target.SubRoot
-        $targetdir = $targetroot + $targetsubroot
+       
+        # 3 - Forward  check with FROM = STAGING and TO   = TARGET (may be multiple targets)
+        $x = 0
         
-        $Modules = $ConfigXml.ADHCinfo.Target.Childnodes
-        $modulefilter = @()
-        foreach ($moduleentry in $Modules) {
-            $process = $moduleentry.Process
-            $delay = $moduleentry.Delay
-            $includes = $moduleentry.Include.SPlit(",")
-            $excludes = $moduleentry.Exclude.Split(",")
-            $filter = [PSCustomObject] [ordered] @{process = $process;
-                                            delay = $delay;    
-                                            includes = $includes 
-                                            excludes = $excludes}
-            $modulefilter += $filter 
+        $targetlist = $ConfigXml.ADHCinfo.SelectNodes("//Target")
+        
+        foreach ($targetentry in $targetlist) {
+            $targetroot = $targetentry.Root
+            $targetsubroot = $targetentry.SubRoot
+            $targetdir = $targetroot + $targetsubroot
+            $x = $x + 1
+            Report "N" " "
+            Report "N" "##########                                                                          ########## $subroot"
+            Report "N" "########## Checking FORWARD:  S T A G I N G versus T A R G E T directory ($x)        ########## $subroot"
+            Report "N" "##########                                                                          ########## $subroot"   
+
+            Report "I" "Staging directory: $stagingdir"
+            Report "I" "Target directory: $targetdir"
+            Report "N" " " 
+           
+        
+            $Modules = $targetentry.Childnodes
+            $modulefilter = @()
+            foreach ($moduleentry in $Modules) {
+                $process = $moduleentry.Process
+                $delay = $moduleentry.Delay
+                $includes = $moduleentry.Include.SPlit(",")
+                $excludes = $moduleentry.Exclude.Split(",")
+                $filter = [PSCustomObject] [ordered] @{process = $process;
+                                                delay = $delay;    
+                                                includes = $includes; 
+                                                excludes = $excludes}
+                $modulefilter += $filter 
             
+            }
+            
+            foreach ($naam in $stagingmodules) {
+                # Write-Host $module.FullName
+                $toname = $naam.Fullname.ToUpper().Replace($stagingdir.ToUpper(), $targetdir)
+                CheckModule "FORWARD" $naam.Name $naam.FullName $toname $modulefilter
+            }
         }
 
-        # 3 - Forward  check with FROM = STAGING and TO   = TARGET
-        Report "N" " "
-        Report "N" "##########                                                                          ########## $subroot"
-        Report "N" "########## Checking FORWARD:  S T A G I N G versus T A R G E T directory            ########## $subroot"
-        Report "N" "##########                                                                          ########## $subroot"   
-
-        Report "I" "Staging directory: $stagingdir"
-        Report "I" "Target directory: $targetdir"
-        Report "N" " "
-
-        foreach ($naam in $stagingmodules) {
-            # Write-Host $module.FullName
-            $toname = $naam.Fullname.ToUpper().Replace($stagingdir.ToUpper(), $targetdir)
-            CheckModule "FORWARD" $naam.Name $naam.FullName $toname $modulefilter
-        }
+        
 
         # 4 - Backward check with To   = TARGET  and FROM = STAGING
-        Report "N" " "
-        Report "N" "##########                                                                          ########## $subroot"
-        Report "N" "########## Checking BACKWARD: T A R G E T versus S T A G I N G directory            ########## $subroot"
-        Report "N" "##########                                                                          ########## $subroot" 
+        $x = 0
 
-        Report "I" "Target directory: $targetdir"
-        Report "I" "Staging directory: $stagingdir"
-        Report "N" " "
+        foreach ($targetentry in $targetlist) {
+            $targetroot = $targetentry.Root
+            $targetsubroot = $targetentry.SubRoot
+            $targetdir = $targetroot + $targetsubroot
+            $x = $x + 1
+
+
+            Report "N" " "
+            Report "N" "##########                                                                          ########## $subroot"
+            Report "N" "########## Checking BACKWARD: T A R G E T versus S T A G I N G directory ($x)        ########## $subroot"
+            Report "N" "##########                                                                          ########## $subroot" 
+
+            Report "I" "Target directory: $targetdir"
+            Report "I" "Staging directory: $stagingdir"
+            Report "N" " "
         
-        $targetmodules = Get-ChildItem $targetdir -recurse -file  | `
+            $targetmodules = Get-ChildItem $targetdir -recurse -file  | `
                                      Select FullName, Name
-        foreach ($naam in $targetmodules) {
-            # Write-Host $module.FullName
-            $fromname = $naam.Fullname.ToUpper().Replace($targetdir.ToUpper(), $stagingdir)
-            CheckModule "Backward" $naam.Name $fromname $naam.FullName $modulefilter
+
+            $Modules = $targetentry.Childnodes
+            $modulefilter = @()
+            foreach ($moduleentry in $Modules) {
+                $process = $moduleentry.Process
+                $delay = $moduleentry.Delay
+                $includes = $moduleentry.Include.SPlit(",")
+                $excludes = $moduleentry.Exclude.Split(",")
+                $filter = [PSCustomObject] [ordered] @{process = $process;
+                                                delay = $delay;    
+                                                includes = $includes; 
+                                                excludes = $excludes}
+                $modulefilter += $filter 
+            
+            }
+
+            foreach ($naam in $targetmodules) {
+                # Write-Host $module.FullName
+                $fromname = $naam.Fullname.ToUpper().Replace($targetdir.ToUpper(), $stagingdir)
+                CheckModule "Backward" $naam.Name $fromname $naam.FullName $modulefilter
+            }
 
         }   
 
@@ -568,7 +619,7 @@ try {
             $excludes = $moduleentry.Exclude.Split(",")
             $filter = [PSCustomObject] [ordered] @{process = $process;
                                             delay = $delay;    
-                                            includes = $includes 
+                                            includes = $includes; 
                                             excludes = $excludes}
             $modulefilter += $filter 
             
@@ -616,6 +667,7 @@ catch {
     $global:scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
+    $Dump = $_.Exception.ToSTring()
 }
 
 finally {
@@ -632,14 +684,16 @@ finally {
     if ($global:scripterror) {
         Add-Content $Report "Failed item = $FailedItem"
         Add-Content $Report "Errormessage = $ErrorMessage"
+        Add-Content $Report "Dump info = $Dump"
         $msg = ">>> Script ended abnormally"
         Add-Content $Report $msg
+
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString()
         Set-Content $jobstatus $jobline
-       
         Add-Content $jobstatus "Failed item = $FailedItem"
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $Dump"
         exit 16        
     }
    
