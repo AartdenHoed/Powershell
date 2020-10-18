@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.0"
+﻿$Version = " -- Version: 2.1"
 
 # COMMON coding
 CLS
@@ -178,11 +178,11 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             }
             if ($attention) {
                 $l =  "Source file = ".Padright(20," ") + $from.Padright(90," ") + 
-                            "Length = ".PadRight(10," ") + $fromprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $fromprops.LastWriteTime 
+                            "Length = ".PadRight(10," ") + $fromprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $fromprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm") 
                 Report "B" $l
 						
                 $l = "Target file = ".Padright(20," ") + $to.Padright(90," ") + 
-                        "Length = ".PadRight(10," ") + $toprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $toprops.LastWriteTime 
+                        "Length = ".PadRight(10," ") + $toprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $toprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm") 
                 Report "B" $l
             }
 			return
@@ -235,11 +235,11 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             
             if ($attention) {
                 $l =  "Source file = ".Padright(20," ") + $from.Padright(90," ") + 
-                            "Length = ".PadRight(10," ") + $fromprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $fromprops.LastWriteTime 
+                            "Length = ".PadRight(10," ") + $fromprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $fromprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm")  
                 Report "B" $l
 						
                 $l = "Target file = ".Padright(20," ") + $to.Padright(90," ") + 
-                        "Length = ".PadRight(10," ") + $toprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $toprops.LastWriteTime 
+                        "Length = ".PadRight(10," ") + $toprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $toprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm") 
                 Report "B" $l
             }
 			return
@@ -329,11 +329,11 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                                            
                     }
                     $l =  "Master file = ".Padright(20," ") + $ADHC_MasterXml.Padright(90," ") + 
-                            "Last update = ".Padright(16," ") + $masterprops.LastWriteTime 
+                            "Last update = ".Padright(16," ") + $masterprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm")  
                     Report "B" $l
 						
                     $l = "Config file = ".Padright(20," ") + $to.Padright(90," ") + 
-                         "Last update = ".Padright(16," ") + $toprops.LastWriteTime 
+                         "Last update = ".Padright(16," ") + $toprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm")  
                     Report "B" $l
                 }
                             
