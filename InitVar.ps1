@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.5"
+$Version = " -- Version: 3.6"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -126,12 +126,12 @@ Set-Variable -Name "ADHC_Caption" -Value $x.Caption -Option readonly -Scope glob
 
 switch ($ADHC_Computer)
     { 
-        "ADHC"          {$StartTime = "2016-11-01T15:00:00"} 
+        "ADHC"          {$StartTime = "2020-01-01T15:00:00"} 
        
-        "Laptop_AHMRDH" {$StartTime = "2016-11-01T21:00:00"} 
-        "empty slot"    {$StartTime = "2016-11-01T12:00:00"} 
-        "Holiday"       {$StartTime = "2016-11-01T18:00:00"}
-        default         {$StartTime = "2016-11-01T06:00:00"} 
+        "Laptop_AHMRDH" {$StartTime = "2020-01-01T21:00:00"} 
+        "empty slot"    {$StartTime = "2020-01-01T12:00:00"} 
+        "Holiday"       {$StartTime = "2020-01-01T18:00:00"}
+        default         {$StartTime = "2020-01-01T06:00:00"} 
     }
     
 Remove-Variable -Name "ADHC_WmicAnalyze_StartTime" -force -ErrorAction SilentlyContinue
@@ -148,12 +148,14 @@ switch ($ADHC_Computer)
 Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
 
-$PythonArgCreate = '"' + $ADHC_Sympapgm + '" "--mode=Create" "--outputdir=' + $ADHC_WmicDir + '"'
+$wmicdir = $output + "WmicFiles"
+
+$PythonArgCreate = '"' + $ADHC_Sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
  
 Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "Path to PYTHON arguments - CREATE" -force
 
-$PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + $ADHC_WmicDir + '"'
+$PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
  
 Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
