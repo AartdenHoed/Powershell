@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.2"
+﻿$Version = " -- Version: 3.0.1"
 
 # COMMON coding
 CLS
@@ -31,7 +31,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
             $modulefound = $true
         }
         if ($entry.excludes.ToUpper() -contains "*ALL*") {
-            $included = $false
+            
             $modulefound = $true
         }
         if ($included) {
@@ -92,9 +92,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         "DELETE" { 
             Report "C" "Module $tobedeleted will be deleted directly from computer $ADHC_Computer"
             Remove-Item "$tobedeleted" -force
-            $logdate = Get-Date
-            $logrec = $logdate.ToSTring().PadRight(24," ") + " *** Directly DELETED *** ".Padright(40," ")+ $tobedeleted
-            Add-Content $log $logrec
+            WriteLog "Directly DELETED" $tobedeleted
         }
         "DELETED" {            
             $delyear = $delname.Substring(14,4)
@@ -110,10 +108,8 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                 # dataset kan be deleted now
                 Report "C" "Renamed module $tobedeleted will be deleted directly from computer $ADHC_Computer (Delay $thisdelay has elapsed)"
                 Remove-Item "$tobedeleted" -force
-                    
-                $logdate = Get-Date
-                $logrec = $logdate.ToString().PadRight(24," ") + " *** Deferred DELETED *** ".Padright(40," ")+ $tobedeleted
-                Add-Content $log $logrec
+               
+                WriteLog "Deferred DELETED" $tobedeleted
             }
             else {
                 $wt = $thisdelay - $diff.Days
@@ -139,10 +135,8 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                         
             Report "C" "Module $tobedeleted will be renamed to $deletename and removed later from computer $ADHC_Computer"
             Rename-Item "$tobedeleted" "$deletename" -force
-               
-            $logdate = Get-Date
-            $logrec = $logdate.ToString().PadRight(24," ") + " *** Staged for DELETION *** ".Padright(40," ")+ $tobedeleted
-            Add-Content $log $logrec
+            
+            WriteLOg "Staged for DELETION" $tobedeleted
           
                         
         }
@@ -175,9 +169,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                 Write-Warning $msg
                 Report "C" $msg
 
-                $logdate = Get-Date
-                $logrec = $logdate.ToString().PadRight(24," ") + " *** UNREGISTERED *** ".Padright(40," ")+ $TaskName
-                Add-Content $log $logrec
+                WriteLog "UNREGISTERED" $TaskName
             }
             else {
                 Report "I" "$xmlname is not an valid XML file, $process processing skipped"
@@ -208,7 +200,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
             $modulefound = $true
         }
         if ($entry.excludes.ToUpper() -contains "*ALL*") {
-            $included = $false
+            
             $modulefound = $true
         }
         if ($included) {
@@ -260,10 +252,8 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
             if ($copyme) {            
                 Report "C" "Module $to does not exist and will be added to computer $ADHC_Computer"
                 Copy-Item "$from" "$to" -force
-                    
-                $logdate = Get-Date
-                $logrec = $logdate.ToString().PadRight(24," ") + " *** ADDED *** ".Padright(40," ")+ $to
-                Add-Content $log $logrec
+                
+                Writelog "ADDED" $to
             }
             else {
                 Report "I" "Module $from will be copied to $to in $waitTime days"
@@ -279,10 +269,8 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
             if ($copyme) {
                 Report "C" "Module $to has been updated and will be replaced on computer $ADHC_Computer"
                 Copy-Item "$from" "$to" -force
-                   
-                $logdate = Get-Date
-                $logrec = $logdate.ToString().PadRight(24," ") + " *** REPLACED *** ".Padright(40," ")+ $to
-                Add-Content $log $logrec
+                
+                WriteLog "REPLACED" $to
             }
             else {
                 Report "I" "Module $from will replace $to in $waitTime days"
@@ -373,10 +361,8 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                     
                 $msg = "Scheduled task '" + $taskName + "' registered now."
                 Report "C" $msg
-                    
-                $logdate = Get-Date
-                $logrec = $logdate.ToString().PadRight(24," ") + " *** REGISTERED *** ".Padright(40," ") + $taskname
-                Add-Content $log $logrec
+                
+                WriteLog "REGISTERED" $taskname
             }
             else {
                 Report "I" "$from is not an valid XML file, $process processing skipped"
@@ -426,6 +412,34 @@ function Report ([string]$level, [string]$line) {
 
 }
 
+function WriteLog ([string]$Action, [string]$line) {
+    $oldrecords = Get-Content $log 
+
+    $logdate = Get-Date
+    $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString()
+    Set-Content $log $logrec
+
+    $now = Get-Date
+
+    foreach ($record in $oldrecords) {
+        $keeprecord = $false
+        if ($record.Length -gt 224) {
+            $dtstring = $record.Substring(224)
+            # $dtstring
+            $timest = [datetime]::ParseExact($dtstring,"dd-MM-yyyy HH:mm:ss",$null)
+            # $timest.ToString("yyyy-MMM-dd HH:mm:ss")
+            $recordage = NEW-TIMESPAN –Start $timest –End $now
+            if ($recordage.Days -le 50) {
+                $keeprecord = $true    
+            }
+        }
+        if ($keeprecord) {
+            Add-Content $log $record
+        }
+    }
+
+}
+
 # ------------------------ END OF FUNCTIONS
 
 # ------------------------ START OF MAIN CODE
@@ -460,6 +474,11 @@ try {
     $dir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $log = $ADHC_OutputDirectory + $ADHC_Deploylog
+    $lt = Test-Path $log
+    if (!$lt) {
+        Set-Content $log " " -force
+    }
+
 
     # Locate staging library and get all staging folders in $stagingdirlist
 
