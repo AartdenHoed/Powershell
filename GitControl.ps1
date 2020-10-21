@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.0"
+﻿$Version = " -- Version: 5.0"
 
 # COMMON coding
 CLS
@@ -125,6 +125,53 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         else {
             Report "W" "==> Unpushed commits       ***"
             
+        }
+        Report "N" $line
+        Report "N" " "
+        Remove-Item $ofile
+    }
+
+    #Invoke-Expression("ssh-add D:\Software\SSH\GITHUB_rsa G1th#b!") 
+    #Invoke-Expression("ssh -T git@github.com")
+
+    Set-Location -Path $ADHC_RemoteDir
+    $remdirs = Get-ChildItem "*.git" -Recurse -Force
+
+    foreach ($rementry in $remdirs) {
+        $rdir = $rementry.FullName
+
+        Report "N" ""
+        $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
+        Report "N" $msg
+
+        Set-Location $rdir
+        Write-Host ">>> $rdir"
+
+        & {git push GITHUB master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+
+        $a = Get-Content $ofile
+        Report "N" $line
+
+        $ok = $false
+        foreach ($l in $a) {
+            Report "B" $l
+            if ($l -eq "Everything up-to-date")  {
+                $ok = $true
+                $showline = $l
+            }
+            if (!$ok) {
+                $showline = $l
+            }  
+        } 
+        
+        Write-Host "    $showline"       
+        Report "N" $line
+                
+        if ($ok) { 
+             Report "I" "==> No unpushed commits"
+        }
+        else {
+            Report "W" "==> Unpushed commits       ***"
         }
         Report "N" $line
         Report "N" " "
