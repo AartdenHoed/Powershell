@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 5.0"
+﻿$Version = " -- Version: 7.0"
 
 # COMMON coding
 CLS
@@ -42,9 +42,9 @@ function Report ([string]$level, [string]$line) {
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"              # PUSH creating error still has to be solved!
+$ErrorActionPreference = "Stop"              
 
-#try {                                             PUSH creating error still has to be solved!
+try {                                        
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -75,6 +75,8 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     $ofile = $odir + "\gitoutput.txt"
     $line = "=".PadRight(120,"=")
 
+    $alarmlist = @()
+
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
    
@@ -85,8 +87,12 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
 
         Set-Location $gdir
         Write-Host ">>> $gdir"
+
+        $ErrorActionPreference = "Continue"  
        
         & {git status} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+
+        $ErrorActionPreference = "Stop"  
         
         $a = Get-Content $ofile
                
@@ -103,13 +109,20 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         }
         else {
             Report "C" "==> Uncommitted changes    ***"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Uncommitted changes";
+                                                  Repo = $gdir}
+            $alarmlist += $alarm
             
         }
         Remove-Item $ofile
 
         #&{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
+
+        $ErrorActionPreference = "Continue"  
         
         & {git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+
+        $ErrorActionPreference = "Stop"  
 
         $a = Get-Content $ofile
         Report "N" $line
@@ -124,6 +137,9 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         }
         else {
             Report "W" "==> Unpushed commits       ***"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                                                  Repo = $gdir}
+            $alarmlist += $alarm
             
         }
         Report "N" $line
@@ -131,8 +147,6 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         Remove-Item $ofile
     }
 
-    #Invoke-Expression("ssh-add D:\Software\SSH\GITHUB_rsa G1th#b!") 
-    #Invoke-Expression("ssh -T git@github.com")
 
     Set-Location -Path $ADHC_RemoteDir
     $remdirs = Get-ChildItem "*.git" -Recurse -Force
@@ -147,7 +161,11 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         Set-Location $rdir
         Write-Host ">>> $rdir"
 
+        $ErrorActionPreference = "Continue"  
+
         & {git push GITHUB master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+
+        $ErrorActionPreference = "Stop"  
 
         $a = Get-Content $ofile
         Report "N" $line
@@ -172,18 +190,21 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         }
         else {
             Report "W" "==> Unpushed commits       ***"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                                                  Repo = $rdir}
+            $alarmlist += $alarm
         }
         Report "N" $line
         Report "N" " "
         Remove-Item $ofile
     }
-#}
-#catch {
-#    $global:scripterror = $true
-#    $ErrorMessage = $_.Exception.Message
-#    $FailedItem = $_.Exception.ItemName
-#}
-#finally {
+}
+catch {
+    $global:scripterror = $true
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+}
+finally {
     # Init jobstatus file
     $jdir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $jdir | Out-Null
@@ -193,6 +214,14 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     
     Report "N" " "
 
+    Report "I" "Short report:"
+    foreach ($al in $alarmlist) {
+        $d = $al.Desc
+        $r = $al.Repo
+        $l = $r.PadRight(80," ") + "===> " + $d
+        Report "B" "$l"
+    }
+    Report "N" " "
         
     if ($global:scripterror) {
         $msg = ">>> Script ended abnormally"
@@ -202,7 +231,7 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         Set-Content $jobstatus $jobline
        
         Add-Content $jobstatus "Failed item = $FailedItem"
-        Add-Content $jobstatus "Ërrormessage = $ErrorMessage"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
         exit 16        
     }
    
@@ -235,4 +264,4 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     exit 0
    
 
-#} 
+} 
