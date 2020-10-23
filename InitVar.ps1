@@ -3,7 +3,7 @@
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.6"
+$Version = " -- Version: 3.6.3"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -148,17 +148,18 @@ switch ($ADHC_Computer)
 Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
 
-$wmicdir = $output + "WmicFiles"
+$wmicdir = ($output + "WmicFiles\").Replace('\','\\')
+$sympapgm = "C:\AdHC\WmicPgm\WMIC 3.PYW"
 
-$PythonArgCreate = '"' + $ADHC_Sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
+$PythonArgCreate = '"' + $sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
  
 Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "Path to PYTHON arguments - CREATE" -force
+Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "PYTHON arguments - CREATE" -force
 
-$PythonArgAnalyze = '"' + $ADHC_Sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
+$PythonArgAnalyze = '"' + $sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
  
 Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "PYTHON arguments - ANALYZE" -force
 
 $master = $staging + "ADHCmaster\ADHCmaster.xml"
 Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
