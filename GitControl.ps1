@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 7.0"
+﻿$Version = " -- Version: 7.1"
 
 # COMMON coding
 CLS
@@ -72,7 +72,7 @@ try {
 
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
-    $ofile = $odir + "\gitoutput.txt"
+    $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput.txt"
     $line = "=".PadRight(120,"=")
 
     $alarmlist = @()
