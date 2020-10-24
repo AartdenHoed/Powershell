@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 2.0"
 
 # COMMON coding
 CLS
@@ -6,6 +6,34 @@ CLS
 $global:scripterror = $false
 $global:scriptaction = $false
 $global:scriptchange = $false
+
+function WriteLog ([string]$Action, [string]$line) {
+    $oldrecords = Get-Content $log 
+
+    $logdate = Get-Date
+    $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString()
+    Set-Content $log $logrec
+
+    $now = Get-Date
+
+    foreach ($record in $oldrecords) {
+        $keeprecord = $false
+        if ($record.Length -gt 224) {
+            $dtstring = $record.Substring(224)
+            # $dtstring
+            $timest = [datetime]::ParseExact($dtstring,"dd-MM-yyyy HH:mm:ss",$null)
+            # $timest.ToString("yyyy-MMM-dd HH:mm:ss")
+            $recordage = NEW-TIMESPAN –Start $timest –End $now
+            if ($recordage.Days -le 50) {
+                $keeprecord = $true    
+            }
+        }
+        if ($keeprecord) {
+            Add-Content $log $record
+        }
+    }
+
+}
 
 function Report ([string]$level, [string]$line) {
     switch ($level) {
@@ -42,9 +70,9 @@ function Report ([string]$level, [string]$line) {
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"              # PUSH creating error still has to be solved!
+$ErrorActionPreference = "Stop"             
 
-#try {                                             PUSH creating error still has to be solved!
+try {                                             
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -68,7 +96,17 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
     $gitstatus = $ADHC_OutputDirectory + $ADHC_GitPushAll
 
-    Set-Content $gitstatus $Scriptmsg -force  
+    Set-Content $gitstatus $Scriptmsg -force 
+    
+    # Init log
+    $str = $ADHC_PushLog.Split("\")
+    $dir = $ADHC_OutputDirectory + $str[0]
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    $log = $ADHC_OutputDirectory + $ADHC_Pushlog
+    $lt = Test-Path $log
+    if (!$lt) {
+        Set-Content $log " " -force
+    } 
 
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
@@ -84,9 +122,13 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         Report "N" $msg
 
         Set-Location $gdir
-        Write-Host ">>> $gdir"       
+        Write-Host ">>> $gdir"  
+        
+        $ErrorActionPreference = "Continue"      
              
         & {git push ADHCentral master} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+
+        $ErrorActionPreference = "Stop" 
 
         $a = Get-Content $ofile
        
@@ -117,6 +159,7 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         } 
         else {
             Report "C" "==> Push executed"
+            WriteLog "Pushed" $gdir
         }
         
         Report "N" " "
@@ -136,7 +179,12 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         Set-Location $rdir
         Write-Host ">>> $rdir"
 
+        $ErrorActionPreference = "Continue" 
+
         & {git push GITHUB master} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+
+        $ErrorActionPreference = "Stop" 
+
         Report "N" " "
         Report "I" "==> Start of GIT output"
         Report "N" $line
@@ -164,18 +212,19 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
         } 
         else {
             Report "C" "==> Push executed"
+            WriteLog "Pushed" $rdir
         }        
         Report "N" " "
 
         Remove-Item $ofile
     }
-#}
-#catch {
-#    $global:scripterror = $true
-#    $ErrorMessage = $_.Exception.Message
-#    $FailedItem = $_.Exception.ItemName
-#}
-#finally {
+}
+catch {
+    $global:scripterror = $true
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+}
+finally {
     # Init jobstatus file
     $jdir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $jdir | Out-Null
@@ -227,4 +276,4 @@ $ErrorActionPreference = "Continue"              # PUSH creating error still has
     exit 0
    
 
-#} 
+} 
