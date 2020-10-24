@@ -1,9 +1,13 @@
 ﻿# Setting of all global variables named ADHC_<something>
+param (
+    [string]$JSON = "NO"    
+)
+$JSON = 'NO'
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 3.6.3"
+$Version = " -- Version: 4.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -40,7 +44,6 @@ $hoststring = $hoststring.Replace("~", "" )
 Remove-Variable -Name "ADHC_Hoststring" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope global -Description "List of known hosts (string)" -force
 
-
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
 
@@ -63,6 +66,10 @@ Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope glo
 $gpa = "GitPushAll\" + $ADHC_Computer + "_GitPushAll.txt"
 Remove-Variable -Name "ADHC_GitPushAll" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_GitPushAll" -Value "$gpa" -Option readonly -Scope global -Description "GIT 'Push All' execution" -force
+
+$pu = "GitPushAll\" + $ADHC_Computer + "_Push.log"
+Remove-Variable -Name "ADHC_PushLog" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_PushLog" -Value "$pu" -Option readonly -Scope global -Description "Push log file" -force
 
 $ng = "BuildDeployCheck\"+ $ADHC_Computer + "_BuildDeployCheck.txt"
 Remove-Variable -Name "ADHC_BuildDeployCheck" -force -ErrorAction SilentlyContinue
@@ -165,4 +172,9 @@ $master = $staging + "ADHCmaster\ADHCmaster.xml"
 Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
 
-Return
+if ($JSON.ToUpper() -eq  "NO" ) {
+    return 0
+}
+else {
+    return $JSON
+}
