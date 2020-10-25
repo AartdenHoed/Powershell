@@ -2,19 +2,22 @@
 param (
     [string]$JSON = "NO"    
 )
-$JSON = 'NO'
-
+# $JSON = 'YES'
+CLS
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
-$Version = " -- Version: 4.1"
+$Version = " -- Version: 4.2"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
 $Tijd = " -- Time: " + $d.ToShortTimeString()
 $myname = $MyInvocation.MyCommand.Name
 $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-Write-Information $Scriptmsg 
+if ($JSON.ToUpper() -ne "YES") {
+    Write-Information $Scriptmsg 
+}
 
 Remove-Variable -Name "ADHC_InitVar" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Initvar" -Value "$myname" -Option readonly -Scope global -Description "Name of INIT script" -force
@@ -172,9 +175,16 @@ $master = $staging + "ADHCmaster\ADHCmaster.xml"
 Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
 
-if ($JSON.ToUpper() -eq  "NO" ) {
-    return 0
+if ($JSON.ToUpper() -eq  "YES" ) {
+     $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
+                                              ADHC_User = $ADHC_User}
+    
+    $ReturnJSON = ConvertTo-JSON $ReturnOBJ     
+    write-output $ReturnJSON 
+    return 
+    
 }
 else {
-    return $JSON
+    return 0
+   
 }
