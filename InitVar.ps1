@@ -159,14 +159,21 @@ Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
 
 $wmicdir = ($output + "WmicFiles\").Replace('\','\\')
+$wmicdir2 = $wmicdir.Replace("\\","/")
 $sympapgm = "C:\AdHC\WmicPgm\WMIC 3.PYW"
 
 $PythonArgCreate = '"' + $sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
  
+Remove-Variable -Name "ADHC_WmicDirectory" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_WmicDirectory" -Value $wmicdir2 -Option readonly -Scope global -Description "Wmic OUTPUT directory" -force
+
 Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "PYTHON arguments - CREATE" -force
 
 $PythonArgAnalyze = '"' + $sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
+
+Remove-Variable -Name "ADHC_WmicGenerations" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_WmicGenerations" -Value "12" -Option readonly -Scope global -Description "Number of WMIC output file generations to keep" -force
  
 Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "PYTHON arguments - ANALYZE" -force
@@ -177,7 +184,11 @@ Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope globa
 
 if ($JSON.ToUpper() -eq  "YES" ) {
      $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
-                                              ADHC_User = $ADHC_User}
+                                              ADHC_User = $ADHC_User;
+                                              ADHC_WmicGenerations = $ADHC_WmicGenerations
+                                              ADHC_WmicDirectory = $ADHC_WmicDirectory;
+                                              ADHC_OutputDirectory = $ADHC_OutputDirectory;
+                                              ADHC_Jobstatus = $ADHC_Jobstatus}
     
     $ReturnJSON = ConvertTo-JSON $ReturnOBJ     
     write-output $ReturnJSON 
@@ -185,6 +196,6 @@ if ($JSON.ToUpper() -eq  "YES" ) {
     
 }
 else {
-    return 0
+    return 
    
 }
