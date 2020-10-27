@@ -8,7 +8,7 @@ $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
-$Version = " -- Version: 4.2"
+$Version = " -- Version: 4.3"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -49,6 +49,10 @@ Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope 
 
 Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
+
+$boot = "BootTime\" + $ADHC_Computer + "_BootTime.txt"
+Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
 
 $dl = "Deploy\" + $ADHC_Computer + "_Deploy.log"
 Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
@@ -181,6 +185,13 @@ Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option read
 $master = $staging + "ADHCmaster\ADHCmaster.xml"
 Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+
+$secfile = $output + "PRTG\SaveString.txt"
+$sec = Get-Content $secfile
+$SecureString = $sec  | ConvertTo-SecureString
+$Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList "ADHCode", $Securestring 
+Remove-Variable -Name "ADHC_Credentials" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_Credentials" -Value $Credentials -Option readonly -Scope global -Description "Credentials" -force
 
 if ($JSON.ToUpper() -eq  "YES" ) {
      $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
