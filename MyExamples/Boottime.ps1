@@ -16,3 +16,4 @@ $minute
 $second 
 $boottime = Get-Date -Year $year -Month $month -Day $day -Hour $hour -Minute $minute -Second $second
 $boottime.ToString()
+$x = Get-CimInstance -Class Win32_OperatingSystem | Select-Object LastBootUpTime
