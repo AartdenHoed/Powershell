@@ -8,7 +8,7 @@ $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
-$Version = " -- Version: 4.3"
+$Version = " -- Version: 4.3.1"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -186,9 +186,11 @@ $master = $staging + "ADHCmaster\ADHCmaster.xml"
 Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
 
+$encoder = new-object System.Text.UTF8Encoding
+$bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
 $secfile = $output + "PRTG\SaveString.txt"
 $sec = Get-Content $secfile
-$SecureString = $sec  | ConvertTo-SecureString
+$SecureString = ConvertTo-SecureString $sec -Key $bytes
 $Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList "ADHCode", $Securestring 
 Remove-Variable -Name "ADHC_Credentials" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_Credentials" -Value $Credentials -Option readonly -Scope global -Description "Credentials" -force
