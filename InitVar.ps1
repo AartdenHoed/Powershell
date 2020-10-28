@@ -4,211 +4,237 @@ param (
 )
 # $JSON = 'YES'
 CLS
+
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
-$Version = " -- Version: 4.3.1"
-$Node = " -- Node: " + $env:COMPUTERNAME
-$d = Get-Date
-$Datum = " -- Date: " + $d.ToShortDateString()
-$Tijd = " -- Time: " + $d.ToShortTimeString()
-$myname = $MyInvocation.MyCommand.Name
-$Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-if ($JSON.ToUpper() -ne "YES") {
-    Write-Information $Scriptmsg 
+class InitVarException : System.Exception  { 
+    InitVarException( [string]$message) : base($message) {
+
+    }
+
+    InitVarException() {
+
+    }
 }
 
-Remove-Variable -Name "ADHC_InitVar" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Initvar" -Value "$myname" -Option readonly -Scope global -Description "Name of INIT script" -force
+CLS
+$MyError = [InitVarException]::new("INITVAR.PS1 failed - fatal error")
+Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
+    
 
-$FullScriptName = $MyInvocation.MyCommand.Definition
-$mypath = $FullScriptName.Replace($MyName, "")
-Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
+try {
+    $Version = " -- Version: 4.4"
+    $Node = " -- Node: " + $env:COMPUTERNAME
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToShortDateString()
+    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $myname = $MyInvocation.MyCommand.Name
+    $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    if ($JSON.ToUpper() -ne "YES") {
+        Write-Information $Scriptmsg 
+    }
 
-Remove-Variable -Name "ADHC_User" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_User" -Value "$env:USERNAME" -Option readonly -Scope global -Description "Current user" -force
+    Remove-Variable -Name "ADHC_InitVar" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Initvar" -Value "$myname" -Option readonly -Scope global -Description "Name of INIT script" -force
 
-Remove-Variable -Name "ADHC_Computer" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -Scope global -Description "Name of this computer" -force
+    $FullScriptName = $MyInvocation.MyCommand.Definition
+    $mypath = $FullScriptName.Replace($MyName, "")
+    Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
 
-$Hostlist = "ADHC","Laptop-AHMRDH","Holiday" 
-Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
+    Remove-Variable -Name "ADHC_User" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_User" -Value "$env:USERNAME" -Option readonly -Scope global -Description "Current user" -force
 
-$hoststring = ""
-foreach ($h in $Hostlist) {
-    $hoststring = $hoststring + "~" + $h + "~"
-} 
-$hoststring = $hoststring.Replace("~~", "," )
-$hoststring = $hoststring.Replace("~", "" )
+    Remove-Variable -Name "ADHC_Computer" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -Scope global -Description "Name of this computer" -force
 
-Remove-Variable -Name "ADHC_Hoststring" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope global -Description "List of known hosts (string)" -force
+    $Hostlist = "ADHC","Laptop-AHMRDH","Holiday" 
+    Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
 
-Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
+    # $a = 0/0 # Test abend
 
-$boot = "BootTime\" + $ADHC_Computer + "_BootTime.txt"
-Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
+    $hoststring = ""
+    foreach ($h in $Hostlist) {
+        $hoststring = $hoststring + "~" + $h + "~"
+    } 
+    $hoststring = $hoststring.Replace("~~", "," )
+    $hoststring = $hoststring.Replace("~", "" )
 
-$dl = "Deploy\" + $ADHC_Computer + "_Deploy.log"
-Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
+    Remove-Variable -Name "ADHC_Hoststring" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope global -Description "List of known hosts (string)" -force
 
-$dt = "Deploy\" + $ADHC_Computer + "_DeployReport.txt"
-Remove-Variable -Name "ADHC_DeployReport" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DeployReport" -Value "$dt" -Option readonly -Scope global -Description "Deployment report file" -force
+    Remove-Variable -Name "ADHC_ConfigFile" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ConfigFile" -Value "#Config.adhc" -Option readonly -Scope global -Description "ADHC config filename" -force
 
-$cf = "Conflicts\" + $ADHC_Computer + "_Conflicts.txt"
-Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ConflictRpt" -Value "$cf" -Option readonly -Scope global -Description "Conflict report file" -force
+    $boot = "BootTime\" + $ADHC_Computer + "_BootTime.txt"
+    Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
 
-$gs = "SourceControl\" + $ADHC_Computer + "_GitStatus.txt"
-Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
+    $dl = "Deploy\" + $ADHC_Computer + "_Deploy.log"
+    Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
 
-$gpa = "GitPushAll\" + $ADHC_Computer + "_GitPushAll.txt"
-Remove-Variable -Name "ADHC_GitPushAll" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_GitPushAll" -Value "$gpa" -Option readonly -Scope global -Description "GIT 'Push All' execution" -force
+    $dt = "Deploy\" + $ADHC_Computer + "_DeployReport.txt"
+    Remove-Variable -Name "ADHC_DeployReport" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DeployReport" -Value "$dt" -Option readonly -Scope global -Description "Deployment report file" -force
 
-$pu = "GitPushAll\" + $ADHC_Computer + "_Push.log"
-Remove-Variable -Name "ADHC_PushLog" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PushLog" -Value "$pu" -Option readonly -Scope global -Description "Push log file" -force
+    $cf = "Conflicts\" + $ADHC_Computer + "_Conflicts.txt"
+    Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ConflictRpt" -Value "$cf" -Option readonly -Scope global -Description "Conflict report file" -force
 
-$ng = "BuildDeployCheck\"+ $ADHC_Computer + "_BuildDeployCheck.txt"
-Remove-Variable -Name "ADHC_BuildDeployCheck" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_BuildDeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
+    $gs = "SourceControl\" + $ADHC_Computer + "_GitStatus.txt"
+    Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
 
-$vx = "VariableXref\"+ $ADHC_Computer + "_VariableXref.txt"
-Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
+    $gpa = "GitPushAll\" + $ADHC_Computer + "_GitPushAll.txt"
+    Remove-Variable -Name "ADHC_GitPushAll" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_GitPushAll" -Value "$gpa" -Option readonly -Scope global -Description "GIT 'Push All' execution" -force
 
-Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force
+    $pu = "GitPushAll\" + $ADHC_Computer + "_Push.log"
+    Remove-Variable -Name "ADHC_PushLog" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PushLog" -Value "$pu" -Option readonly -Scope global -Description "Push log file" -force
 
-Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
+    $ng = "BuildDeployCheck\"+ $ADHC_Computer + "_BuildDeployCheck.txt"
+    Remove-Variable -Name "ADHC_BuildDeployCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_BuildDeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
 
-$usr = $env:USERPROFILE + "\Documents\"
-Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
+    $vx = "VariableXref\"+ $ADHC_Computer + "_VariableXref.txt"
+    Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
-$prof = $env:USERPROFILE -split '\\'
+    Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force
 
-switch ($ADHC_Computer) { 
+    Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
+
+    $usr = $env:USERPROFILE + "\Documents\"
+    Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
+
+    $prof = $env:USERPROFILE -split '\\'
+
+    switch ($ADHC_Computer) { 
         
-        "Ahmrdh-Netbook"{$OneDrive = "P:\" + $prof[2] + "\OneDrive\"} 
-        "Holiday"       {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
-        "ADHC"          {$OneDrive = "D:\AartenHetty" + "\OneDrive\"}
-        default         {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
-    }
-Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force
+            "Ahmrdh-Netbook"{$OneDrive = "P:\" + $prof[2] + "\OneDrive\"} 
+            "Holiday"       {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
+            "ADHC"          {$OneDrive = "D:\AartenHetty" + "\OneDrive\"}
+            default         {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
+        }
+    Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force
 
-$output = $ADHC_OneDrive + "ADHC Output\"
-Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
+    $output = $ADHC_OneDrive + "ADHC Output\"
+    Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
 
-$staging = $OneDrive + "ADHC StagingLibrary\"
-Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
+    $staging = $OneDrive + "ADHC StagingLibrary\"
+    Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
 
-$remdir = $OneDrive + "ADHC RemoteRepository\"
-Remove-Variable -Name "ADHC_RemoteDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_RemoteDir" -Value $remdir -Option readonly -Scope global -Description "Remote repository root directory" -force
+    $remdir = $OneDrive + "ADHC RemoteRepository\"
+    Remove-Variable -Name "ADHC_RemoteDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_RemoteDir" -Value $remdir -Option readonly -Scope global -Description "Remote repository root directory" -force
 
-$devdir = $OneDrive + "ADHC Development\"
-Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
+    $devdir = $OneDrive + "ADHC Development\"
+    Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
 
-Remove-Variable -Name "ADHC_DSLDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_DSLDir" -Value "D:\Software\DSL\" -Option readonly -Scope global -Description "DSL root directory" -force
+    Remove-Variable -Name "ADHC_DSLDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DSLDir" -Value "D:\Software\DSL\" -Option readonly -Scope global -Description "DSL root directory" -force
 
-Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_ProdDir" -Value "C:\ADHC\" -Option readonly -Scope global -Description "Production root directory" -force
+    Remove-Variable -Name "ADHC_ProdDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ProdDir" -Value "C:\ADHC\" -Option readonly -Scope global -Description "Production root directory" -force
 
-$arg = 'name="' + $ADHC_User + '"'
-$x =Get-WmiObject -Class win32_useraccount -filter "$arg"
-Remove-Variable -Name "ADHC_SID" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_SID" -Value $x.SID -Option readonly -Scope global -Description "SID value for current user" -force
+    $arg = 'name="' + $ADHC_User + '"'
+    $x =Get-WmiObject -Class win32_useraccount -filter "$arg"
+    Remove-Variable -Name "ADHC_SID" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_SID" -Value $x.SID -Option readonly -Scope global -Description "SID value for current user" -force
 
-Remove-Variable -Name "ADHC_Caption" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Caption" -Value $x.Caption -Option readonly -Scope global -Description "Caption value for current user" -force
+    Remove-Variable -Name "ADHC_Caption" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Caption" -Value $x.Caption -Option readonly -Scope global -Description "Caption value for current user" -force
 
-switch ($ADHC_Computer)
-    { 
-        "ADHC"          {$StartTime = "2020-01-01T15:00:00"} 
+    switch ($ADHC_Computer)
+        { 
+            "ADHC"          {$StartTime = "2020-01-01T15:00:00"} 
        
-        "Laptop_AHMRDH" {$StartTime = "2020-01-01T21:00:00"} 
-        "empty slot"    {$StartTime = "2020-01-01T12:00:00"} 
-        "Holiday"       {$StartTime = "2020-01-01T18:00:00"}
-        default         {$StartTime = "2020-01-01T06:00:00"} 
-    }
+            "Laptop_AHMRDH" {$StartTime = "2020-01-01T21:00:00"} 
+            "empty slot"    {$StartTime = "2020-01-01T12:00:00"} 
+            "Holiday"       {$StartTime = "2020-01-01T18:00:00"}
+            default         {$StartTime = "2020-01-01T06:00:00"} 
+        }
     
-Remove-Variable -Name "ADHC_WmicAnalyze_StartTime" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_WmicAnalyze_StartTime" -Value $StartTime -Option readonly -Scope global -Description "Start time for WMIC analyze run" -force
+    Remove-Variable -Name "ADHC_WmicAnalyze_StartTime" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_WmicAnalyze_StartTime" -Value $StartTime -Option readonly -Scope global -Description "Start time for WMIC analyze run" -force
 
-switch ($ADHC_Computer)
-    { 
+    switch ($ADHC_Computer)
+        { 
         
-        "Ahmrdh-Netbook"{$PythonExec = "C:\Program Files\Python36-32\pythonw.exe"}
-        "Holiday"       {$PythonExec = "D:\Program Files\Python38\pythonw.exe"}
+            "Ahmrdh-Netbook"{$PythonExec = "C:\Program Files\Python36-32\pythonw.exe"}
+            "Holiday"       {$PythonExec = "D:\Program Files\Python38\pythonw.exe"}
        
-        default         {$PythonExec = "C:\Program Files\Python38\pythonw.exe"} 
+            default         {$PythonExec = "C:\Program Files\Python38\pythonw.exe"} 
+        }
+    Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
+
+    $wmicdir = ($output + "WmicFiles\").Replace('\','\\')
+    $wmicdir2 = $wmicdir.Replace("\\","/")
+    $sympapgm = "C:\AdHC\WmicPgm\WMIC 3.PYW"
+
+    $PythonArgCreate = '"' + $sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
+ 
+    Remove-Variable -Name "ADHC_WmicDirectory" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_WmicDirectory" -Value $wmicdir2 -Option readonly -Scope global -Description "Wmic OUTPUT directory" -force
+
+    Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "PYTHON arguments - CREATE" -force
+
+    $PythonArgAnalyze = '"' + $sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
+
+    Remove-Variable -Name "ADHC_WmicGenerations" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_WmicGenerations" -Value "12" -Option readonly -Scope global -Description "Number of WMIC output file generations to keep" -force
+ 
+    Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "PYTHON arguments - ANALYZE" -force
+
+    $master = $staging + "ADHCmaster\ADHCmaster.xml"
+    Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+
+    $encoder = new-object System.Text.UTF8Encoding
+    $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
+    $secfile = $output + "PRTG\SaveString.txt"
+    $sec = Get-Content $secfile
+    $SecureString = ConvertTo-SecureString $sec -Key $bytes
+    $Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList "ADHCode", $Securestring 
+    Remove-Variable -Name "ADHC_Credentials" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Credentials" -Value $Credentials -Option readonly -Scope global -Description "Credentials" -force
+
+    if ($JSON.ToUpper() -eq  "YES" ) {
+         $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
+                                                  ADHC_User = $ADHC_User;
+                                                  ADHC_WmicGenerations = $ADHC_WmicGenerations
+                                                  ADHC_WmicDirectory = $ADHC_WmicDirectory;
+                                                  ADHC_OutputDirectory = $ADHC_OutputDirectory;
+                                                  ADHC_Jobstatus = $ADHC_Jobstatus}
+    
+        $ReturnJSON = ConvertTo-JSON $ReturnOBJ     
+        write-output $ReturnJSON 
+        return 
+    
     }
-Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
-
-$wmicdir = ($output + "WmicFiles\").Replace('\','\\')
-$wmicdir2 = $wmicdir.Replace("\\","/")
-$sympapgm = "C:\AdHC\WmicPgm\WMIC 3.PYW"
-
-$PythonArgCreate = '"' + $sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
- 
-Remove-Variable -Name "ADHC_WmicDirectory" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_WmicDirectory" -Value $wmicdir2 -Option readonly -Scope global -Description "Wmic OUTPUT directory" -force
-
-Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "PYTHON arguments - CREATE" -force
-
-$PythonArgAnalyze = '"' + $sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
-
-Remove-Variable -Name "ADHC_WmicGenerations" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_WmicGenerations" -Value "12" -Option readonly -Scope global -Description "Number of WMIC output file generations to keep" -force
- 
-Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "PYTHON arguments - ANALYZE" -force
-
-$master = $staging + "ADHCmaster\ADHCmaster.xml"
-Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
-
-$encoder = new-object System.Text.UTF8Encoding
-$bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
-$secfile = $output + "PRTG\SaveString.txt"
-$sec = Get-Content $secfile
-$SecureString = ConvertTo-SecureString $sec -Key $bytes
-$Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList "ADHCode", $Securestring 
-Remove-Variable -Name "ADHC_Credentials" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_Credentials" -Value $Credentials -Option readonly -Scope global -Description "Credentials" -force
-
-if ($JSON.ToUpper() -eq  "YES" ) {
-     $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
-                                              ADHC_User = $ADHC_User;
-                                              ADHC_WmicGenerations = $ADHC_WmicGenerations
-                                              ADHC_WmicDirectory = $ADHC_WmicDirectory;
-                                              ADHC_OutputDirectory = $ADHC_OutputDirectory;
-                                              ADHC_Jobstatus = $ADHC_Jobstatus}
-    
-    $ReturnJSON = ConvertTo-JSON $ReturnOBJ     
-    write-output $ReturnJSON 
-    return 
-    
-}
-else {
-    return 
+    else {
+        return 
    
+    }
+}
+Catch {
+    Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_InitSuccessfull" -Value $false -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
+    throw $MyError
 }
