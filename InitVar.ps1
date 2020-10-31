@@ -23,10 +23,12 @@ CLS
 $MyError = [InitVarException]::new("INITVAR.PS1 failed - fatal error")
 Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
+Remove-Variable -Name "ADHC_InitError" -force -ErrorAction SilentlyContinue
+Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope global -Description "INITVAR user error" -force
     
 
 try {
-    $Version = " -- Version: 4.4"
+    $Version = " -- Version: 4.6"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -44,6 +46,10 @@ try {
     $mypath = $FullScriptName.Replace($MyName, "")
     Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
+
+    $ls = $mypath + "Globallock.ps1"
+    Remove-Variable -Name "ADHC_LockScript" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_LockScript" -Value "$ls" -Option readonly -Scope global -Description "Name of Glbal Lock script" -force
 
     Remove-Variable -Name "ADHC_User" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_User" -Value "$env:USERNAME" -Option readonly -Scope global -Description "Current user" -force
@@ -160,19 +166,6 @@ try {
 
     switch ($ADHC_Computer)
         { 
-            "ADHC"          {$StartTime = "2020-01-01T15:00:00"} 
-       
-            "Laptop_AHMRDH" {$StartTime = "2020-01-01T21:00:00"} 
-            "empty slot"    {$StartTime = "2020-01-01T12:00:00"} 
-            "Holiday"       {$StartTime = "2020-01-01T18:00:00"}
-            default         {$StartTime = "2020-01-01T06:00:00"} 
-        }
-    
-    Remove-Variable -Name "ADHC_WmicAnalyze_StartTime" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_WmicAnalyze_StartTime" -Value $StartTime -Option readonly -Scope global -Description "Start time for WMIC analyze run" -force
-
-    switch ($ADHC_Computer)
-        { 
         
             "Ahmrdh-Netbook"{$PythonExec = "C:\Program Files\Python36-32\pythonw.exe"}
             "Holiday"       {$PythonExec = "D:\Program Files\Python38\pythonw.exe"}
@@ -205,6 +198,10 @@ try {
     $master = $staging + "ADHCmaster\ADHCmaster.xml"
     Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+    
+    $lock = $output + "GlobalLock\"
+    Remove-Variable -Name "ADHC_LockDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_LockDir" -Value $lock -Option readonly -Scope global -Description "Directory for Global Locks" -force
 
     $encoder = new-object System.Text.UTF8Encoding
     $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
@@ -236,5 +233,6 @@ try {
 Catch {
     Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_InitSuccessfull" -Value $false -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
-    throw $MyError
+
+    
 }
