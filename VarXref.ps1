@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.1"
+﻿$Version = " -- Version: 2.2"
 
 # COMMON coding
 CLS
@@ -22,6 +22,11 @@ try {
 
     $LocalInitVar = $mypath + "InitVar.PS1"
     & "$LocalInitVar"
+
+    if (!$ADHC_InitSuccessfull) {
+        # Write-Warning "YES"
+        throw $ADHC_InitError
+    }
 
      # init flags
     $scripterror = $false

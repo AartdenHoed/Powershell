@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 3.1"
+$Version = " -- Version: 3.2"
 
 # COMMON coding
 CLS
@@ -24,6 +24,11 @@ Write-Information $Scriptmsg
 
 $LocalInitVar = $mypath + "InitVar.PS1"
 & "$LocalInitVar"
+
+if (!$ADHC_InitSuccessfull) {
+    # Write-Warning "YES"
+    throw $ADHC_InitError
+}
 
 # END OF COMMON CODING
 

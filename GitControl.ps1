@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 7.1"
+﻿$Version = " -- Version: 7.2"
 
 # COMMON coding
 CLS
@@ -58,7 +58,12 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"   
+    & "$LocalInitVar" 
+    
+    if (!$ADHC_InitSuccessfull) {
+        # Write-Warning "YES"
+        throw $ADHC_InitError
+    }  
 
 # END OF COMMON CODING
 
