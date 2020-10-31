@@ -1,0 +1,281 @@
+﻿# Lock/unlock a global resource
+param (
+    [string]$Action = "Action?", 
+    [string]$EnqName = "EnqName?",
+    [string]$Process = "Process?", 
+    [int] $Duration = 10  
+)
+CLS
+#$Action = "LOCK"
+#$ENQNAME = "TESSIE"
+#$PROCESS = "Ikkuh"
+#$waittime = 15
+
+$waittime = 150
+
+$InformationPreference = "Continue"
+$WarningPreference = "Continue"
+$ErrorActionPreference = "Stop"
+
+$global:MessageList = @()
+
+
+class GlobalLockException : System.Exception  { 
+    GlobalLockException( [string]$message) : base($message) {
+
+    }
+
+    GlobalLockException() {
+
+    }
+}
+
+function CreateLockRecord ([string]$Status, [string]$Machine, [string]$Who, [string]$What, [datetime]$Start, [datetime]$Stop)  {
+   
+    $record = $Status.ToUpper() + "|" + $Machine + "|" + $Who + "|" + $What + "|" + $Start.ToSTring("dd-MM-yyyy HH:mm:ss") + "|" + $Stop.ToSTring("dd-MM-yyyy HH:mm:ss")
+    return $record
+}
+function AddMessage ([string]$level, [string]$msg) {
+    $msgentry = [PSCustomObject] [ordered] @{Level = $level;
+                                             Message = $msg}
+    $global:MessageList += $msgentry
+    Write-Host $msg
+    
+    return  
+}
+
+function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]$What) {
+
+    switch ($InternalAction.ToUpper()) {
+        "INIT" {
+            $LockName = $Computer + "_" + $Process + "_"+ $EnqName
+            $LockDsn = $LockName + ".glock"
+            $LockFullName = $ADHC_LockDir + $LockDsn
+
+            if (!(Test-Path $ADHC_LockDir)) {
+                New-Item -ItemType Directory -Force -Path $ADHC_LockDir | Out-Null
+            } 
+            if (!(Test-Path $LockFullName)) {
+                New-Item -Path $ADHC_LockDir -Name "$LockDsn" -ItemType File | Out-Null
+                $i1 =[datetime]::ParseExact("01-01-2000 00:00:00","dd-MM-yyyy HH:mm:ss",$null) 
+                $i2 = [datetime]::ParseExact("01-01-2000 00:10:00","dd-MM-yyyy HH:mm:ss",$null)
+                $R = CreateLockRecord "INIT" $Computer $Process $EnqName $i1 $i2
+                Set-Content $LockFullNAme $R -force
+            }
+            return "ok"    
+
+        }
+        "TEST" {
+            $search = "^.+_.+_" + $what + "\.glock$"
+            # Write-Host "Zoekargument $search"
+            # Write-Host "Directory $ADHC_Lockdir"            
+            
+            $locklist = Get-ChildItem -Path $ADHC_LockDir | Select-Object FullName,Name | Where-Object {$_.Name -match "$search" }            
+            $RetryCount = 0
+            do { 
+                
+                $RetryCount += 1
+                $ResourceFree = $True
+                AddMessage "I" "Try number $RetryCOunt to lock resource $what for process $Process on computer $Computer"  
+                        
+                foreach ($entry in $locklist) {
+                    
+                    $E = $entry.FullName
+                    # Write-Host "Dataset $E"
+                    $lockrecord = Get-Content $entry.FullName
+                    $lockbits = $lockrecord.Split("|")
+                    # $lockbits
+                    $Lockstatus  = $lockbits[0]
+                    $lockmachine = $lockbits[1]
+                    $lockprocess = $lockbits[2]
+                    $lockenqname = $lockbits[3]
+                    $lockfrom    = [datetime]::ParseExact($lockbits[4],"dd-MM-yyyy HH:mm:ss",$null) 
+                    $lockuntil   = [datetime]::ParseExact($lockbits[5],"dd-MM-yyyy HH:mm:ss",$null)
+                    # Write-Host $lockuntil.ToSTring()
+                    $Now = Get-Date
+                    $u = $lockuntil.ToString("dd-MM-yyyy HH:mm:ss")
+                    # write-host $lockstatus
+                    if ($lockstatus -eq "LOCK") {
+                        if ($lockuntil -gt $now) {   # Resource is locked by a process
+                            $ResourceFree = $false
+                            AddMessage "I" "Resource $lockenqname locked by process $lockprocess on computer $lockmachine Until $u"  
+                        }
+                                            
+                    }
+                    
+                } 
+                if (!$ResourceFree) { 
+                        AddMessage "A" "Resource $what not available now. Wait for $waittime seconds" 
+                        Start-Sleep -s $waittime
+                    }
+                    else {
+                        AddMessage "I" "Resource $what not locked by any other process" 
+                }
+            } until ($ResourceFree)
+            
+            return "ok" 
+
+        }
+        "LOCK"{
+            # Set lock
+            $Now = Get-Date
+            $End = $now.AddMinutes($duration) 
+            $LockName = $Computer + "_" + $Process + "_"+ $EnqName
+            $LockDsn = $LockName + ".glock"
+            $LockFullName = $ADHC_LockDir + $LockDsn
+            $R = CreateLockRecord "LOCK" $Computer $Process $EnqName $Now $End
+            $u = $End.ToString("dd-MM-yyyy HH:mm:ss")
+            Set-Content $LockFullNAme $R  
+            AddMessage "I" "Process $Process on computer $Computer locked resource $what successfully now until $u"
+            return "ok"                
+ 
+        }
+        "FREE"{
+            $LockName = $Computer + "_" + $Process + "_"+ $EnqName
+            $LockDsn = $LockName + ".glock"
+            $LockFullName = $ADHC_LockDir + $LockDsn
+
+            $lockrecord = Get-Content $lockFullName
+            $lockbits = $lockrecord.Split("|")
+            # $lockbits
+            $Lockstatus  = $lockbits[0]
+            $lockmachine = $lockbits[1]
+            $lockprocess = $lockbits[2]
+            $lockenqname = $lockbits[3]
+            $lockfrom    = [datetime]::ParseExact($lockbits[4],"dd-MM-yyyy HH:mm:ss",$null) 
+            $lockuntil   = [datetime]::ParseExact($lockbits[5],"dd-MM-yyyy HH:mm:ss",$null)
+            $R = CreateLockRecord "FREE" $Computer $Process $EnqName $lockfrom $lockuntil
+            Set-Content $LockFullNAme $R 
+            AddMessage "I" "Resource $what freed bij process $Process on computer $COmputer"
+            return "ok" 
+        }
+        "VRFY"{
+            $search = "^.+" + $what + "\.glock$"
+            # Write-Host "Zoekargument $search"
+            $locklist = Get-ChildItem -Path $ADHC_LockDir | Select-Object FullName,Name | Where-Object {$_.Name -match $search}            
+            $ResourceFree = $True
+              
+            foreach ($entry in $locklist) {
+                $E = $entry.FullNAme
+                $lockrecord = Get-Content $entry.FullName
+                $lockbits = $lockrecord.Split("|")
+                # $lockbits
+                $Lockstatus  = $lockbits[0]
+                $lockmachine = $lockbits[1]
+                $lockprocess = $lockbits[2]
+                $lockenqname = $lockbits[3]
+                $lockfrom    = [datetime]::ParseExact($lockbits[4],"dd-MM-yyyy HH:mm:ss",$null) 
+                $lockuntil   = [datetime]::ParseExact($lockbits[5],"dd-MM-yyyy HH:mm:ss",$null)
+                $Now = Get-Date
+                if (($lockmachine -eq $Machine) -and ($lockprocess -eq $who)) {
+                    # this is my self, skip
+                    continue
+                }
+                if ($lockstatus -eq "LOCK") {
+                    if ($lockuntil -gt $now) {   # Resource is locked by a process
+                        $ResourceFree = $false
+                    }
+                    
+                }
+            } 
+            
+            if (!$ResourceFree) { 
+                AddMessage "A" "Failed to verify resource $what for process $Process on computer $Computer" 
+                return "nok"
+            }
+            else {
+                AddMessage "I" "Resource $what succesfully verified for process $Process on computer $Computer" 
+                return "ok"
+            }            
+
+      
+        }
+        Default {
+            $MyError = [GlobalLockException]::new("Internal action $internalaction Unknown...")
+            throw $MyError
+        }
+
+    }
+    return
+}
+
+try {
+    $Version = " -- Version: 1.0"
+    $Node = " -- Node: " + $env:COMPUTERNAME
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToShortDateString()
+    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $myname = $MyInvocation.MyCommand.Name
+    $FullScriptName = $MyInvocation.MyCommand.Definition
+    $mypath = $FullScriptName.Replace($MyName, "")
+       
+    $myname = $MyInvocation.MyCommand.Name
+    $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+
+    AddMessage "I" $Scriptmsg
+
+
+    $LocalInitVar = $mypath + "InitVar.PS1"
+    & "$LocalInitVar" 
+    
+    if (!$ADHC_InitSuccessfull) {
+        # Write-Warning "YES"
+        throw $ADHC_InitError
+    }  
+
+    $EnqSuccess = $true
+
+    # ENQ Name
+    $Computer = $ADHC_Computer
+
+    $COmputer = $Computer.Replace("_", "-").ToUpper().Trim()
+    $Process =  $Process.Replace("_", "-").ToUpper().Trim()
+    $EnqName =  $EnqName.Replace("_", "-").ToUpper().Trim()
+
+    
+        Switch ($Action.ToUpper()) {
+        "LOCK" {
+            $lockset = $false
+            DO {
+                    
+                $a = Lock "Init" $Computer $process $EnqName
+                # Check if lock is free
+                $b = Lock "Test" $Computer $process $EnqName
+                # If Test returns, the lock is free, so get it!
+                $c = Lock "Lock" $Computer $process $EnqName 
+                # After this, verify that no other process crossed the lock 
+                $d = Lock "VRFY" $Computer $process $EnqName
+
+                if ($d -eq "ok") {
+                    $lockset = $true
+                }
+                else {                    
+                    AddMessage "A" "Resource $what could not be verified, retry..." 
+                    $e = Lock "FREE" $Computer $process $EnqName
+                }
+            } until ($lockset)
+
+            
+        }
+
+        "FREE" {
+            $f = Lock "FREE" $Computer $process $EnqName
+            
+
+        }
+        Default {
+            $MyError = [GlobalLockException]::new("External action $action Unknown...")
+            throw $MyError
+        }
+    }
+
+
+}
+Catch {
+   $ErrorMessage = $_.Exception.Message
+   AddMessage  "E" $ErrorMessage
+   $EnqSuccess = $false
+    
+}
+Return $global:MessageList
+
