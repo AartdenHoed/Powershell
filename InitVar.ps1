@@ -19,7 +19,6 @@ class InitVarException : System.Exception  {
     }
 }
 
-CLS
 $MyError = [InitVarException]::new("INITVAR.PS1 failed - fatal error")
 Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
@@ -28,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 4.6.1"
+    $Version = " -- Version: 4.6.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -100,7 +99,7 @@ try {
     Remove-Variable -Name "ADHC_GitPushAll" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_GitPushAll" -Value "$gpa" -Option readonly -Scope global -Description "GIT 'Push All' execution" -force
 
-    $pu = "GitPushAll\" + $ADHC_Computer + "_Push.log"
+    $pu = "GitPushAll\" + "#Overall_Push.log"
     Remove-Variable -Name "ADHC_PushLog" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PushLog" -Value "$pu" -Option readonly -Scope global -Description "Push log file" -force
 

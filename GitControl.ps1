@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 7.2"
+﻿$Version = " -- Version: 7.3"
 
 # COMMON coding
 CLS
@@ -51,6 +51,7 @@ try {
     $Tijd = " -- Time: " + $d.ToShortTimeString()
 
     $myname = $MyInvocation.MyCommand.Name
+    $enqprocess = $myname.ToUpper().Replace(".PS1","")
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
 
@@ -64,6 +65,7 @@ try {
         # Write-Warning "YES"
         throw $ADHC_InitError
     }  
+    $m = & $ADHC_LockScript "Lock" "Git" "$enqprocess"    
 
 # END OF COMMON CODING
 
@@ -74,6 +76,11 @@ try {
     $gitstatus = $ADHC_OutputDirectory + $ADHC_SourceControl
 
     Set-Content $gitstatus $Scriptmsg -force  
+    foreach ($msgentry in $m) {
+        $msglvl = $msgentry.level
+        $msgtext = $msgentry.Message
+        Report $msglvl $msgtext
+    }
 
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
@@ -210,6 +217,12 @@ catch {
     $FailedItem = $_.Exception.ItemName
 }
 finally {
+    $m = & $ADHC_LockScript "Free" "Git" "$enqprocess"
+    foreach ($msgentry in $m) {
+        $msglvl = $msgentry.level
+        $msgtext = $msgentry.Message
+        Report $msglvl $msgtext
+    }
     # Init jobstatus file
     $jdir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $jdir | Out-Null
