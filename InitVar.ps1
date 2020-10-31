@@ -3,7 +3,7 @@ param (
     [string]$JSON = "NO"    
 )
 # $JSON = 'YES'
-CLS
+
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
@@ -28,7 +28,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 4.6"
+    $Version = " -- Version: 4.6.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -80,7 +80,7 @@ try {
     Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
 
-    $dl = "Deploy\" + $ADHC_Computer + "_Deploy.log"
+    $dl = "Deploy\" +  "#Overall_Deploy.log"
     Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
 

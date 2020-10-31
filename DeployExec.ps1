@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.0.1"
+﻿$Version = " -- Version: 3.2"
 
 # COMMON coding
 CLS
@@ -416,7 +416,8 @@ function WriteLog ([string]$Action, [string]$line) {
     $oldrecords = Get-Content $log 
 
     $logdate = Get-Date
-    $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString()
+    $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
+                    (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString()
     Set-Content $log $logrec
 
     $now = Get-Date
@@ -451,6 +452,7 @@ try {
     $Tijd = " -- Time: " + $d.ToShortTimeString()
 
     $myname = $MyInvocation.MyCommand.Name
+    $enqprocess = $myname.ToUpper().Replace(".PS1","")
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
 
@@ -459,6 +461,12 @@ try {
 
     $LocalInitVar = $mypath + "InitVar.PS1"
     & "$LocalInitVar"
+
+    if (!$ADHC_InitSuccessfull) {
+        # Write-Warning "YES"
+        throw $ADHC_InitError
+    }
+    $m = & $ADHC_LockScript "Lock" "Deploy" "$enqprocess"    
    
 # END OF COMMON CODING   
 
@@ -468,6 +476,12 @@ try {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $Report = $ADHC_OutputDirectory + $ADHC_DeployReport
     Set-Content $Report $Scriptmsg -force
+
+    foreach ($msgentry in $m) {
+        $msglvl = $msgentry.level
+        $msgtext = $msgentry.Message
+        Report $msglvl $msgtext
+    }
 
     # Init log
     $str = $ADHC_DeployLog.Split("\")
@@ -746,6 +760,12 @@ catch {
     $Dump = $_.Exception.ToString()
 }
 finally {
+    $m = & $ADHC_LockScript "Free" "Deploy" "$enqprocess"
+    foreach ($msgentry in $m) {
+        $msglvl = $msgentry.level
+        $msgtext = $msgentry.Message
+        Report $msglvl $msgtext
+    }
     # Init jobstatus file
     $dir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $dir | Out-Null

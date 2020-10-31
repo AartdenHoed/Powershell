@@ -5,7 +5,7 @@ param (
     [string]$Process = "Process?", 
     [int] $Duration = 10  
 )
-CLS
+
 #$Action = "LOCK"
 #$ENQNAME = "TESSIE"
 #$PROCESS = "Ikkuh"
@@ -39,7 +39,7 @@ function AddMessage ([string]$level, [string]$msg) {
     $msgentry = [PSCustomObject] [ordered] @{Level = $level;
                                              Message = $msg}
     $global:MessageList += $msgentry
-    Write-Host $msg
+    # Write-Host $msg
     
     return  
 }
@@ -200,7 +200,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 1.0"
+    $Version = " -- Version: 1.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
