@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.3"
+﻿$Version = " -- Version: 2.3.2"
 
 # COMMON coding
 CLS
@@ -12,15 +12,15 @@ function WriteLog ([string]$Action, [string]$line) {
 
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_COmputer.PadRight(24," ") +
-                (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString()
+                (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
     Set-Content $log $logrec
 
     $now = Get-Date
 
     foreach ($record in $oldrecords) {
         $keeprecord = $false
-        if ($record.Length -gt 224) {
-            $dtstring = $record.Substring(224)
+        if ($record.Length -ge 248) {
+            $dtstring = $record.Substring(248)
             # $dtstring
             $timest = [datetime]::ParseExact($dtstring,"dd-MM-yyyy HH:mm:ss",$null)
             # $timest.ToString("yyyy-MMM-dd HH:mm:ss")
