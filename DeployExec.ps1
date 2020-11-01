@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.2.2"
+﻿$Version = " -- Version: 3.2.3"
 
 # COMMON coding
 CLS
@@ -780,7 +780,7 @@ finally {
         Report "E" ">>> Script ended abnormally"
         
         $dt = Get-Date
-        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString()
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
         Add-Content $jobstatus "Failed item = $FailedItem"
@@ -797,7 +797,7 @@ finally {
         Report "W" ">>> Script ended normally with action required"
         
         $dt = Get-Date
-        $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString()
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
         exit 8
@@ -816,7 +816,7 @@ finally {
     Report "I" ">>> Script ended normally without reported changes, and no action required"
    
     $dt = Get-Date
-    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString()
+    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
     Set-Content $jobstatus $jobline
        
     exit 0
