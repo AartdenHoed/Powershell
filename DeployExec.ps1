@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.2.3"
+﻿$Version = " -- Version: 3.3"
 
 # COMMON coding
 CLS
@@ -787,9 +787,9 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Add-Content $report "Failed item = $FailedItem"
-        Add-Content $report "Errormessage = $ErrorMessage"
-        Add-Content $report "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem"
+        Report "E" "Errormessage = $ErrorMessage"
+        Report "E" "Dump info = $dump"
         exit 16        
     }
    
@@ -807,7 +807,7 @@ finally {
         Report "C" ">>> Script ended normally with reported changes, but no action required"
         
         $dt = Get-Date
-        $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString()
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
         exit 4

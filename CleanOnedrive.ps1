@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.2.1"
+﻿$Version = " -- Version: 2.3"
 
 # COMMON coding
 CLS
@@ -86,6 +86,7 @@ catch {
     $scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
+    $Dump = $_.Exception.ToString()
 }
 finally {
     # Init jobstatus file
@@ -109,6 +110,11 @@ finally {
        
         Add-Content $jobstatus "Failed item = $FailedItem"
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $dump"
+
+        Add-Content $TxtFile "Failed item = $FailedItem"
+        Add-Content $TxtFile "Errormessage = $ErrorMessage"
+        Add-Content $TxtFile "Dump info = $dump"
         exit 16        
     }
    
