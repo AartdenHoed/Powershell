@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 8.0"
+﻿$Version = " -- Version: 8.0.1"
 
 # COMMON coding
 CLS
@@ -85,7 +85,7 @@ try {
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
     $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput.txt"
-    Set-COntent $ofile "~~~~ init"
+    Set-COntent $ofile "*** init ***"
     $line = "=".PadRight(120,"=")
 
     $alarmlist = @()
@@ -95,7 +95,7 @@ try {
 
         # Clear contents of output file
         $inhoud = Get-COntent $ofile
-        Set-COntent $ofile "~~~~ init"
+        Set-COntent $ofile "*** init ***" 
         foreach ($regel in $inhoud) {
             Add-COntent $ofile $gdir
         }      
@@ -174,7 +174,7 @@ try {
 
         # Clear contents of output file
         $inhoud = Get-COntent $ofile
-        Set-COntent $ofile "~~~~ init"
+        Set-COntent $ofile "*** init ***"
         foreach ($regel in $inhoud) {
             Add-COntent $ofile $rdir
         }     
