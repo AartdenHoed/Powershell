@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 7.3.1"
+﻿$Version = " -- Version: 8.0"
 
 # COMMON coding
 CLS
@@ -85,12 +85,20 @@ try {
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
     $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput.txt"
+    Set-COntent $ofile "~~~~ init"
     $line = "=".PadRight(120,"=")
 
     $alarmlist = @()
 
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
+
+        # Clear contents of output file
+        $inhoud = Get-COntent $ofile
+        Set-COntent $ofile "~~~~ init"
+        foreach ($regel in $inhoud) {
+            Add-COntent $ofile $gdir
+        }      
    
         $gdir = $gdir.replace(".git","")
         Report "N" ""
@@ -126,8 +134,7 @@ try {
             $alarmlist += $alarm
             
         }
-        Remove-Item $ofile
-
+        
         #&{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
 
         $ErrorActionPreference = "Continue"  
@@ -156,15 +163,21 @@ try {
         }
         Report "N" $line
         Report "N" " "
-        Remove-Item $ofile
-    }
-
+        
+    }    
 
     Set-Location -Path $ADHC_RemoteDir
     $remdirs = Get-ChildItem "*.git" -Recurse -Force
 
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
+
+        # Clear contents of output file
+        $inhoud = Get-COntent $ofile
+        Set-COntent $ofile "~~~~ init"
+        foreach ($regel in $inhoud) {
+            Add-COntent $ofile $rdir
+        }     
 
         Report "N" ""
         $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
@@ -208,13 +221,14 @@ try {
         }
         Report "N" $line
         Report "N" " "
-        Remove-Item $ofile
     }
+    Remove-Item $ofile
 }
 catch {
     $global:scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
+    $Dump = $_.Exception.ToString()
 }
 finally {
     $m = & $ADHC_LockScript "Free" "Git" "$enqprocess"
@@ -250,6 +264,11 @@ finally {
        
         Add-Content $jobstatus "Failed item = $FailedItem"
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $dump"
+
+        Report "E" "Failed item = $FailedItem"
+        Report "E" "Errormessage = $ErrorMessage"
+        Report "E" "Dump info = $dump"
         exit 16        
     }
    
