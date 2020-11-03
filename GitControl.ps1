@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 8.0.1"
+﻿$Version = " -- Version: 8.1"
 
 # COMMON coding
 CLS
@@ -84,22 +84,18 @@ try {
 
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
-    $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput.txt"
-    Set-COntent $ofile "*** init ***"
+    
     $line = "=".PadRight(120,"=")
 
     $alarmlist = @()
+    $filenr = 0
 
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
-
-        # Clear contents of output file
-        $inhoud = Get-COntent $ofile
-        Set-COntent $ofile "*** init ***" 
-        foreach ($regel in $inhoud) {
-            Add-COntent $ofile $gdir
-        }      
-   
+        $filenr += 1
+        $suffix = $filenr.ToString("00")
+        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
+    
         $gdir = $gdir.replace(".git","")
         Report "N" ""
         $msg = "----------Directory $gdir".PadRight(120,"-") 
@@ -134,8 +130,13 @@ try {
             $alarmlist += $alarm
             
         }
+        Remove-Item $ofile
         
         #&{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
+
+        $filenr += 1
+        $suffix = $filenr.ToString("00")
+        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
 
         $ErrorActionPreference = "Continue"  
         
@@ -163,6 +164,7 @@ try {
         }
         Report "N" $line
         Report "N" " "
+        Remove-Item $ofile
         
     }    
 
@@ -172,12 +174,9 @@ try {
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
 
-        # Clear contents of output file
-        $inhoud = Get-COntent $ofile
-        Set-COntent $ofile "*** init ***"
-        foreach ($regel in $inhoud) {
-            Add-COntent $ofile $rdir
-        }     
+        $filenr += 1
+        $suffix = $filenr.ToString("00")
+        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
 
         Report "N" ""
         $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
@@ -221,8 +220,9 @@ try {
         }
         Report "N" $line
         Report "N" " "
+        Remove-Item $ofile
     }
-    Remove-Item $ofile
+    
 }
 catch {
     $global:scripterror = $true
