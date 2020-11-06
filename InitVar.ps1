@@ -10,7 +10,7 @@ $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
 if ($ADHC_InitSuccessfull) {
-    Write-Host "Double"
+    # Write-Host "Double"
     return
 }
 
@@ -32,7 +32,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.0"
+    $Version = " -- Version: 5.0.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
