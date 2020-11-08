@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.1"
+﻿$Version = " -- Version: 4.0"
 
 # COMMON coding
 CLS
@@ -109,7 +109,13 @@ try {
         $msglvl = $msgentry.level
         $msgtext = $msgentry.Message
         Report $msglvl $msgtext
-    } 
+    }
+    $ENQfailed = $false 
+    if ($msglvl -eq "E") {
+        # ENQ failed
+        $ENQfailed = $true
+        throw "Could not lock resource 'Git'"
+    }
     
     # Init log
     $str = $ADHC_PushLog.Split("\")
@@ -243,6 +249,7 @@ try {
 }
 catch {
     $global:scripterror = $true
+    
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
@@ -263,6 +270,24 @@ finally {
     
     Report "N" " "
 
+    if ($ENQfailed) {
+        $msg = ">>> Script could not run"
+        Report "E" $msg
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+       
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $dump"
+
+        Report "E" "Failed item = $FailedItem"
+        Report "E" "Errormessage = $ErrorMessage"
+        Report "E" "Dump info = $dump"
+        exit 12        
+
+    }
+
         
     if ($global:scripterror) {
         $msg = ">>> Script ended abnormally"
@@ -279,7 +304,8 @@ finally {
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
         exit 16        
-    }
+    }   
+    
    
     if ($global:scriptaction) {
         $msg = ">>> Script ended normally with action required"

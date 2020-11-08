@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.3"
+﻿$Version = " -- Version: 3.4"
 
 # COMMON coding
 CLS
@@ -482,6 +482,12 @@ try {
         $msgtext = $msgentry.Message
         Report $msglvl $msgtext
     }
+    $ENQfailed = $false 
+    if ($msglvl -eq "E") {
+        # ENQ failed
+        $ENQfailed = $true
+        throw "Could not lock resource 'Deploy'"
+    }
 
     # Init log
     $str = $ADHC_DeployLog.Split("\")
@@ -775,6 +781,23 @@ finally {
     
     Report "N" " "
 
+    if ($ENQfailed) {
+        $msg = ">>> Script could not run"
+        Report "E" $msg
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+       
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $dump"
+
+        Report "E" "Failed item = $FailedItem"
+        Report "E" "Errormessage = $ErrorMessage"
+        Report "E" "Dump info = $dump"
+        exit 12        
+
+    }
         
     if ($global:scripterror) {
         Report "E" ">>> Script ended abnormally"
