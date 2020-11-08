@@ -200,7 +200,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 1.1"
+    $Version = " -- Version: 2.0.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -233,7 +233,20 @@ try {
     $EnqName =  $EnqName.Replace("_", "-").ToUpper().Trim()
 
     
-        Switch ($Action.ToUpper()) {
+    Try {
+        # Check availabiliy of ONEDRIVE. If NOT available, abort execution
+        $OD = Test-Connection -COmputerName onedrive.live.com -Count 1 -ErrorAction Stop
+    }
+    Catch {
+        #Write-Host "Catch"
+        $MyError = [GlobalLockException]::new("OneDrive not available, $Action of resource $EnqName impossible")
+        throw $MyError
+       
+    }
+    
+
+    
+    Switch ($Action.ToUpper()) {
         "LOCK" {
             $lockset = $false
             DO {
