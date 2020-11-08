@@ -9,11 +9,6 @@ $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
-if ($ADHC_InitSuccessfull) {
-    # Write-Host "Double"
-    return
-}
-
 class InitVarException : System.Exception  { 
     InitVarException( [string]$message) : base($message) {
 
@@ -32,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.0.1"
+    $Version = " -- Version: 5.0.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
