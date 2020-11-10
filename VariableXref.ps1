@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.3"
+﻿$Version = " -- Version: 2.4"
 
 # COMMON coding
 CLS
@@ -36,10 +36,10 @@ try {
 # END OF COMMON CODING   
 
     # Init reporting file
-    $str = $ADHC_VarXref.Split("/")
+    $str = $ADHC_VariableXref.Split("/")
     $dir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $Report = $ADHC_OutputDirectory + $ADHC_VarXref
+    $Report = $ADHC_OutputDirectory + $ADHC_VariableXref
     Set-Content $Report $Scriptmsg -force
 
     $ADHCvars = Get-Variable |  Where-Object {$_.Name -like "ADHC_*"}

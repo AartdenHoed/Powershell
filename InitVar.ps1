@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.1"
+    $Version = " -- Version: 5.3"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -121,9 +121,9 @@ try {
     Remove-Variable -Name "ADHC_DeployCheck" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
     
-    $cf = "Conflicts\" + $ADHC_Computer + "_Conflicts.txt"
-    Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_ConflictRpt" -Value "$cf" -Option readonly -Scope global -Description "Conflict report file" -force
+    $cf = "OneDriveCheck\" + $ADHC_Computer + "_OneDriveCheck.txt"
+    Remove-Variable -Name "ADHC_OneDriveReport" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_OneDriveReport" -Value "$cf" -Option readonly -Scope global -Description "Conflict report file" -force
 
     $encoder = new-object System.Text.UTF8Encoding
     $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
@@ -165,8 +165,8 @@ try {
     Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
 
     $vx = "VariableXref\"+ $ADHC_Computer + "_VariableXref.txt"
-    Remove-Variable -Name "ADHC_VarXref" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_VarXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
+    Remove-Variable -Name "ADHC_VariableXref" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_VariableXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
     # STAGING DIRECTORY
    

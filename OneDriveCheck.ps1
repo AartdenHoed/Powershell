@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.3"
+﻿$Version = " -- Version: 2.4"
 
 # COMMON coding
 CLS
@@ -32,20 +32,19 @@ try {
 
     # init flags
     $scripterror = $false
-    $scriptaction = $false
-  
+    $scriptaction = $false  
 
     $OneDrive = $ADHC_OneDrive
     $FileList = Get-ChildItem $OneDrive -recurse  -name -force
     # $FileList | Out-Gridview
 
     # Init reporting file
-    $str = $ADHC_ConflictRpt.Split("/")
+    $str = $ADHC_OneDriveReport.Split("\")
     $dir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $TxtFile = $ADHC_OutputDirectory + $ADHC_ConflictRpt
+    $TxtFile = $ADHC_OutputDirectory + $ADHC_OneDriveReport
 
-    Set-Content $TxtFile $Scriptmsg
+    Set-Content $TxtFile $Scriptmsg -force
     Add-Content $TxtFile "Overview of OneDrive conficts"
     Add-Content $TxtFile " "
 
