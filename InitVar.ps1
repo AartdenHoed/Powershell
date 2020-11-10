@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.0.2"
+    $Version = " -- Version: 5.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -117,9 +117,9 @@ try {
     Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
     
-    $ng = "BuildDeployCheck\"+ $ADHC_Computer + "_BuildDeployCheck.txt"
-    Remove-Variable -Name "ADHC_BuildDeployCheck" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_BuildDeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
+    $ng = "DeployCheck\"+ $ADHC_Computer + "_DeployCheck.txt"
+    Remove-Variable -Name "ADHC_DeployCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
     
     $cf = "Conflicts\" + $ADHC_Computer + "_Conflicts.txt"
     Remove-Variable -Name "ADHC_ConflictRpt" -force -ErrorAction SilentlyContinue
@@ -134,11 +134,11 @@ try {
     Remove-Variable -Name "ADHC_Credentials" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Credentials" -Value $Credentials -Option readonly -Scope global -Description "Credentials" -force
 
-    $dl = "Deploy\" +  "#Overall_Deploy.log"
+    $dl = "DeployExec\" +  "#Overall_Deploy.log"
     Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
 
-    $dt = "Deploy\" + $ADHC_Computer + "_DeployReport.txt"
+    $dt = "DeployExec\" + $ADHC_Computer + "_DeployReport.txt"
     Remove-Variable -Name "ADHC_DeployReport" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployReport" -Value "$dt" -Option readonly -Scope global -Description "Deployment report file" -force
 

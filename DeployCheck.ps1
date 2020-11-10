@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.2.1"
+﻿$Version = " -- Version: 2.4"
 
 # COMMON coding
 CLS
@@ -415,10 +415,10 @@ try {
 # END OF COMMON CODING
 
     # Init report file 
-    $str = $ADHC_BuildDeployCheck.Split("\")   
+    $str = $ADHC_DeployCheck.Split("\")   
     $rptdir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $rptdir | Out-Null
-    $Report = $ADHC_OutputDirectory + $ADHC_BuildDeployCheck
+    $Report = $ADHC_OutputDirectory + $ADHC_DeployCheck
     Set-Content $Report $Scriptmsg -force
 
     $StagingList = Get-ChildItem $ADHC_StagingDir -Directory | Select Name,FullName
