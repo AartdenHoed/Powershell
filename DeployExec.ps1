@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.4"
+﻿$Version = " -- Version: 3.4.1"
 
 # COMMON coding
 CLS
@@ -22,17 +22,21 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
     foreach ($entry in $filter) {
         if ($entry.includes.ToUpper() -contains "*ALL*") {
             $included = $true
+            # Write-Host "include *ALL"
         }
         if ($entry.includes.ToUpper() -contains $delname.ToUpper()) {
             $included = $true
+            # Write-Host "include name-match"
         }
         if ($entry.excludes.ToUpper() -contains $delname.ToUpper()) {
             $included = $false
             $modulefound = $true
+            # Write-Host "exclude name-match"
         }
         if ($entry.excludes.ToUpper() -contains "*ALL*") {
             
             $modulefound = $true
+            # Write-Host "exclude *ALL*"
         }
         if ($included) {
             $process = $entry.process.ToUpper()
@@ -44,11 +48,14 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
     }
     if (($delname -match "\w+\.?\w*" ) -or ($delname -match "#\w+\.?\w*")) {
         if (!$modulefound) {
-            Report "W" "Module $delname ($tobedeleted) has no corresponding INCLUDE statement - processing wil be SKIPPED"
+            Report "W" "Module $delname ($tobedeleted) has no corresponding INCLUDE statement for $action - processing wil be SKIPPED"
             return
         }
         else {
-            if (!$included) {return}
+            if (!$included) {
+                Write-Host "Module $delname ($tobedeleted) EXCLUDED for $action - processing wil be SKIPPED"
+                return
+            }
         }
     } 
     else {
@@ -188,6 +195,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
 
 function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$to, [System.Collections.ArrayList]$filter) {
     $modulefound = $false
+    $included = $false
     foreach ($entry in $filter) {
         if ($entry.includes.ToUpper() -contains "*ALL*") {
             $included = $true
@@ -214,11 +222,14 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
     
     if (($shortname -match "\w+\.?\w*" ) -or ($shortname -match "#\w+\.?\w*")) {
         if (!$modulefound) {
-            Report "W" "Module $shortname ($to)has no corresponding INCLUDE statement - processing wil be SKIPPED"
+            Report "W" "Module $shortname ($to)has no corresponding INCLUDE statement for $action - processing wil be SKIPPED"
             return
         }
         else {
-            if (!$included) {return} 
+            if (!$included) {
+                Write-Host "Module $shortname ($to) EXCLUDED for $action - processing wil be SKIPPED"
+                return
+            }
         }
     }         
     else {
@@ -645,9 +656,25 @@ try {
 
          # Determine deletions in target directory (multiple possible)
         $x = 0
+       
         foreach ($targetentry in $targetlist) {
             $x = $x + 1
             $targetdir = $targetentry.Root + $targetentry.SubRoot
+
+            $tModules = $targetentry.Childnodes
+            $targetfilter = @()
+            foreach ($moduleentry in $tModules) {
+                $process = $moduleentry.Process
+                $delay = $moduleentry.Delay
+                $includes = $moduleentry.Include.SPlit(",")
+                $excludes = $moduleentry.Exclude.Split(",")
+                $filter = [PSCustomObject] [ordered] @{process = $process;
+                                                delay = $delay;    
+                                                includes = $includes; 
+                                                excludes = $excludes}
+                $targetfilter += $filter 
+            
+            }
 
             Set-Location "$targetDir"
             $TargetModList = Get-ChildItem -file -recurse | select-object FullName,Name 
@@ -661,15 +688,8 @@ try {
                     DeleteNow "CheckNone"  "$mod" "$sname" $targetfilter           # Check if module should be here at all 
                 }
                 else {
-                    # Module has been deleted from staging, delete it from target as well, but ONLY if it ALSO STILL exists in DSL!!!!
-                    # Reason: DSL is filled with a DELAY!!!!
-                    $dslname = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $dsldir)
-                    if (Test-Path $dslname) {
-                     
-                        Report "C" "Production module $targetMod.FullName is obsolete and will be deleted on computer $ADHC_Computer"
-                        DeleteNow "Delete"  "$mod" "$sname" $targetfilter
-                    }
-
+                    
+                    DeleteNow "Delete"  "$mod" "$sname" $targetfilter                 
                 } 
  
             }
@@ -747,9 +767,7 @@ try {
             }
             else {
                 # Module has been deleted from staging, delete it from DSL as well, DELETEX will do a rename! 
-                
-               Report "C" "DSL module $mod is obsolete and will be deleted on computer $ADHC_Computer"
-               
+                              
                DeleteNow "Delete"  "$mod" "$sname" $dslfilter
          
 
