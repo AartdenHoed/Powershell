@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.3"
+    $Version = " -- Version: 5.4"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -154,9 +154,9 @@ try {
     Remove-Variable -Name "ADHC_LockDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LockDir" -Value $lock -Option readonly -Scope global -Description "Directory for Global Locks" -force
     
-    $gs = "SourceControl\" + $ADHC_Computer + "_GitStatus.txt"
-    Remove-Variable -Name "ADHC_SourceControl" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_SourceControl" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
+    $gs = "GitCheck\" + $ADHC_Computer + "_GitCheck.txt"
+    Remove-Variable -Name "ADHC_GitCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_GitCheck" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
     
     Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force

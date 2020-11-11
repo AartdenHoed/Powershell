@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 8.2"
+﻿$Version = " -- Version: 8.3"
 
 # COMMON coding
 CLS
@@ -70,10 +70,10 @@ try {
 # END OF COMMON CODING
 
     # Init reporting file
-    $str = $ADHC_SourceControl.Split("\")
+    $str = $ADHC_GitCheck.Split("\")
     $odir = $ADHC_OutputDirectory + $str[0]
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
-    $gitstatus = $ADHC_OutputDirectory + $ADHC_SourceControl
+    $gitstatus = $ADHC_OutputDirectory + $ADHC_Gitcheck
 
     Set-Content $gitstatus $Scriptmsg -force  
     foreach ($msgentry in $m) {
