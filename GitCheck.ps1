@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 8.3"
+﻿$Version = " -- Version: 8.4"
 
 # COMMON coding
 CLS
@@ -30,6 +30,9 @@ function Report ([string]$level, [string]$line) {
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
             $global:scripterror = $true
+        }
+        ("G") {
+            $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
@@ -94,14 +97,10 @@ try {
     $line = "=".PadRight(120,"=")
 
     $alarmlist = @()
-    $filenr = 0
-
+    
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
-        $filenr += 1
-        $suffix = $filenr.ToString("00")
-        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
-    
+            
         $gdir = $gdir.replace(".git","")
         Report "N" ""
         $msg = "----------Directory $gdir".PadRight(120,"-") 
@@ -112,21 +111,17 @@ try {
 
         $ErrorActionPreference = "Continue"  
        
-        & {git status} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+        & {git status} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
 
         $ErrorActionPreference = "Stop"  
         
-        $a = Get-Content $ofile
-               
         Report "N" $line
         foreach ($l in $a) {
-            Report "B" $l
-        }   
+            Report "G" $l
+        }
         Report "N" $line
         
-        $x = $a[1]
-        Write-Host "    $x"
-        if ($a[1] -eq "nothing to commit, working tree clean") {
+        if ($a -like "nothing to commit, working tree clean") {
             Report "I" "==> No uncommitted changes"
         }
         else {
@@ -135,30 +130,21 @@ try {
                                                   Repo = $gdir}
             $alarmlist += $alarm
             
-        }
-        Remove-Item $ofile
-        
-        #&{git log ADHCentral/master..HEAD} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile
-
-        $filenr += 1
-        $suffix = $filenr.ToString("00")
-        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
+        } 
 
         $ErrorActionPreference = "Continue"  
         
-        & {git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+        & {git push ADHCentral master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a 
 
-        $ErrorActionPreference = "Stop"  
-
-        $a = Get-Content $ofile
+        $ErrorActionPreference = "Stop" 
+        
         Report "N" $line
         foreach ($l in $a) {
-            Report "B" $l
-        }        
-        Report "N" $line
-        $x = $a[0]
-        Write-Host "    $x"
-        if ($a[0] -eq "git : Everything up-to-date")  {
+            Report "G" $l
+        }
+        Report "N" $line 
+                        
+        if ($a -like "Everything up-to-date")  {
             Report "I" "==> No unpushed commits"
         }
         else {
@@ -170,7 +156,7 @@ try {
         }
         Report "N" $line
         Report "N" " "
-        Remove-Item $ofile
+        
         
     }    
 
@@ -179,10 +165,6 @@ try {
 
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
-
-        $filenr += 1
-        $suffix = $filenr.ToString("00")
-        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
 
         Report "N" ""
         $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
@@ -193,29 +175,17 @@ try {
 
         $ErrorActionPreference = "Continue"  
 
-        & {git push GITHUB master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+        & {git push GITHUB master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
 
         $ErrorActionPreference = "Stop"  
-
-        $a = Get-Content $ofile
+                                   
         Report "N" $line
-
-        $ok = $false
         foreach ($l in $a) {
-            Report "B" $l
-            if ($l -eq "Everything up-to-date")  {
-                $ok = $true
-                $showline = $l
-            }
-            if (!$ok) {
-                $showline = $l
-            }  
-        } 
-        
-        Write-Host "    $showline"       
+            Report "N" $l
+        }
         Report "N" $line
                 
-        if ($ok) { 
+        if ($a -like "Everything up-to-date")  {
              Report "I" "==> No unpushed commits"
         }
         else {
@@ -225,8 +195,7 @@ try {
             $alarmlist += $alarm
         }
         Report "N" $line
-        Report "N" " "
-        Remove-Item $ofile
+        Report "N" " " 
     }
     
 }

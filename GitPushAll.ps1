@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.0"
+﻿$Version = " -- Version: 4.1"
 
 # COMMON coding
 CLS
@@ -59,6 +59,9 @@ function Report ([string]$level, [string]$line) {
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
             $global:scripterror = $true
+        }
+        ("G") {
+            $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
@@ -131,15 +134,10 @@ try {
     $gitdirs = Get-ChildItem "*.git" -Recurse -Force
         
     $line = "=".PadRight(120,"=")
-    $filenr = 0
-
+    
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
-
-        $filenr += 1
-        $suffix = $filenr.ToString("00")
-        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
-
+        
         $gdir = $gdir.replace(".git","")
         Report "N" ""
         $msg = "----------Directory $gdir".PadRight(120,"-") 
@@ -150,35 +148,22 @@ try {
         
         $ErrorActionPreference = "Continue"      
              
-        & {git push ADHCentral master} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+        & {git push ADHCentral master} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a 
 
         $ErrorActionPreference = "Stop" 
-
-        $a = Get-Content $ofile
-       
+                     
         Report "N" " "
+        Report "N" $line
         Report "I" "==> Start of GIT output"
-        
-        Report "N" $line
-
-        $ok = $false
+                
         foreach ($l in $a) {
-            Report "B" $l
-            if ($l -eq "git : Everything up-to-date")  {
-                $ok = $true
-                $showline = $l
-            }
-            if (!$ok) {
-                $showline = $l
-            }
-            
+            Report "G" $l
         }
-        Write-Host "       $showline"        
-            
-        Report "N" $line
-        
+                
         Report "I" "==> End of GIT output"
-        if ($ok) {
+        Report "N" $line 
+
+        if ($a -like "Everything up-to-date") {
             Report "I" "==> Nothing to push"
         } 
         else {
@@ -186,8 +171,7 @@ try {
             WriteLog "Pushed" $gdir
         }
         
-        Report "N" " "
-        Remove-Item $ofile        
+        Report "N" " "          
     }
 
     Set-Location -Path $ADHC_RemoteDir
@@ -195,11 +179,7 @@ try {
 
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
-
-        $filenr += 1
-        $suffix = $filenr.ToString("00")
-        $ofile = $odir + "\" + $ADHC_Computer + "_gitoutput" + $suffix + ".txt"
-
+        
         Report "N" ""
         $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
         Report "N" $msg
@@ -209,43 +189,30 @@ try {
 
         $ErrorActionPreference = "Continue" 
 
-        & {git push GITHUB master} 6>&1 5>&1 4>&1 3>&1 2>&1 > $ofile 
+        & {git push GITHUB master} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a 
 
         $ErrorActionPreference = "Stop" 
 
         Report "N" " "
-        Report "I" "==> Start of GIT output"
         Report "N" $line
-
-        $a = Get-Content $ofile
-       
-        $ok = $false
+        Report "I" "==> Start of GIT output"       
+        
         foreach ($l in $a) {
-            Report "B" $l
-            if ($l -eq "Everything up-to-date")  {
-                $ok = $true
-                $showline = $l
-            }
-            if (!$ok) {
-                $showline = $l
-            }  
-        } 
-        
-        Write-Host "        $showline"       
-        Report "N" $line
-        
+            Report "G" $l
+        }
         Report "I" "==> End of GIT output"
-        if ($ok) {
+        Report "N" $line 
+
+        if ($a -like "Everything up-to-date") {
             Report "I" "==> Nothing to push"
         } 
         else {
             Report "C" "==> Push executed"
             WriteLog "Pushed" $rdir
         }        
-        Report "N" " "  
-        Remove-Item $ofile      
-    }
-    
+        Report "N" " "
+    }  
+            
 }
 catch {
     $global:scripterror = $true
