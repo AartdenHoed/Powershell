@@ -17,8 +17,8 @@ Write-Host "====================================================================
 Write-Host "Test connection Holiday:"
 Test-WsMan Holiday -port 5985
 Write-Host "===================================================================================="
-Write-Host "Test connection Laptop-AHMRDH:"
-Test-Wsman Laptop-AHMRDH -port 5985
+Write-Host "Test connection HoeSto:"
+Test-Wsman HoeSto -port 5985
 Write-Host "===================================================================================="
 Write-Host "Test connection ADHC:"
 Test-Wsman ADHC -port 5985
@@ -26,8 +26,8 @@ Write-Host "====================================================================
 Write-Host "Test port 5985 Holiday:"
 Test-NetConnection Holiday -Port 5985
 Write-Host "===================================================================================="
-Write-Host "Test port 5985 Laptop-AHMRDH:"
-Test-NetConnection Laptop-AHMRDH -Port 5985
+Write-Host "Test port 5985 HoeSto:"
+Test-NetConnection HoeSto -Port 5985
 Write-Host "===================================================================================="
 Write-Host "Test port 5985 ADHC:"
 Test-NetConnection ADHC -Port 5985
