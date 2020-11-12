@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.4"
+    $Version = " -- Version: 5.5"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -54,7 +54,7 @@ try {
     Remove-Variable -Name "ADHC_Computer" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -Scope global -Description "Name of this computer" -force
 
-    $Hostlist = "ADHC","Laptop-AHMRDH","Holiday" 
+    $Hostlist = "ADHC","Hoesto","Holiday" 
     Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
 
