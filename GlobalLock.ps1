@@ -7,7 +7,7 @@ param (
 )
 
 #$Action = "LOCK"
-#$ENQNAME = "TESSIE"
+#$ENQNAME = "GIT"
 #$PROCESS = "Ikkuh"
 #$waittime = 15
 
@@ -98,18 +98,22 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
                     if ($lockstatus -eq "LOCK") {
                         if ($lockuntil -gt $now) {   # Resource is locked by a process
                             $ResourceFree = $false
-                            AddMessage "I" "Resource $lockenqname locked by process $lockprocess on computer $lockmachine Until $u"  
+                            $msg = "Resource $lockenqname locked by process $lockprocess on computer $lockmachine Until $u"  
+                            AddMessage "I" $msg
+                            Write-Host $msg 
                         }
                                             
                     }
                     
                 } 
                 if (!$ResourceFree) { 
-                        AddMessage "A" "Resource $what not available now. Wait for $waittime seconds" 
-                        Start-Sleep -s $waittime
-                    }
-                    else {
-                        AddMessage "I" "Resource $what not locked by any other process" 
+                    $msg = "Resource $what not available now. Wait for $waittime seconds" 
+                    AddMessage "A" $msg
+                    Write-Host $msg 
+                    Start-Sleep -s $waittime
+                } 
+                else {
+                    AddMessage "I" "Resource $what not locked by any other process" 
                 }
             } until ($ResourceFree)
             
@@ -200,7 +204,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 2.0.1"
+    $Version = " -- Version: 2.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -213,7 +217,7 @@ try {
     $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 
     AddMessage "I" $Scriptmsg
-
+    Write-Host $scriptmsg
 
     $LocalInitVar = $mypath + "InitVar.PS1"
     & "$LocalInitVar" 
@@ -254,6 +258,7 @@ try {
                 $a = Lock "Init" $Computer $process $EnqName
                 # Check if lock is free
                 $b = Lock "Test" $Computer $process $EnqName
+                # write-host "test return"
                 # If Test returns, the lock is free, so get it!
                 $c = Lock "Lock" $Computer $process $EnqName 
                 # After this, verify that no other process crossed the lock 
