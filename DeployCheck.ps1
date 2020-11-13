@@ -487,7 +487,7 @@ try {
         Report "I" "Staging directory: $stagingdir"
         Report "N" " "
 
-        $devmodules = Get-ChildItem $devdir -recurse -file  | `
+        $devmodules = Get-ChildItem "$devdir" -recurse -file  | `
                                     Where-Object {($_.FullName -notlike "*.git*") -and ($_.FullName -notlike "*MyExample*") } | `
                                     Select FullName, Name
         foreach ($naam in $devmodules) {
