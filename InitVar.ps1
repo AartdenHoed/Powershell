@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 6.0"
+    $Version = " -- Version: 6.1.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -107,7 +107,7 @@ try {
     Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
     
-    $boot = "BootTime\" + $ADHC_Computer + "_BootTime.txt"
+    $boot = "PRTG\BootTime\" + $ADHC_Computer + "_BootTime.txt"
     Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
     
@@ -121,7 +121,7 @@ try {
 
     $encoder = new-object System.Text.UTF8Encoding
     $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
-    $secfile = $output + "PRTG\SaveString.txt"
+    $secfile = $output + "PRTG\Security\SaveString.txt"
     $sec = Get-Content $secfile
     $SecureString = ConvertTo-SecureString $sec -Key $bytes
     $Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList "ADHCode", $Securestring 
@@ -153,10 +153,10 @@ try {
     Set-Variable -Name "ADHC_GitCheck" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
     
     Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_Jobstatus" -Value "JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force
+    Set-Variable -Name "ADHC_Jobstatus" -Value "PRTG\JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force
     
     Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTGsensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
+    Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTG\SensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
 
     $vx = "VariableXref\"+ $ADHC_Computer + "_VariableXref.txt"
     Remove-Variable -Name "ADHC_VariableXref" -force -ErrorAction SilentlyContinue
