@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 5.5"
+    $Version = " -- Version: 6.0"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -74,13 +74,7 @@ try {
     
     $prof = $env:USERPROFILE -split '\\'
 
-    switch ($ADHC_Computer) { 
-        
-            "Ahmrdh-Netbook"{$OneDrive = "P:\" + $prof[2] + "\OneDrive\"} 
-            "Holiday"       {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
-            "ADHC"          {$OneDrive = "D:\AartenHetty" + "\OneDrive\"}
-            default         {$OneDrive = "D:\" + $prof[2] + "\OneDrive\"} 
-        }
+    $OneDrive = "D:\ADHC_Home\OneDrive\"
     Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force    
 
