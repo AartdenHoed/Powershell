@@ -1,17 +1,22 @@
 ﻿# Lock/unlock a global resource
 param (
-    [string]$Action = "Action?", 
-    [string]$EnqName = "EnqName?",
-    [string]$Process = "Process?", 
-    [int] $Duration = 10  
+    [string]$Action = "LOCK", 
+    [string]$EnqName = "EnqName",
+    [string]$Process = "Process", 
+    [int] $Duration = 10,
+    [string] $Mode = "xx" 
 )
 
+#TestValues####################################
 #$Action = "LOCK"
-#$ENQNAME = "GIT"
+#$ENQNAME = "WMIC"
 #$PROCESS = "Ikkuh"
 #$waittime = 15
+#$Mode = "Json"
+#TestValues####################################
 
-$waittime = 150
+$Mode = $mode.ToUpper()
+$Waittime = 150
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
@@ -109,7 +114,9 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
                 if (!$ResourceFree) { 
                     $msg = "Resource $what not available now. Wait for $waittime seconds" 
                     AddMessage "A" $msg
-                    Write-Host $msg 
+                    if ($Mode -ne "JSON") {
+                        Write-Host $msg
+                    } 
                     Start-Sleep -s $waittime
                 } 
                 else {
@@ -204,7 +211,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 2.1"
+    $Version = " -- Version: 3.0.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -217,10 +224,12 @@ try {
     $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 
     AddMessage "I" $Scriptmsg
-    Write-Host $scriptmsg
+    if ($Mode -ne "JSON") {
+        Write-Host $scriptmsg
+    }
 
-    $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar" 
+    $LocalInitVar = $mypath + "InitVar.PS1"  
+    & "$LocalInitVar" -JSON Silent
     
     if (!$ADHC_InitSuccessfull) {
         # Write-Warning "YES"
@@ -295,5 +304,14 @@ Catch {
    $EnqSuccess = $false
     
 }
-Return $global:MessageList
+if ($Mode.ToUpper() -eq  "JSON" ) {
+       
+    $ReturnJSON = ConvertTo-JSON $global:MessageList     
+     
+    return $ReturnJSON 
+}
+else {
+    Return $global:MessageList   
+}
+
 
