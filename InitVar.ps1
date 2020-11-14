@@ -27,14 +27,14 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 6.1.1"
+    $Version = " -- Version: 6.3"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
     $Tijd = " -- Time: " + $d.ToShortTimeString()
     $myname = $MyInvocation.MyCommand.Name
     $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    if ($JSON.ToUpper() -ne "YES") {
+    if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
         Write-Information $Scriptmsg 
     }
 
@@ -232,11 +232,11 @@ try {
                                                   ADHC_WmicGenerations = $ADHC_WmicGenerations
                                                   ADHC_WmicDirectory = $ADHC_WmicDirectory;
                                                   ADHC_OutputDirectory = $ADHC_OutputDirectory;
-                                                  ADHC_Jobstatus = $ADHC_Jobstatus}
+                                                  ADHC_Jobstatus = $ADHC_Jobstatus;
+                                                  ADHC_LockScript = $ADHC_LockScript}
     
-        $ReturnJSON = ConvertTo-JSON $ReturnOBJ     
-        write-output $ReturnJSON 
-        return 
+        $ReturnJSON = ConvertTo-JSON $ReturnOBJ 
+        return $ReturnJSON
     
     }
     else {
