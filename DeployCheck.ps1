@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.4"
+﻿$Version = " -- Version: 2.5"
 
 # COMMON coding
 CLS
@@ -398,6 +398,7 @@ try {
     $Tijd = " -- Time: " + $d.ToShortTimeString()
 
     $myname = $MyInvocation.MyCommand.Name
+    $enqprocess = $myname.ToUpper().Replace(".PS1","")
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
 
@@ -412,6 +413,8 @@ try {
         throw $ADHC_InitError
     }
 
+    $m = & $ADHC_LockScript "Lock" "Deploy" "$enqprocess"    
+
 # END OF COMMON CODING
 
     # Init report file 
@@ -420,6 +423,18 @@ try {
     New-Item -ItemType Directory -Force -Path $rptdir | Out-Null
     $Report = $ADHC_OutputDirectory + $ADHC_DeployCheck
     Set-Content $Report $Scriptmsg -force
+
+    foreach ($msgentry in $m) {
+        $msglvl = $msgentry.level
+        $msgtext = $msgentry.Message
+        Report $msglvl $msgtext
+    }
+    $ENQfailed = $false 
+    if ($msglvl -eq "E") {
+        # ENQ failed
+        $ENQfailed = $true
+        throw "Could not lock resource 'Deploy'"
+    }
 
     $StagingList = Get-ChildItem $ADHC_StagingDir -Directory | Select Name,FullName
 
@@ -676,6 +691,12 @@ catch {
 }
 
 finally {
+    $m = & $ADHC_LockScript "Free" "Deploy" "$enqprocess"
+    foreach ($msgentry in $m) {
+        $msglvl = $msgentry.level
+        $msgtext = $msgentry.Message
+        Report $msglvl $msgtext
+    }
     # Init jobstatus file
     $dir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -684,6 +705,24 @@ finally {
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
     Add-Content $Report " "
+
+    if ($ENQfailed) {
+        $msg = ">>> Script could not run"
+        Report "E" $msg
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+       
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $dump"
+
+        Report "E" "Failed item = $FailedItem"
+        Report "E" "Errormessage = $ErrorMessage"
+        Report "E" "Dump info = $dump"
+        exit 12        
+
+    }
 
         
     if ($global:scripterror) {
