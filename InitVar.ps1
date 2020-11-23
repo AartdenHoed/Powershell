@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 6.3"
+    $Version = " -- Version: 6.5"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -110,6 +110,10 @@ try {
     $boot = "PRTG\BootTime\" + $ADHC_Computer + "_BootTime.txt"
     Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
+
+    $drive = "PRTG\DriveInfo\" + $ADHC_Computer + "_DriveInfo.txt"
+    Remove-Variable -Name "ADHC_DriveInfo" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DriveInfo" -Value "$drive" -Option readonly -Scope global -Description "Drive info file" -force
     
     $ng = "DeployCheck\"+ $ADHC_Computer + "_DeployCheck.txt"
     Remove-Variable -Name "ADHC_DeployCheck" -force -ErrorAction SilentlyContinue
@@ -191,6 +195,13 @@ try {
 
     Remove-Variable -Name "ADHC_Caption" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Caption" -Value $x.Caption -Option readonly -Scope global -Description "Caption value for current user" -force
+
+    $xmldate = Get-Date
+    $xmlymd = $xmldate.ToString("yyyy-MM-dd")
+    $xmlhms = $xmldate.ToString("HH:mm:ss")
+    $xmlstr = $xmlymd + "T" + $xmlhms + ".0000000" 
+    Remove-Variable -Name "ADHC_XmlTimestamp" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_XmlTimestamp" -Value $xmlstr -Option readonly -Scope global -Description "Creation timestamp XML" -force
 
     # PYTHON (WMIC pgm)
 

@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.4.1"
+﻿$Version = " -- Version: 3.5"
 
 # COMMON coding
 CLS
@@ -78,7 +78,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         }
     }
 
-    if (($action.ToUpper() -eq "CHECKNONE") -and ($process.ToUpper() -eq "NONE")) {
+    if (($action.ToUpper() -eq "VALIDATE") -and ($process.ToUpper() -eq "NONE")) {
         $action = "DELETE"
         Report "C" "Deletion of file $tobedeleted will be initiated because process = $process"
     } 
@@ -95,7 +95,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
     # $action
            
     switch ($action.ToUpper()) {
-        "CHECKNONE" {return} 
+        "VALIDATE" {return} 
         "DELETE" { 
             Report "C" "Module $tobedeleted will be deleted directly from computer $ADHC_Computer"
             Remove-Item "$tobedeleted" -force
@@ -313,6 +313,15 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                     # write $Author.substring(0,6); 
                     if  ($Author.substring(0,6) -eq '$ADHC_'){ 
                         $xml.task.RegistrationInfo.Author = Invoke-Expression($Author); 
+                    }; 
+                    # write $xml.task.RegistrationInfo.Author 
+                }
+
+                $Createdate = $xml.task.RegistrationInfo.Date; 
+                if ($Createdate) { 
+                    # write $Author.substring(0,6); 
+                    if  ($Createdate.substring(0,6) -eq '$ADHC_'){ 
+                        $xml.task.RegistrationInfo.Date = Invoke-Expression($Createdate); 
                     }; 
                     # write $xml.task.RegistrationInfo.Author 
                 }
@@ -568,7 +577,7 @@ try {
         foreach ($stagedfile in $stageContent) {
             $mod = $stagedfile.FullName
             $sname = $stagedfile.Name
-            DeleteNow "CheckNone"  "$mod" "$sname" $stagingfilter           # Check if module should be here at all 
+            DeleteNow "VALIDATE"  "$mod" "$sname" $stagingfilter           # Check if module should be here at all 
         }
 
         $x = 0
@@ -677,7 +686,7 @@ try {
             }
 
             Set-Location "$targetDir"
-            $TargetModList = Get-ChildItem -file -recurse | select-object FullName,Name 
+            $TargetModList = Get-ChildItem -file -recurse | Where-Object {($_.FullName -notlike "*.git*") -and ($_.FullName -notlike "*MyExample*") } | select-object FullName,Name 
         
             foreach ($targetMod in $TargetModList) {
                 $mod = $Targetmod.FullName
@@ -685,7 +694,7 @@ try {
                 $stagename = $TargetMod.Fullname.ToUpper().Replace($targetDir.ToUpper(), $staginglocation)
                 # $stagename
                 if (Test-Path $stagename) {
-                    DeleteNow "CheckNone"  "$mod" "$sname" $targetfilter           # Check if module should be here at all 
+                    DeleteNow "VALIDATE"  "$mod" "$sname" $targetfilter           # Check if module should be here at all 
                 }
                 else {
                     
@@ -763,7 +772,7 @@ try {
             $stagename = $DSLMod.Fullname.ToUpper().Replace($DSLDir.ToUpper(), $staginglocation)
             # $stagename
             if (Test-Path $stagename) {
-                DeleteNow "CheckNone"  "$mod" "$sname" $dslfilter           # Check if module should be here at all 
+                DeleteNow "VALIDATE"  "$mod" "$sname" $dslfilter           # Check if module should be here at all 
             }
             else {
                 # Module has been deleted from staging, delete it from DSL as well, DELETEX will do a rename! 
