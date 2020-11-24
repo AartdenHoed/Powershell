@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 6.5"
+    $Version = " -- Version: 6.6"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -100,6 +100,10 @@ try {
     $ls = $mypath + "Globallock.ps1"
     Remove-Variable -Name "ADHC_LockScript" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LockScript" -Value "$ls" -Option readonly -Scope global -Description "Name of Global Lock script" -force
+    
+    $ni = $mypath + "IpNodeInfo.ps1"
+    Remove-Variable -Name "ADHC_NodeInfoScript" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_NodeInfoScript" -Value "$ni" -Option readonly -Scope global -Description "Name of IpNodeInfok script" -force
 
     # OUTPUT FILES
     
