@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.4"
+﻿$Version = " -- Version: 3.0"
 
 # COMMON coding
 CLS
@@ -38,15 +38,14 @@ try {
     $FileList = Get-ChildItem $OneDrive -recurse  -name -force
     # $FileList | Out-Gridview
 
-    # Init reporting file
-    $str = $ADHC_OneDriveReport.Split("\")
-    $dir = $ADHC_OutputDirectory + $str[0]
+    # Init temporary reporting file
+    $dir = $ADHC_TempDirectory + $ADHC_OneDriveCheck.Directory
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $TxtFile = $ADHC_OutputDirectory + $ADHC_OneDriveReport
+    $TempFile = $dir + $ADHC_OneDriveCheck.Name
 
-    Set-Content $TxtFile $Scriptmsg -force
-    Add-Content $TxtFile "Overview of OneDrive conficts"
-    Add-Content $TxtFile " "
+    Set-Content $TempFile $Scriptmsg -force
+    Add-Content $TempFile "Overview of OneDrive conficts"
+    Add-Content $TempFile " "
 
     foreach ($HostName in $ADHC_Hostlist) {
         $SearchFor1 = "-" + $HostName.ToUpper() + "\."
@@ -55,7 +54,7 @@ try {
         $SearchFor2
         $SearchFor3 = "-" + $HostName.ToUpper() + "-\d"
         $SearchFor3
-        Add-Content $TxtFile "Computer $Hostname :"
+        Add-Content $TempFile "Computer $Hostname :"
         $ConflictsFound = $false
         foreach ($FileName in $FileList) {        
             $a = select-string -InputObject $FileName.ToUpper() -pattern $SearchFor1 
@@ -66,13 +65,13 @@ try {
             $c
             if ($a -or $b -or $c) {
                 $ConflictsFound = $true
-                Add-Content $TxtFile "  ==> $FileName"
+                Add-Content $TempFile "  ==> $FileName"
                 
             }
         
         }
         if (!$ConflictsFound) {
-            Add-Content $TxtFile "  No Conflicts Found"
+            Add-Content $TempFile "  No Conflicts Found"
         }
         else {
             $scriptaction = $true
@@ -95,14 +94,14 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Add-Content $Txtfile " "
+    Add-Content $TempFile " "
 
         
     if ($scripterror) {
-        Add-Content $TxtFile "Failed item = $FailedItem"
-        Add-Content $TxtFile "Errormessage = $ErrorMessage"
+        Add-Content $TempFile "Failed item = $FailedItem"
+        Add-Content $TempFile "Errormessage = $ErrorMessage"
         $msg = ">>> Script ended abnormally"
-        Add-Content $TxtFile $msg
+        Add-Content $TempFile $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -111,15 +110,15 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Add-Content $TxtFile "Failed item = $FailedItem"
-        Add-Content $TxtFile "Errormessage = $ErrorMessage"
-        Add-Content $TxtFile "Dump info = $dump"
+        Add-Content $TempFile "Failed item = $FailedItem"
+        Add-Content $TempFile "Errormessage = $ErrorMessage"
+        Add-Content $TempFile "Dump info = $dump"
         exit 16        
     }
    
     if ($scriptaction) {
         $msg = ">>> Script ended normally with action required"
-        Add-Content $TxtFile $msg
+        Add-Content $TempFile $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -129,7 +128,7 @@ finally {
 
     if ($scriptchange) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Add-Content $TxtFile $msg
+        Add-Content $TempFile $msg
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -138,10 +137,23 @@ finally {
     }
 
     $msg = ">>> Script ended normally without reported changes, and no action required"
-    Add-Content $TXTfile $msg
-    $dt = Get-Date
-    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $jobstatus $jobline
+    Add-Content $TempFile $msg
+    Add-Content $TempFile " "
+
+    try {
+
+        $deffile = $ADHC_OutputDirectory + $ADHC_OneDriveCheck.Directory + $ADHC_OneDriveCheck.Name 
+        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile
+    }
+    Catch {
+
+    }
+    Finally {
+
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
        
-    exit 0
+        exit 0
+    }
 }

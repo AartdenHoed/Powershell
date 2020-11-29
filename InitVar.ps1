@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 6.6"
+    $Version = " -- Version: 7.0"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -97,6 +97,10 @@ try {
     Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
 
+    $cm = $mypath + "CopyMove.ps1"
+    Remove-Variable -Name "ADHC_CopyMoveScript" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_CopyMOveScript" -Value "$cm" -Option readonly -Scope global -Description "Name of Copy/Move script" -force
+    
     $ls = $mypath + "Globallock.ps1"
     Remove-Variable -Name "ADHC_LockScript" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LockScript" -Value "$ls" -Option readonly -Scope global -Description "Name of Global Lock script" -force
@@ -106,6 +110,9 @@ try {
     Set-Variable -Name "ADHC_NodeInfoScript" -Value "$ni" -Option readonly -Scope global -Description "Name of IpNodeInfok script" -force
 
     # OUTPUT FILES
+    $temp = "D:\ADHC_Home\ADHC_Temp\"
+    Remove-Variable -Name "ADHC_TempDirectory" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_TempDirectory" -Value $temp -Option readonly -Scope global -Description "Common root directory for temp files" -force
     
     $output = $ADHC_OneDrive + "ADHC Output\"
     Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
@@ -123,9 +130,12 @@ try {
     Remove-Variable -Name "ADHC_DeployCheck" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
     
-    $cf = "OneDriveCheck\" + $ADHC_Computer + "_OneDriveCheck.txt"
-    Remove-Variable -Name "ADHC_OneDriveReport" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_OneDriveReport" -Value "$cf" -Option readonly -Scope global -Description "Conflict report file" -force
+    $cfdir = "OneDriveCheck\" 
+    $cfname = $ADHC_Computer + "_OneDriveCheck.txt"
+    $cf = [PSCustomObject] [ordered] @{Directory = $cfdir;
+                                       Name = $cfname }
+    Remove-Variable -Name "ADHC_OneDriveCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_OneDriveCheck" -Value $cf -Option readonly -Scope global -Description "Conflict report file attributes" -force
 
     $encoder = new-object System.Text.UTF8Encoding
     $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
