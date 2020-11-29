@@ -105,7 +105,9 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
                             $ResourceFree = $false
                             $msg = "Resource $lockenqname locked by process $lockprocess on computer $lockmachine Until $u"  
                             AddMessage "I" $msg
-                            Write-Host $msg 
+                            if (($Mode -ne "JSON") -and ($Mode -ne "SILENT"))  {
+                                Write-Host $msg
+                            } 
                         }
                                             
                     }
@@ -114,7 +116,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
                 if (!$ResourceFree) { 
                     $msg = "Resource $what not available now. Wait for $waittime seconds" 
                     AddMessage "A" $msg
-                    if ($Mode -ne "JSON") {
+                    if (($Mode -ne "JSON") -and ($Mode -ne "SILENT")) {
                         Write-Host $msg
                     } 
                     Start-Sleep -s $waittime
@@ -157,7 +159,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
             $lockuntil   = [datetime]::ParseExact($lockbits[5],"dd-MM-yyyy HH:mm:ss",$null)
             $R = CreateLockRecord "FREE" $Computer $Process $EnqName $lockfrom $lockuntil
             Set-Content $LockFullNAme $R 
-            AddMessage "I" "Resource $what freed bij process $Process on computer $COmputer"
+            AddMessage "I" "Resource $what freed by process $Process on computer $COmputer"
             return "ok" 
         }
         "VRFY"{
@@ -211,7 +213,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 3.0.1"
+    $Version = " -- Version: 3.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToShortDateString()
@@ -224,7 +226,7 @@ try {
     $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 
     AddMessage "I" $Scriptmsg
-    if ($Mode -ne "JSON") {
+    if (($Mode -ne "JSON") -and ($Mode -ne "SILENT")) {
         Write-Host $scriptmsg
     }
 
