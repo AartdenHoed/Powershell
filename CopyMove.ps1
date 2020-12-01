@@ -17,7 +17,7 @@ $Mode = $Mode.ToUpper()
 $Actionlist = @("MOVE","COPY")
 $Modelist = @("REPLACE","APPEND")
 
-$ScriptVersion = " -- Version: 1.0.1"
+$ScriptVersion = " -- Version: 1.1"
 
 function Report ([string]$level, [string]$line) {
     
@@ -71,8 +71,8 @@ Try {
 
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
-    $Datum = " -- Date: " + $d.ToShortDateString()
-    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
 
     $myname = $MyInvocation.MyCommand.Name
     $p = $myname.Split(".")
@@ -108,8 +108,9 @@ if (!$scripterror) {
         else {
             $global:writemsg = $false
         }
-        $Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
-        Report "I" $Scriptmsg 
+        $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
+        Report "N" $Scriptmsg 
+        Write-Host $scriptmsg
     
         $mymsg = "Input Validation: $Action file $InputFile to $Outputfile (mode: $Mode)"
         Report "I"  $mymsg
@@ -222,4 +223,12 @@ if (!$scripterror) {
 if ($scripterror) {
     throw "$FullScriptName ended abnormally"
 } 
+else {
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
+    Report "N" $Scriptmsg 
+    Write-Host $scriptmsg
+}
 

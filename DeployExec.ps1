@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.5"
+﻿$Version = " -- Version: 3.6"
 
 # COMMON coding
 CLS
@@ -468,15 +468,15 @@ function WriteLog ([string]$Action, [string]$line) {
 try {
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
-    $Datum = " -- Date: " + $d.ToShortDateString()
-    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
 
     $myname = $MyInvocation.MyCommand.Name
     $enqprocess = $myname.ToUpper().Replace(".PS1","")
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
 
-    $Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
@@ -872,7 +872,12 @@ finally {
     exit 0
    
 
-} 
+}
+$d = Get-Date
+$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+$Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+$Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+Write-Information $Scriptmsg 
 
 
  

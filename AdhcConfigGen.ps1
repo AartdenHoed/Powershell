@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 3.2"
+$Version = " -- Version: 3.3"
 
 # COMMON coding
 CLS
@@ -12,14 +12,14 @@ $ErrorActionPreference = "Stop"
 
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
-$Datum = " -- Date: " + $d.ToShortDateString()
-$Tijd = " -- Time: " + $d.ToShortTimeString()
+$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+$Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
 
 $myname = $MyInvocation.MyCommand.Name
 $FullScriptName = $MyInvocation.MyCommand.Definition
 $mypath = $FullScriptName.Replace($MyName, "")
 
-$Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+$Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 Write-Information $Scriptmsg 
 
 $LocalInitVar = $mypath + "InitVar.PS1"
@@ -189,4 +189,10 @@ foreach ($factory in $factorylist) {
     write-host " "
     
 }
+
+$d = Get-Date
+$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+$Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+$Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+Write-Information $Scriptmsg 
 

@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 2.4"
+﻿$Version = " -- Version: 3.1"
 
 # COMMON coding
 CLS
@@ -7,17 +7,53 @@ $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
+function Report ([string]$level, [string]$line) {
+    switch ($level) {
+        ("N") {$rptline = $line}
+        ("I") {
+            $rptline = "Info    *".Padright(10," ") + $line
+        }
+        ("A") {
+            $rptline = "Caution *".Padright(10," ") + $line
+        }
+        ("B") {
+            $rptline = "        *".Padright(10," ") + $line
+        }
+        ("C") {
+            $rptline = "Change  *".Padright(10," ") + $line
+            $global:scriptchange = $true
+        }
+        ("W") {
+            $rptline = "Warning *".Padright(10," ") + $line
+            $global:scriptaction = $true
+        }
+        ("E") {
+            $rptline = "Error   *".Padright(10," ") + $line
+            $global:scripterror = $true
+        }
+        ("G") {
+            $rptline = "GIT:    *".Padright(10," ") + $line
+        }
+        default {
+            $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
+            $global:scripterror = $true
+        }
+    }
+    Add-Content $tempfile $rptline
+
+}
+
 try {
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
-    $Datum = " -- Date: " + $d.ToShortDateString()
-    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
 
     $myname = $MyInvocation.MyCommand.Name
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
 
-    $Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
@@ -29,18 +65,18 @@ try {
     }
 
      # init flags
-    $scripterror = $false
-    $scriptaction = $false
-    $scriptchange = $false
+    $global:scripterror = $false
+    $global:scriptaction = $false
+    $global:scriptchange = $false
 
 # END OF COMMON CODING   
 
     # Init reporting file
-    $str = $ADHC_VariableXref.Split("/")
-    $dir = $ADHC_OutputDirectory + $str[0]
+    
+    $dir = $ADHC_TempDirectory + $ADHC_VariableXref.Directory
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $Report = $ADHC_OutputDirectory + $ADHC_VariableXref
-    Set-Content $Report $Scriptmsg -force
+    $Tempfile = $dir + $ADHC_VariableXref.NAme
+    Set-Content $Tempfile $Scriptmsg -force
 
     $ADHCvars = Get-Variable |  Where-Object {$_.Name -like "ADHC_*"}
     $varcount = $ADHCvars.Count
@@ -104,30 +140,30 @@ try {
     $Sorted = $Resultlist | Sort-Object -Property Searchstring,SourceFile  
 
     $curname = "@#$"
-    Add-Content $Report " "
+    Report "N"  " "
     $rptline = " === Cross reference between ADHC variables and sources in $ADHC_Stagingdir === "
-    Add-Content $Report $rptline
+    Report "N"  $rptline
 
     foreach ($hit in $Sorted) {
         $varname = $hit.Searchstring
         if ($varname -ne $curname) {
-            Add-Content $Report " "
+            Report "N"  " "
             $rptline = $varname.Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile.PadRight(100," ") + "Value = '"+ $hit.Value + "'"
-            Add-Content $Report $rptline
+            Report "N"  $rptline
             $curname = $varname
         }
         else {
             $rptline = " ".Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile.PadRight(100," ") 
-            Add-Content $Report $rptline
+            Report "N"  $rptline
         }
      
 
     } 
 
     # report ADHC variables that are not being used
-    Add-Content $Report " "
+    Report "N"  " "
     $rptline = " === ADHC variables that are not being referenced in any source in $ADHC_Stagingdir === "
-    Add-Content $Report $rptline
+    Report "N"  $rptline
 
     $written = $false
 
@@ -142,7 +178,7 @@ try {
         }
         if (!$foundit) {
             $rptline = " >>> $findvar"
-            Add-Content $Report $rptline
+            Report "N"  $rptline
             write-warning "$findvar not referenced in any source"
             $written = $true
         }
@@ -151,15 +187,15 @@ try {
     }
     if (!$written) { 
         $rptline = " >>> N O N E"
-        Add-Content $Report $rptline
+        Report "N"  $rptline
     } 
     else {
-        $scriptaction = $true
+        $global:scriptaction = $true
     }
 
 }
 catch {
-    $scripterror = $true
+    $global:scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
@@ -172,12 +208,13 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Add-Content $Report " "
-
+    Report "N"  " "
+    $returncode = 99
         
-    if ($scripterror) {
+    if (($global:scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
-        Add-Content $Report $msg
+        Report "N"  $msg
+        Report "N"  " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -189,36 +226,73 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 16        
+        $returncode =  16        
     }
    
-    if ($scriptaction) {
+    if (($global:scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
-        Add-Content $Report $msg
+        Report "W"  $msg
+        Report "N"  " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 8
+        $returncode =  8
     }
 
-    if ($scriptchange) {
+    if (($global:scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Add-Content $Report $msg
+        Report "C"  $msg
+        Report "N"  " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 4
+        $returncode =  4
     }
 
-    $msg = ">>> Script ended normally without reported changes, and no action required"
-    Add-Content $Report $msg
-    $dt = Get-Date
-    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $jobstatus $jobline
+    if ($returncode -eq 99) {
+
+        $msg = ">>> Script ended normally without reported changes, and no action required"
+        Report "I"  $msg
+        Report "N"  " "
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
        
-    exit 0
+        $returncode = 0
+    }
+
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    Report "N" $scriptmsg
+    Report "N" " "
+
+     try { # Free resource and copy temp file        
+        
+        $deffile = $ADHC_OutputDirectory + $ADHC_VariableXref.Directory + $ADHC_VariableXref.Name 
+        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
+    }
+    Catch {
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        $Dump = $_.Exception.ToSTring()
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $Dump"
+        $Returncode = 16       
+
+    }
+    Finally {
+        Write-Information $Scriptmsg
+        Exit $Returncode
+        
+    }  
    
 
 } 

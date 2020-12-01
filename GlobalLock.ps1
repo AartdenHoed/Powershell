@@ -213,19 +213,19 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 3.1"
+    $Version = " -- Version: 3.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
-    $Datum = " -- Date: " + $d.ToShortDateString()
-    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $myname = $MyInvocation.MyCommand.Name
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
        
     $myname = $MyInvocation.MyCommand.Name
-    $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 
-    AddMessage "I" $Scriptmsg
+    AddMessage "N" $Scriptmsg
     if (($Mode -ne "JSON") -and ($Mode -ne "SILENT")) {
         Write-Host $scriptmsg
     }
@@ -306,6 +306,18 @@ Catch {
    $EnqSuccess = $false
     
 }
+$d = Get-Date
+$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+$Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+$Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+AddMessage "N" $Scriptmsg
+
+if ($mode -ne "SILENT") {
+   
+    Write-Host $scriptmsg
+}
+
+
 if ($Mode.ToUpper() -eq  "JSON" ) {
        
     $ReturnJSON = ConvertTo-JSON $global:MessageList     
@@ -313,6 +325,7 @@ if ($Mode.ToUpper() -eq  "JSON" ) {
     return $ReturnJSON 
 }
 else {
+    
     Return $global:MessageList   
 }
 

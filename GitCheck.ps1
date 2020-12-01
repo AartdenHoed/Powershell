@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 8.4"
+﻿$Version = " -- Version: 9.0"
 
 # COMMON coding
 CLS
@@ -39,7 +39,7 @@ function Report ([string]$level, [string]$line) {
             $global:scripterror = $true
         }
     }
-    Add-Content $gitstatus $rptline
+    Add-Content $tempfile $rptline
 
 }
 
@@ -50,15 +50,15 @@ $ErrorActionPreference = "Stop"
 try {                                        
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
-    $Datum = " -- Date: " + $d.ToShortDateString()
-    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
 
     $myname = $MyInvocation.MyCommand.Name
     $enqprocess = $myname.ToUpper().Replace(".PS1","")
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
 
-    $Scriptmsg = "Directory " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
@@ -73,12 +73,11 @@ try {
 # END OF COMMON CODING
 
     # Init reporting file
-    $str = $ADHC_GitCheck.Split("\")
-    $odir = $ADHC_OutputDirectory + $str[0]
+    $odir = $ADHC_TempDirectory + $ADHC_GitCheck.Directory
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
-    $gitstatus = $ADHC_OutputDirectory + $ADHC_Gitcheck
+    $tempfile = $odir + $ADHC_Gitcheck.Name
 
-    Set-Content $gitstatus $Scriptmsg -force  
+    Set-Content $tempfile $Scriptmsg -force  
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
         $msgtext = $msgentry.Message
@@ -206,12 +205,7 @@ catch {
     $Dump = $_.Exception.ToString()
 }
 finally {
-    $m = & $ADHC_LockScript "Free" "Git" "$enqprocess"
-    foreach ($msgentry in $m) {
-        $msglvl = $msgentry.level
-        $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
-    }
+    
     # Init jobstatus file
     $jdir = $ADHC_OutputDirectory + $ADHC_Jobstatus
     New-Item -ItemType Directory -Force -Path $jdir | Out-Null
@@ -230,9 +224,12 @@ finally {
     }
     Report "N" " "
 
+    $returncode = 99
+
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
         Report "E" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -244,13 +241,14 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 12        
+        $returncode = 12       
 
     }
         
-    if ($global:scripterror) {
+    if (($global:scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
         Report "E" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -262,36 +260,82 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 16        
+        $retruncode = 16       
     }
    
-    if ($global:scriptaction) {
+    if (($global:scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
         Report "W" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 8
+        $returncode = 8
     }
 
-    if ($global:scriptchange) {
+    if (($global:scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
         Report "C" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 4
+        $returncode = 4
     }
 
-    $msg = ">>> Script ended normally without reported changes, and no action required"
-    Report "I" $msg
-    $dt = Get-Date
-    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $jobstatus $jobline
+    if ($returncode -eq 99) {
+
+        $msg = ">>> Script ended normally without reported changes, and no action required"
+        Report "I" $msg
+        Report "N" " "
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+        
+        $returncode = 0
+
+    }
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    
+    Report "N" $scriptmsg
+    Report "N" " "
        
-    exit 0
+    
+    try { # Free resource and copy temp file
+        
+        $m = & $ADHC_LockScript "Free" "Git" "$enqprocess" "10" "SILENT" 
+        foreach ($msgentry in $m) {
+            $msglvl = $msgentry.level
+            $msgtext = $msgentry.Message
+            Report $msglvl $msgtext
+        }
+
+        $deffile = $ADHC_OutputDirectory + $ADHC_GitCheck.Directory + $ADHC_GitCheck.Name 
+        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "Deploy,$enqprocess"  
+    }
+    Catch {
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        $Dump = $_.Exception.ToSTring()
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $Dump"
+        $Returncode = 16       
+
+    }
+    Finally {
+        Write-Information $Scriptmsg 
+        Exit $Returncode
+        
+    }  
    
 
 } 

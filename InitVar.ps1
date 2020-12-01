@@ -27,13 +27,13 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.0"
+    $Version = " -- Version: 7.4"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
-    $Datum = " -- Date: " + $d.ToShortDateString()
-    $Tijd = " -- Time: " + $d.ToShortTimeString()
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $myname = $MyInvocation.MyCommand.Name
-    $Scriptmsg = "PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
     if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
         Write-Information $Scriptmsg 
     }
@@ -126,9 +126,12 @@ try {
     Remove-Variable -Name "ADHC_DriveInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DriveInfo" -Value "$drive" -Option readonly -Scope global -Description "Drive info file" -force
     
-    $ng = "DeployCheck\"+ $ADHC_Computer + "_DeployCheck.txt"
+    $ngdir = "DeployCheck\"
+    $ngname = $ADHC_Computer + "_DeployCheck.txt"
+    $ng = [PSCustomObject] [ordered] @{Directory = $ngdir;
+                                       Name = $ngname }
     Remove-Variable -Name "ADHC_DeployCheck" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_DeployCheck" -Value "$ng" -Option readonly -Scope global -Description "Check correctness deployments" -force
+    Set-Variable -Name "ADHC_DeployCheck" -Value $ng -Option readonly -Scope global -Description "Check correctness deployments" -force
     
     $cfdir = "OneDriveCheck\" 
     $cfname = $ADHC_Computer + "_OneDriveCheck.txt"
@@ -166,9 +169,12 @@ try {
     Remove-Variable -Name "ADHC_LockDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LockDir" -Value $lock -Option readonly -Scope global -Description "Directory for Global Locks" -force
     
-    $gs = "GitCheck\" + $ADHC_Computer + "_GitCheck.txt"
+    $gsdir = "GitCheck\" 
+    $gsname = $ADHC_Computer + "_GitCheck.txt"
+    $gs = [PSCustomObject] [ordered] @{Directory = $gsdir;
+                                       Name = $gsname }
     Remove-Variable -Name "ADHC_GitCheck" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_GitCheck" -Value "$gs" -Option readonly -Scope global -Description "Status of GIT directories" -force
+    Set-Variable -Name "ADHC_GitCheck" -Value $gs -Option readonly -Scope global -Description "Status of GIT directories" -force
     
     Remove-Variable -Name "ADHC_JobStatus" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Jobstatus" -Value "PRTG\JobStatus\" -Option readonly -Scope global -Description "Jobs status directory" -force
@@ -176,9 +182,12 @@ try {
     Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTG\SensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
 
-    $vx = "VariableXref\"+ $ADHC_Computer + "_VariableXref.txt"
+    $vxdir = "VariableXref\"
+    $vxname = $ADHC_Computer + "_VariableXref.txt"
+    $vx = [PSCustomObject] [ordered] @{Directory = $vxdir;
+                                       Name = $vxname }
     Remove-Variable -Name "ADHC_VariableXref" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_VariableXref" -Value "$vx" -Option readonly -Scope global -Description "XREF between sources and variables" -force
+    Set-Variable -Name "ADHC_VariableXref" -Value $vx -Option readonly -Scope global -Description "XREF between sources and variables" -force
 
     # STAGING DIRECTORY
    
@@ -250,6 +259,14 @@ try {
     Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "PYTHON arguments - ANALYZE" -force
     
     # Return JSON if requested
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+    $myname = $MyInvocation.MyCommand.Name
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
+    if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
+        Write-Information $Scriptmsg 
+    }
 
     if ($JSON.ToUpper() -eq  "YES" ) {
          $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
