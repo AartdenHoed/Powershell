@@ -8,11 +8,11 @@ param (
 )
 
 #TestValues####################################
-#$Action = "LOCK"
-#$ENQNAME = "WMIC"
+#$Action = "FREE"
+#$ENQNAME = "iets"
 #$PROCESS = "Ikkuh"
 #$waittime = 15
-#$Mode = "Json"
+#$Mode = "SILENT"
 #TestValues####################################
 
 $Mode = $mode.ToUpper()
@@ -213,7 +213,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 3.2"
+    $Version = " -- Version: 3.2.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -312,7 +312,7 @@ $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
 $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
 AddMessage "N" $Scriptmsg
 
-if ($mode -ne "SILENT") {
+if (($Mode -ne "JSON") -and ($Mode -ne "SILENT")) {
    
     Write-Host $scriptmsg
 }
