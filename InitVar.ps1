@@ -27,13 +27,15 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.4"
+    $Version = " -- Version: 7.4.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
     $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $myname = $MyInvocation.MyCommand.Name
-    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
+    $FullScriptName = $MyInvocation.MyCommand.Definition
+    $mypath = $FullScriptName.Replace($MyName, "")
+    $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
         Write-Information $Scriptmsg 
     }
@@ -92,8 +94,6 @@ try {
     Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
 
-    $FullScriptName = $MyInvocation.MyCommand.Definition
-    $mypath = $FullScriptName.Replace($MyName, "")
     Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
 
@@ -263,7 +263,7 @@ try {
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
     $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $myname = $MyInvocation.MyCommand.Name
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
         Write-Information $Scriptmsg 
     }
