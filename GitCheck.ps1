@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 9.0"
+﻿$Version = " -- Version: 9.0.1"
 
 # COMMON coding
 CLS
@@ -316,7 +316,7 @@ finally {
         }
 
         $deffile = $ADHC_OutputDirectory + $ADHC_GitCheck.Directory + $ADHC_GitCheck.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "Deploy,$enqprocess"  
+        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "GIT,$enqprocess"  
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
