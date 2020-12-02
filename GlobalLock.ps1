@@ -213,7 +213,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 3.2.1"
+    $Version = " -- Version: 3.3"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -254,8 +254,13 @@ try {
     }
     Catch {
         #Write-Host "Catch"
-        $MyError = [GlobalLockException]::new("OneDrive not available, $Action of resource $EnqName impossible")
-        throw $MyError
+        if ($action -eq "LOCK"){
+            $MyError = [GlobalLockException]::new("OneDrive not available, $Action of resource $EnqName impossible")
+            throw $MyError
+        }
+        else {
+            AddMessage "A" "Onedrive no longer available... could not FREE resource $Enqname for process $process on computer $computer"
+        }
        
     }
     
