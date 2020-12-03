@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 5.0"
+﻿$Version = " -- Version: 5.0.1"
 
 # COMMON coding
 CLS
@@ -349,14 +349,7 @@ finally {
 
     try { # Free resource and copy temp file
         
-        $m = & $ADHC_LockScript "Free" "Git" "$enqprocess" "10" "SILENT" 
-        foreach ($msgentry in $m) {
-            $msglvl = $msgentry.level
-            $msgtext = $msgentry.Message
-            Report $msglvl $msgtext
-        }
-
-        $deffile = $ADHC_OutputDirectory + $ADHC_GitPushAll.Directory + $ADHC_GitPushAll.Name 
+       $deffile = $ADHC_OutputDirectory + $ADHC_GitPushAll.Directory + $ADHC_GitPushAll.Name 
         & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "GIT,$enqprocess"  
     }
     Catch {
