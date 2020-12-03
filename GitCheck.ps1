@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 9.0.1"
+﻿$Version = " -- Version: 9.1"
 
 # COMMON coding
 CLS
@@ -91,16 +91,15 @@ try {
     }
 
     Set-Location -Path $ADHC_DevelopDir
-    $gitdirs = Get-ChildItem "*.git" -Recurse -Force
+    $gitdirs = Get-ChildItem "*.git" -Force -Directory
     
     $line = "=".PadRight(120,"=")
 
     $alarmlist = @()
     
     foreach ($gitentry in $gitdirs) {
-        $gdir = $gitentry.FullName
-            
-        $gdir = $gdir.replace(".git","")
+        $gdir = $gitentry.FullName          
+        
         Report "N" ""
         $msg = "----------Directory $gdir".PadRight(120,"-") 
         Report "N" $msg
@@ -119,17 +118,26 @@ try {
             Report "G" $l
         }
         Report "N" $line
-        
-        if ($a -like "nothing to commit, working tree clean") {
-            Report "I" "==> No uncommitted changes"
+
+        if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
+            Report "W" "==> Git Status command failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Status Command failed";
+                                                  Repo = $gdir}
+            $alarmlist += $alarm            
         }
         else {
-            Report "C" "==> Uncommitted changes    ***"
-            $alarm = [PSCustomObject] [ordered] @{Desc = "Uncommitted changes";
-                                                  Repo = $gdir}
-            $alarmlist += $alarm
+        
+            if ($a -like "*nothing to commit, working tree clean*") {
+                Report "I" "==> No uncommitted changes"
+            }
+            else {
+                Report "C" "==> Uncommitted changes    ***"
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Uncommitted changes";
+                                                      Repo = $gdir}
+                $alarmlist += $alarm
             
-        } 
+            } 
+        }
 
         $ErrorActionPreference = "Continue"  
         
@@ -141,17 +149,26 @@ try {
         foreach ($l in $a) {
             Report "G" $l
         }
-        Report "N" $line 
-                        
-        if ($a -like "Everything up-to-date")  {
-            Report "I" "==> No unpushed commits"
-        }
-        else {
-            Report "W" "==> Unpushed commits       ***"
-            $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+        Report "N" $line
+        
+        if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
+            Report "W" "==> Git Push command (dry run) failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run) failed";
                                                   Repo = $gdir}
-            $alarmlist += $alarm
+            $alarmlist += $alarm            
+        }
+        else { 
+                        
+            if ($a -like "*Everything up-to-date*")  {
+                Report "I" "==> No unpushed commits"
+            }
+            else {
+                Report "W" "==> Unpushed commits       ***"
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                                                      Repo = $gdir}
+                $alarmlist += $alarm
             
+            }
         }
         Report "N" $line
         Report "N" " "
@@ -160,7 +177,7 @@ try {
     }    
 
     Set-Location -Path $ADHC_RemoteDir
-    $remdirs = Get-ChildItem "*.git" -Recurse -Force
+    $remdirs = Get-ChildItem "*.git" -Force -Directory
 
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
@@ -183,15 +200,24 @@ try {
             Report "N" $l
         }
         Report "N" $line
-                
-        if ($a -like "Everything up-to-date")  {
-             Report "I" "==> No unpushed commits"
-        }
-        else {
-            Report "W" "==> Unpushed commits       ***"
-            $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+
+        if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
+            Report "W" "==> Git Push command (dry run) failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run) failed";
                                                   Repo = $rdir}
-            $alarmlist += $alarm
+            $alarmlist += $alarm            
+        }
+        else { 
+                
+            if ($a -like "*Everything up-to-date*")  {
+                 Report "I" "==> No unpushed commits"
+            }
+            else {
+                Report "W" "==> Unpushed commits       ***"
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                                                      Repo = $rdir}
+                $alarmlist += $alarm
+            }
         }
         Report "N" $line
         Report "N" " " 
