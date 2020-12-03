@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.5"
+    $Version = " -- Version: 7.6"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -149,13 +149,19 @@ try {
     Remove-Variable -Name "ADHC_Credentials" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Credentials" -Value $Credentials -Option readonly -Scope global -Description "Credentials" -force
 
-    $dl = "DeployExec\" +  "#Overall_Deploy.log"
+    $dldir = "DeployExec\" 
+    $dlname =  "#Overall_Deploy.log"
+    $dl = [PSCustomObject] [ordered] @{Directory = $dldir;
+                                       Name = $dlname }
     Remove-Variable -Name "ADHC_DeployLog" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_DeployLog" -Value "$dl" -Option readonly -Scope global -Description "Deployment log file" -force
+    Set-Variable -Name "ADHC_DeployLog" -Value $dl -Option readonly -Scope global -Description "Deployment log file" -force
 
-    $dt = "DeployExec\" + $ADHC_Computer + "_DeployReport.txt"
-    Remove-Variable -Name "ADHC_DeployReport" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_DeployReport" -Value "$dt" -Option readonly -Scope global -Description "Deployment report file" -force
+    $dtdir = "DeployExec\" 
+    $dtname = $ADHC_Computer + "_DeployReport.txt"
+    $dt = [PSCustomObject] [ordered] @{Directory = $dtdir;
+                                       Name = $dtname }
+    Remove-Variable -Name "ADHC_DeployExec" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_DeployExec" -Value $dt -Option readonly -Scope global -Description "Deployment report file" -force
 
     $gpadir = "GitPushAll\" 
     $gpaname = $ADHC_Computer + "_GitPushAll.txt"

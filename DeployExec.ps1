@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.6"
+﻿$Version = " -- Version: 4.0"
 
 # COMMON coding
 CLS
@@ -7,6 +7,8 @@ CLS
 $global:scripterror = $false
 $global:scriptaction = $false
 $global:scriptchange = $false
+
+$global:recordslogged = $false
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
@@ -428,7 +430,7 @@ function Report ([string]$level, [string]$line) {
             $global:scripterror = $true
         }
     }
-    Add-Content $Report $rptline
+    Add-Content $tempfile $rptline
 
 }
 
@@ -438,7 +440,8 @@ function WriteLog ([string]$Action, [string]$line) {
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
                     (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $log $logrec
+    Set-Content $templog $logrec
+    $global:recordslogged = $true
 
     $now = Get-Date
 
@@ -455,7 +458,7 @@ function WriteLog ([string]$Action, [string]$line) {
             }
         }
         if ($keeprecord) {
-            Add-Content $log $record
+            Add-Content $templog $record
         }
     }
 
@@ -491,11 +494,11 @@ try {
 # END OF COMMON CODING   
 
     # Init reporting file
-    $str = $ADHC_DeployReport.Split("\")
-    $dir = $ADHC_OutputDirectory + $str[0]
+    $dir = $ADHC_TempDirectory + $ADHC_DeployExec.Directory
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $Report = $ADHC_OutputDirectory + $ADHC_DeployReport
-    Set-Content $Report $Scriptmsg -force
+    $tempfile = $dir + $ADHC_DeployExec.Name
+
+    Set-Content $Tempfile $Scriptmsg -force
 
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
@@ -510,14 +513,21 @@ try {
     }
 
     # Init log
-    $str = $ADHC_DeployLog.Split("\")
-    $dir = $ADHC_OutputDirectory + $str[0]
-    New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $log = $ADHC_OutputDirectory + $ADHC_Deploylog
-    $lt = Test-Path $log
+    $ldir = $ADHC_TempDirectory + $ADHC_DeployLog.Directory
+    New-Item -ItemType Directory -Force -Path $ldir | Out-Null
+    $templog = $ldir + $ADHC_DeployLog.Name
+
+    $deflog = $ADHC_OutputDirectory + $ADHC_DeployLog.Directory + $ADHC_DeployLog.Name 
+    $defdir = $ADHC_OutputDirectory + $ADHC_Deploylog.Directory 
+
+    $lt = Test-Path $deflog
     if (!$lt) {
-        Set-Content $log " " -force
-    }
+        New-Item -ItemType Directory -Force -Path $defdir | Out-Null
+        Set-Content $deflog " " -force
+    } 
+
+    # Copy current log to templog
+    & $ADHC_CopyMoveScript $deflog $templog "COPY" "REPLACE" $TempFile 
 
 
     # Locate staging library and get all staging folders in $stagingdirlist
@@ -584,7 +594,7 @@ try {
         
         $targetlist = $ConfigXml.ADHCinfo.SelectNodes("//Target")
 
-        # Create production directory if it does not exits yet
+        # Create production directory if it does not exists yet
         foreach ($targetentry in $targetlist) {
             $x = $x + 1
             $targetdir = $targetentry.Root + $targetentry.SubRoot 
@@ -793,6 +803,15 @@ catch {
     $Dump = $_.Exception.ToString()
 }
 finally {
+    # Copy temp log to definitive BEFORE DEQ
+    if ($global:recordslogged) {
+        & $ADHC_CopyMoveScript  $Templog $deflog "MOVE" "REPLACE" $TempFile 
+    }
+    else {
+        Report "I" "No records logged, delete $templog without copy-back"
+        Remove-Item $templog
+    }
+
     $m = & $ADHC_LockScript "Free" "Deploy" "$enqprocess"
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
@@ -808,9 +827,12 @@ finally {
     
     Report "N" " "
 
+    $returncode = 99
+
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
         Report "E" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -822,12 +844,13 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 12        
+        $returncode = 12       
 
     }
         
-    if ($global:scripterror) {
+    if (($global:scripterror) -and ($returncode -eq 99)) {
         Report "E" ">>> Script ended abnormally"
+        Report "N" " "
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -840,44 +863,75 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 16        
+        $returncode = 16        
     }
    
-    if ($global:scriptaction) {
+    if (($global:scriptaction) -and ($returncode -eq 99)) {
         Report "W" ">>> Script ended normally with action required"
+        Report "N" " "
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 8
+        $returncode = 8
     }
 
-    if ($global:scriptchange) {
+    if (($global:scriptchange) -and ($returncode -eq 99)) {
         Report "C" ">>> Script ended normally with reported changes, but no action required"
+        Report "N" " "
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 4
+        $returncode = 4
     }
 
-    Report "I" ">>> Script ended normally without reported changes, and no action required"
+    if ($returncode -eq 99) {
+        Report "I" ">>> Script ended normally without reported changes, and no action required"
+        Report "N" " "
    
-    $dt = Get-Date
-    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $jobstatus $jobline
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
        
-    exit 0
+        $returncode = 0
+    }
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    Report "N" $scriptmsg
+    Report "N" " "
+
+    try { # Free resource and copy temp file
+        
+        $deffile = $ADHC_OutputDirectory + $ADHC_DeployExec.Directory + $ADHC_DeployExec.Name 
+        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "DEPLOY,$enqprocess"  
+    }
+    Catch {
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        $Dump = $_.Exception.ToSTring()
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $Dump"
+        $Returncode = 16       
+
+    }
+    Finally {
+        Write-Information $Scriptmsg 
+        Exit $Returncode
+        
+    }  
    
 
 }
-$d = Get-Date
-$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-$Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
-$Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-Write-Information $Scriptmsg 
+
 
 
  
