@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.2"
+﻿$Version = " -- Version: 5.0"
 
 # COMMON coding
 CLS
@@ -7,13 +7,16 @@ $global:scripterror = $false
 $global:scriptaction = $false
 $global:scriptchange = $false
 
+$global:recordslogged = $false
+
 function WriteLog ([string]$Action, [string]$line) {
-    $oldrecords = Get-Content $log 
+    $oldrecords = Get-Content $templog 
 
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_COmputer.PadRight(24," ") +
                 (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $log $logrec
+    Set-Content $templog $logrec
+    $global:recordslogged = $true
 
     $now = Get-Date
 
@@ -30,7 +33,7 @@ function WriteLog ([string]$Action, [string]$line) {
             }
         }
         if ($keeprecord) {
-            Add-Content $log $record
+            Add-Content $templog $record
         }
     }
 
@@ -68,7 +71,7 @@ function Report ([string]$level, [string]$line) {
             $global:scripterror = $true
         }
     }
-    Add-Content $gitstatus $rptline
+    Add-Content $tempfile $rptline
 
 }
 
@@ -102,12 +105,11 @@ try {
 # END OF COMMON CODING
 
     # Init reporting file
-    $str = $ADHC_GitPushAll.Split("\")
-    $odir = $ADHC_OutputDirectory + $str[0]
+    $odir = $ADHC_TempDirectory + $ADHC_GitPushAll.Directory
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
-    $gitstatus = $ADHC_OutputDirectory + $ADHC_GitPushAll
+    $tempfile = $odir + $ADHC_GitPushAll.Name
 
-    Set-Content $gitstatus $Scriptmsg -force
+    Set-Content $tempfile $Scriptmsg -force
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
         $msgtext = $msgentry.Message
@@ -121,24 +123,30 @@ try {
     }
     
     # Init log
-    $str = $ADHC_PushLog.Split("\")
-    $dir = $ADHC_OutputDirectory + $str[0]
+    $dir = $ADHC_TempDirectory + $ADHC_GitPushLog.Directory
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $log = $ADHC_OutputDirectory + $ADHC_Pushlog
-    $lt = Test-Path $log
+    $templog = $dir + $ADHC_GitPushLog.Name
+
+    $deflog = $ADHC_OutputDirectory + $ADHC_GitPushLog.Directory + $ADHC_GitPushLog.Name 
+    $defdir = $ADHC_OutputDirectory + $ADHC_GitPushLog.Directory 
+
+    $lt = Test-Path $deflog
     if (!$lt) {
-        Set-Content $log " " -force
+        New-Item -ItemType Directory -Force -Path $defdir | Out-Null
+        Set-Content $deflog " " -force
     } 
 
+    # Copy current log to templog
+    & $ADHC_CopyMoveScript $deflog $templog "COPY" "REPLACE" $TempFile 
+
     Set-Location -Path $ADHC_DevelopDir
-    $gitdirs = Get-ChildItem "*.git" -Recurse -Force
+    $gitdirs = Get-ChildItem "*.git"  -Force -Directory
         
     $line = "=".PadRight(120,"=")
     
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
-        
-        $gdir = $gdir.replace(".git","")
+                
         Report "N" ""
         $msg = "----------Directory $gdir".PadRight(120,"-") 
         Report "N" $msg
@@ -149,7 +157,7 @@ try {
         $ErrorActionPreference = "Continue"      
              
         & {git push ADHCentral master} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a 
-
+       
         $ErrorActionPreference = "Stop" 
                      
         Report "N" " "
@@ -163,19 +171,26 @@ try {
         Report "I" "==> End of GIT output"
         Report "N" $line 
 
-        if ($a -like "Everything up-to-date") {
-            Report "I" "==> Nothing to push"
-        } 
+        if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
+            Report "W" "==> Push failed"
+            WriteLog "Push FAILED" $gdir
+        }
         else {
-            Report "C" "==> Push executed"
-            WriteLog "Pushed" $gdir
+        
+            if ($a -like "*Everything up-to-date*") {
+                Report "I" "==> Nothing to push"
+            } 
+            else {
+                Report "C" "==> Push executed"
+                WriteLog "Pushed" $gdir
+            }
         }
         
         Report "N" " "          
     }
 
     Set-Location -Path $ADHC_RemoteDir
-    $remdirs = Get-ChildItem "*.git" -Recurse -Force
+    $remdirs = Get-ChildItem "*.git" -Force -Directory
 
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
@@ -203,13 +218,19 @@ try {
         Report "I" "==> End of GIT output"
         Report "N" $line 
 
-        if ($a -like "Everything up-to-date") {
-            Report "I" "==> Nothing to push"
-        } 
+        if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
+            Report "W" "==> Push failed"
+            WriteLog "Push FAILED" $rdir
+        }
         else {
-            Report "C" "==> Push executed"
-            WriteLog "Pushed" $rdir
-        }        
+            if ($a -like "*Everything up-to-date*") {
+                Report "I" "==> Nothing to push"
+            } 
+            else {
+                Report "C" "==> Push executed"
+                WriteLog "Pushed" $rdir
+            } 
+        }       
         Report "N" " "
     }  
             
@@ -222,6 +243,15 @@ catch {
     $Dump = $_.Exception.ToString()
 }
 finally {
+    # Copy temp log to definitive BEFORE DEQ
+    if ($global:recordslogged) {
+        & $ADHC_CopyMoveScript  $Templog $deflog "MOVE" "REPLACE" $TempFile 
+    }
+    else {
+        Report "I" "No records logged, delete $templog without copy-back"
+        Remove-Item $templog
+    }
+
     $m = & $ADHC_LockScript "Free" "Git" "$enqprocess"
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
@@ -237,9 +267,12 @@ finally {
     
     Report "N" " "
 
+    $returncode = 99
+
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
         Report "E" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -251,14 +284,15 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 12        
+        $returncode = 12        
 
     }
 
         
-    if ($global:scripterror) {
+    if (($global:scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
         Report "E" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -270,42 +304,80 @@ finally {
         Report "E" "Failed item = $FailedItem"
         Report "E" "Errormessage = $ErrorMessage"
         Report "E" "Dump info = $dump"
-        exit 16        
+        $returncode = 16       
     }   
     
    
-    if ($global:scriptaction) {
+    if (($global:scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
         Report "W" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 8
+        $returncode = 8
     }
 
-    if ($global:scriptchange) {
+    if (($global:scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
         Report "C" $msg
+        Report "N" " "
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
-        exit 4
+        $returncode = 4
+    }
+    if ($returncode -eq 99) {
+        $msg = ">>> Script ended normally without reported changes, and no action required"
+        Report "I" $msg
+        Report "N" " "
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+       
+        $returncode = 0
     }
 
-    $msg = ">>> Script ended normally without reported changes, and no action required"
-    Report "I" $msg
-    $dt = Get-Date
-    $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $jobstatus $jobline
-       
-    exit 0
+    $d = Get-Date
+    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+    Report "N" $scriptmsg
+    Report "N" " "
+
+    try { # Free resource and copy temp file
+        
+        $m = & $ADHC_LockScript "Free" "Git" "$enqprocess" "10" "SILENT" 
+        foreach ($msgentry in $m) {
+            $msglvl = $msgentry.level
+            $msgtext = $msgentry.Message
+            Report $msglvl $msgtext
+        }
+
+        $deffile = $ADHC_OutputDirectory + $ADHC_GitPushAll.Directory + $ADHC_GitPushAll.Name 
+        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "GIT,$enqprocess"  
+    }
+    Catch {
+        $ErrorMessage = $_.Exception.Message
+        $FailedItem = $_.Exception.ItemName
+        $Dump = $_.Exception.ToSTring()
+        $dt = Get-Date
+        $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
+        Set-Content $jobstatus $jobline
+        Add-Content $jobstatus "Failed item = $FailedItem"
+        Add-Content $jobstatus "Errormessage = $ErrorMessage"
+        Add-Content $jobstatus "Dump info = $Dump"
+        $Returncode = 16       
+
+    }
+    Finally {
+        Write-Information $Scriptmsg 
+        Exit $Returncode
+        
+    }  
+
    
 
 }
-$d = Get-Date
-$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-$Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
-$Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-Write-Information $Scriptmsg 

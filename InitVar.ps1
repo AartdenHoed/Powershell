@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.4.1"
+    $Version = " -- Version: 7.5"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -157,13 +157,19 @@ try {
     Remove-Variable -Name "ADHC_DeployReport" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployReport" -Value "$dt" -Option readonly -Scope global -Description "Deployment report file" -force
 
-    $gpa = "GitPushAll\" + $ADHC_Computer + "_GitPushAll.txt"
+    $gpadir = "GitPushAll\" 
+    $gpaname = $ADHC_Computer + "_GitPushAll.txt"
+    $gpa = [PSCustomObject] [ordered] @{Directory = $gpadir;
+                                       Name = $gpaname }
     Remove-Variable -Name "ADHC_GitPushAll" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_GitPushAll" -Value "$gpa" -Option readonly -Scope global -Description "GIT 'Push All' execution" -force
+    Set-Variable -Name "ADHC_GitPushAll" -Value $gpa -Option readonly -Scope global -Description "GIT 'Push All' execution" -force
 
-    $pu = "GitPushAll\" + "#Overall_Push.log"
-    Remove-Variable -Name "ADHC_PushLog" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_PushLog" -Value "$pu" -Option readonly -Scope global -Description "Push log file" -force
+    $pudir = "GitPushAll\" 
+    $puname = "#Overall_Push.log"
+    $pu = [PSCustomObject] [ordered] @{Directory = $pudir;
+                                       Name = $puname }
+    Remove-Variable -Name "ADHC_GitPushLog" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_GitPushLog" -Value $pu -Option readonly -Scope global -Description "Push log file" -force
     
     $lock = $output + "GlobalLock\"
     Remove-Variable -Name "ADHC_LockDir" -force -ErrorAction SilentlyContinue
