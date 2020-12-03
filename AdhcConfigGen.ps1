@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 3.3"
+$Version = " -- Version: 3.4"
 
 # COMMON coding
 CLS
@@ -104,6 +104,7 @@ foreach ($factory in $factorylist) {
         switch ($Naam.ToUpper().Trim()) {
             "STAGELIB" {
                 $thischild = $xmldoc.CreateElement("StageLib")
+                $stageroot = $subroot
             }
             "TARGET" { 
                 $thischild = $xmldoc.CreateElement("Target") 
@@ -180,10 +181,10 @@ foreach ($factory in $factorylist) {
     [void]$xmldoc.AppendChild($adhcinfo)
 
     # Write xml to config dataset
-    $outdir = $ADHC_DevelopDir + $subdevdir
+    $outdir = $ADHC_StagingDir + $stageroot
     
     New-Item -ItemType Directory -Force -Path $outdir | Out-Null
-    $fullname = $ADHC_StagingDir + $subdevdir + $ADHC_configfile
+    $fullname = $outdir + $ADHC_configfile
     $xmlDoc.Save($fullName)
 
     write-host " "
