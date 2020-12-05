@@ -1,4 +1,12 @@
 ﻿# Get all local working repos
+
+#Total RE_INIT
+#rm -rf .git
+#git init
+#git add .
+#git commit -m 'Re-initialize repository without old history.'
+
+
 cls
 $ErrorActionPreference = "Continue"
 $Node = " -- Node: " + $env:COMPUTERNAME
@@ -23,18 +31,15 @@ if (!$ADHC_InitSuccessfull) {
 } 
 $repolist = Get-ChildItem $ADHC_DevelopDir -Directory | Select-Object Name, Fullname
 foreach ($sourcerepo in $repolist) {
-    $sourcelocation = $sourcerepo.FullName    
-    $targetlocation = $sourcelocation.ToUpper().Replace("ADHC DEVELOPMENT","ADHC RemoteRepository") 
+    $sourcelocation = $sourcerepo.FullName 
+       
+    
     Write-Host " "
     Write-Host "======================================================================================="
     Write-Host "Source location   = $sourceLocation"
-   
 
-    Set-Location $sourcelocation
-    & git clone . "$targetlocation"
-    & git remote rm ADHCentral
-    & git remote add ADHCentral "$targetlocation"
-    Write-Host "---------------------------------------------------------------------------------------"
+    $targetlocation = $sourcelocation.ToUpper().Replace("ADHC DEVELOPMENT","ADHC RemoteRepository").Replace('\',"/") 
+    #New-Item -ItemType Directory -Force -Path  $targetlocation | Out-Null
     if (Test-Path $targetlocation) {
         $note = " exits"
     }
@@ -42,27 +47,39 @@ foreach ($sourcerepo in $repolist) {
         $note = " *** NOT FOUND ***"
         throw "$targetlocation NOT FOUND"
     }
-    Write-Host "Target location   = $targetLocation $note"
-
+    Write-Host "Target location   = $targetLocation $note" 
     
-
-    Set-Location $targetlocation
-    $quals = $targetlocation.SPlit("\")
+    $quals = $sourcelocation.SPlit("\")
     $c = $quals.count - 1
-    $gitname = $quals[$c].Replace(".GIT","")     
+    $gitname = $quals[$c]
      
-    $gitlocation = "git@github.com:AartdenHoed/" + $gitname
+    $gitlocation = "git@github.com:AartdenHoed/" + $gitname 
+    Set-Location $sourcelocation
 
-    Write-Host "Git location      = $gitlocation"
+    #####################################################################################################
+    
+    #Write-host "git remote rm ADHCentral"
+    #& git remote rm ADHCentral
 
-    &git remote add GITHUB "$gitlocation"
-    &git config core.sshCommand C:/Windows/System32/OpenSSH/ssh.exe
+    Write-Host "git remote rm GITHUB"
+    & git remote rm GITHUB
 
+    #Write-Host "git clone --bare . $targetlocation" 
+    #& git clone --bare . "$targetlocation"
+
+    #Write-Host "git remote add ADHCentral $targetlocation"
+    #& git remote add ADHCentral "$targetlocation"
+
+    Write-Host "git remote add GITHUB $gitlocation"
+    & git remote add GITHUB "$gitlocation"
+
+    #Write-Host "git config core.sshCommand C:/Windows/System32/OpenSSH/ssh.exe"
+    #& git config core.sshCommand C:/Windows/System32/OpenSSH/ssh.exe
+
+    #####################################################################################################
 
     Write-Host "======================================================================================="
-
-
-       
+ 
 }
 
 
