@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 9.1"
+﻿$Version = " -- Version: 10.1"
 
 # COMMON coding
 CLS
@@ -113,10 +113,14 @@ try {
 
         $ErrorActionPreference = "Stop"  
         
+        Report "N" " "
+        Report "B" "git status"
         Report "N" $line
+        Report "B" "==> Start of GIT output"
         foreach ($l in $a) {
             Report "G" $l
         }
+        Report "B" "==> End of GIT output"
         Report "N" $line
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
@@ -145,10 +149,14 @@ try {
 
         $ErrorActionPreference = "Stop" 
         
+        Report "N" " "
+        Report "B" "git push ADHCentral master --dry-run"
         Report "N" $line
+        Report "B" "==> Start of GIT output"
         foreach ($l in $a) {
             Report "G" $l
         }
+        Report "B" "==> End of GIT output"
         Report "N" $line
         
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
@@ -172,6 +180,44 @@ try {
         }
         Report "N" $line
         Report "N" " "
+
+         $ErrorActionPreference = "Continue"  
+
+        & {git push GITHUB master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
+
+        $ErrorActionPreference = "Stop"  
+                                   
+        Report "N" " "
+        Report "B" "git push GITHUB master --dry-run"
+        Report "N" $line
+        Report "B" "==> Start of GIT output"
+        foreach ($l in $a) {
+            Report "G" $l
+        }
+        Report "B" "==> End of GIT output"
+        Report "N" $line
+
+        if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
+            Report "W" "==> Git Push command (dry run) failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run) failed";
+                                                  Repo = $gdir}
+            $alarmlist += $alarm            
+        }
+        else { 
+                
+            if ($a -like "*Everything up-to-date*")  {
+                 Report "I" "==> No unpushed commits"
+            }
+            else {
+                Report "W" "==> Unpushed commits       ***"
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                                                      Repo = $gdir}
+                $alarmlist += $alarm
+            }
+        }
+        Report "N" $line
+        Report "N" " " 
+   
         
         
     }    
@@ -190,38 +236,35 @@ try {
         Write-Host ">>> $rdir"
 
         $ErrorActionPreference = "Continue"  
-
-        & {git push GITHUB master --dry-run} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
+       
+        & {git rev-parse --is-bare-repository} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
 
         $ErrorActionPreference = "Stop"  
-                                   
+        
+        Report "N" " "
+        Report "B" "git rev-parse --is-bare-repository"
         Report "N" $line
+        Report "B" "==> Start of GIT output"
         foreach ($l in $a) {
-            Report "N" $l
+            Report "G" $l
         }
+        Report "B" "==> End of GIT output"
         Report "N" $line
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Push command (dry run) failed"
-            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run) failed";
+            Report "W" "==> Git Status command failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Status Command failed";
                                                   Repo = $rdir}
             $alarmlist += $alarm            
         }
-        else { 
-                
-            if ($a -like "*Everything up-to-date*")  {
-                 Report "I" "==> No unpushed commits"
-            }
-            else {
-                Report "W" "==> Unpushed commits       ***"
-                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
-                                                      Repo = $rdir}
-                $alarmlist += $alarm
-            }
+        else {
+            Report "I" "==> OK"
+            
         }
-        Report "N" $line
-        Report "N" " " 
+
     }
+
+       
     
 }
 catch {

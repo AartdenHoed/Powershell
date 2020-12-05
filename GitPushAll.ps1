@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 5.0.1"
+﻿$Version = " -- Version: 6.0.1"
 
 # COMMON coding
 CLS
@@ -161,19 +161,20 @@ try {
         $ErrorActionPreference = "Stop" 
                      
         Report "N" " "
+        Report "B" "git push ADHCentral master"
         Report "N" $line
-        Report "I" "==> Start of GIT output"
+        Report "B" "==> Start of GIT output"
                 
         foreach ($l in $a) {
             Report "G" $l
         }
                 
-        Report "I" "==> End of GIT output"
+        Report "B" "==> End of GIT output"
         Report "N" $line 
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
             Report "W" "==> Push failed"
-            WriteLog "Push FAILED" $gdir
+            WriteLog "Push ADHCentral FAILED" $gdir
         }
         else {
         
@@ -182,26 +183,12 @@ try {
             } 
             else {
                 Report "C" "==> Push executed"
-                WriteLog "Pushed" $gdir
+                WriteLog "ADHCentral Pushed" $gdir
             }
         }
         
-        Report "N" " "          
-    }
-
-    Set-Location -Path $ADHC_RemoteDir
-    $remdirs = Get-ChildItem "*.git" -Force -Directory
-
-    foreach ($rementry in $remdirs) {
-        $rdir = $rementry.FullName
+        Report "N" " "  
         
-        Report "N" ""
-        $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
-        Report "N" $msg
-
-        Set-Location $rdir
-        Write-Host ">>> $rdir"
-
         $ErrorActionPreference = "Continue" 
 
         & {git push GITHUB master} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a 
@@ -209,18 +196,19 @@ try {
         $ErrorActionPreference = "Stop" 
 
         Report "N" " "
+        Report "B" "git push GITHUB master"
         Report "N" $line
-        Report "I" "==> Start of GIT output"       
+        Report "B" "==> Start of GIT output"       
         
         foreach ($l in $a) {
             Report "G" $l
         }
-        Report "I" "==> End of GIT output"
+        Report "B" "==> End of GIT output"
         Report "N" $line 
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
             Report "W" "==> Push failed"
-            WriteLog "Push FAILED" $rdir
+            WriteLog "Push GITHUB FAILED" $gdir
         }
         else {
             if ($a -like "*Everything up-to-date*") {
@@ -228,11 +216,28 @@ try {
             } 
             else {
                 Report "C" "==> Push executed"
-                WriteLog "Pushed" $rdir
+                WriteLog "GITHUB Pushed" $gdir
             } 
         }       
         Report "N" " "
-    }  
+                
+    }
+
+    #Set-Location -Path $ADHC_RemoteDir
+    #$remdirs = Get-ChildItem "*.git" -Force -Directory
+
+    #foreach ($rementry in $remdirs) {
+    #    $rdir = $rementry.FullName
+    #    
+    #    Report "N" ""
+    #    $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
+    #    Report "N" $msg
+    #
+    #    Set-Location $rdir
+    #    Write-Host ">>> $rdir"
+    #
+    #    
+    #}  
             
 }
 catch {
