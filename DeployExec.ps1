@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.0"
+﻿$Version = " -- Version: 4.0.2"
 
 # COMMON coding
 CLS
@@ -435,7 +435,7 @@ function Report ([string]$level, [string]$line) {
 }
 
 function WriteLog ([string]$Action, [string]$line) {
-    $oldrecords = Get-Content $log 
+    $oldrecords = Get-Content $templog 
 
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
@@ -696,7 +696,7 @@ try {
             }
 
             Set-Location "$targetDir"
-            $TargetModList = Get-ChildItem -file -recurse | Where-Object {($_.FullName -notlike "*.git*") -and ($_.FullName -notlike "*MyExample*") } | select-object FullName,Name 
+            $TargetModList = Get-ChildItem -file -recurse | Where-Object {($_.FullName -notlike "*\\.git*") -and ($_.FullName -notlike "*MyExample*") } | select-object FullName,Name 
         
             foreach ($targetMod in $TargetModList) {
                 $mod = $Targetmod.FullName
@@ -746,7 +746,8 @@ try {
 
         foreach ($stagedfile in $StageContent) {
             $stagedprops = Get-ItemProperty $stagedfile.FullName
-            $stagedname = $stagedfile.FullName           
+            $stagedname = $stagedfile.FullName  
+            $sname = $stagedfile.Name         
                        
             # Check if DSL differs from staged file ################################################
             $DSLname = $stagedfile.FullName.ToUpper().Replace($staginglocation.ToUpper(),$dsldir)
