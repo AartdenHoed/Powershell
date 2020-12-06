@@ -4,7 +4,12 @@
 #rm -rf .git
 #git init
 #git add .
-#git commit -m 'Re-initialize repository without old history.'
+#git commit -m "Re-initialize repository without old history."
+#git config core.sshCommand C:/Windows/System32/OpenSSH/ssh.exe
+# remote ADD lalala
+# git pull ADHCentral master --allow-unrelated-histories
+# git pull GITHUB master --allow-unrelated-histories
+
 
 
 cls

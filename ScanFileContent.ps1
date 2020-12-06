@@ -20,9 +20,9 @@ $t = Get-Date
 Write-Host $t
 
  
-$FileList = Get-ChildItem $FileDirectory -Recurse -File  -Exclude *.png,*.jpg,*.dll |  `
+$FileList = Get-ChildItem $FileDirectory -Recurse -File  -Exclude *.png,*.jpg,*.dll #|  #`
 
-        Where-Object {(($_.FullName -notlike "*.git*") -and `                        ($_.FullName -notlike "*\.vs\*") -and `                        ($_.FullName -notlike "*\debug\*") -and `                        ($_.FullName -notlike "*\packages\*") -and `                        ($_.FullName -notlike "*\bin\*")) } | `    	Select-Object Name,Fullname
+       # Where-Object {(($_.FullName -notlike "*.git*") -and `       #                 ($_.FullName -notlike "*\.vs\*") -and `       #                 ($_.FullName -notlike "*\debug\*") -and `       #                 ($_.FullName -notlike "*\packages\*") -and `       #                 ($_.FullName -notlike "*\bin\*")) } | `    	Select-Object Name,Fullname
 $Totaal = $FileList.count
 Write-host "$Totaal Files will be analyzed"
 
@@ -36,7 +36,8 @@ $part = $percentiel
 $FileCount = 0
 
 
-$searchlist = @("Credential","Userid","USR","PSW","PASSWORD")
+#$searchlist = @("Credential","Userid","USR","PSW","PASSWORD")
+$searchlist = @("Aartenhetty","AHMRDH")
 
 $Resultlist = @()
 
