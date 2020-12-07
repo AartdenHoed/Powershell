@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 10.1.1"
+﻿$Version = " -- Version: 10.2"
 
 # COMMON coding
 CLS
@@ -262,8 +262,16 @@ try {
             $alarmlist += $alarm            
         }
         else {
-            Report "I" "==> OK"
-            
+            if ($a -like "*true*")  {
+                 Report "I" "==> Repository is bare (= OK)"
+            }
+            else {
+                Report "W" "==> Non-bare repository ***"
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Non-bare repository";
+                                                      Repo = $rdir}
+                $alarmlist += $alarm
+            }
+                        
         }
 
     }
