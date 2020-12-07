@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.6"
+    $Version = " -- Version: 7.7"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -139,6 +139,13 @@ try {
                                        Name = $cfname }
     Remove-Variable -Name "ADHC_OneDriveCheck" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDriveCheck" -Value $cf -Option readonly -Scope global -Description "Conflict report file attributes" -force
+
+    $sodir = "SyncOneDrive\" 
+    $soname = $ADHC_Computer + "_SyncOneDrive.txt"
+    $so = [PSCustomObject] [ordered] @{Directory = $sodir;
+                                       Name = $soname }
+    Remove-Variable -Name "ADHC_SyncOneDrive" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_SyncOneDrive" -Value $so -Option readonly -Scope global -Description "Force OneDrive synchronisation" -force
 
     $encoder = new-object System.Text.UTF8Encoding
     $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
