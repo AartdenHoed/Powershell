@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 10.1"
+﻿$Version = " -- Version: 10.1.1"
 
 # COMMON coding
 CLS
@@ -77,16 +77,20 @@ try {
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
     $tempfile = $odir + $ADHC_Gitcheck.Name
 
-    Set-Content $tempfile $Scriptmsg -force  
+    Set-Content $tempfile $Scriptmsg -force 
+    
+    $ENQfailed = $false  
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
+        if ($msglvl -eq "E") {
+            # ENQ failed
+            $ENQfailed = $true
+        }
         $msgtext = $msgentry.Message
         Report $msglvl $msgtext
     }
-    $ENQfailed = $false 
-    if ($msglvl -eq "E") {
-        # ENQ failed
-        $ENQfailed = $true
+    
+    if ($ENQfailed) {
         throw "Could not lock resource 'Git'"
     }
 

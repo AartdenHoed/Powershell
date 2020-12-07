@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.0.2"
+﻿$Version = " -- Version: 4.0.3"
 
 # COMMON coding
 CLS
@@ -500,15 +500,18 @@ try {
 
     Set-Content $Tempfile $Scriptmsg -force
 
+    $ENQfailed = $false 
     foreach ($msgentry in $m) {
         $msglvl = $msgentry.level
+        if ($msglvl -eq "E") {
+            # ENQ failed
+            $ENQfailed = $true
+        }
         $msgtext = $msgentry.Message
         Report $msglvl $msgtext
     }
-    $ENQfailed = $false 
-    if ($msglvl -eq "E") {
-        # ENQ failed
-        $ENQfailed = $true
+    
+    if ($ENQfailed) {
         throw "Could not lock resource 'Deploy'"
     }
 

@@ -17,7 +17,7 @@ $Mode = $Mode.ToUpper()
 $Actionlist = @("MOVE","COPY")
 $Modelist = @("REPLACE","APPEND")
 
-$ScriptVersion = " -- Version: 1.1"
+$ScriptVersion = " -- Version: 1.1.1"
 
 function Report ([string]$level, [string]$line) {
     
@@ -165,11 +165,18 @@ if (!$scripterror) {
         Report "I" "Perform requested actions"
         if ($lock) {
             $m = & $ADHC_LockScript "Lock" "$Resource" "$Process" "10" "SILENT"
+            $ENQfailed = $false
             foreach ($msgentry in $m) {
                 $msglvl = $msgentry.level
+                if ($msglvl -eq "E") {
+                    $EQNfailed = $true
+                }
                 $msgtext = $msgentry.Message
                 Report $msglvl $msgtext
-            }            
+            } 
+            if ($ENQfailed) {
+                throw "ENQ Failed - Fatal error"
+            }           
         } 
         $outdir = Split-Path $Outputfile
         if (!(Test-Path $outdir)) {
