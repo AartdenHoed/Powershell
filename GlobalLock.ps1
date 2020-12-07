@@ -9,7 +9,7 @@ param (
 
 #TestValues####################################
 #$Action = "FREE"
-#$ENQNAME = "iets"
+$ENQNAME = "DEPLOY"
 #$PROCESS = "Ikkuh"
 #$waittime = 15
 #$Mode = "SILENT"
@@ -88,7 +88,20 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
                     $E = $entry.FullName
                     # Write-Host "Dataset $E"
                     $lockrecord = Get-Content $entry.FullName
-                    $lockbits = $lockrecord.Split("|")
+                    if ($lockrecord) {
+                        $lockbits = $lockrecord.Split("|")
+                    }
+                    else {
+                        $lockbits = @("NO","N0")
+                    }
+                    if ($lockbits.Count -lt 6) {                                   # file corrupted for some reason 
+                        $i1 =[datetime]::ParseExact("01-01-2000 00:00:00","dd-MM-yyyy HH:mm:ss",$null) 
+                        $i2 = [datetime]::ParseExact("01-01-2000 00:10:00","dd-MM-yyyy HH:mm:ss",$null)
+                        $lockrecord = CreateLockRecord "FREE" "???" "????" "DEPLOY" $i1 $i2
+                        Set-Content $E $lockrecord -force    
+                        AddMessage "A" "Lockfile $E is corrupted, and has been bypassed" 
+                        $lockbits = $lockrecord.Split("|") 
+                    }
                     # $lockbits
                     $Lockstatus  = $lockbits[0]
                     $lockmachine = $lockbits[1]
@@ -213,7 +226,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 3.3"
+    $Version = " -- Version: 3.3.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
