@@ -9,12 +9,12 @@ param (
 
 #TestValues####################################
 #$Action = "FREE"
-$ENQNAME = "DEPLOY"
+#$ENQNAME = "DEPLOY"
 #$PROCESS = "Ikkuh"
 #$waittime = 15
 #$Mode = "SILENT"
 #TestValues####################################
-
+$Version = " -- Version: 3.3.2"
 $Mode = $mode.ToUpper()
 $Waittime = 150
 
@@ -226,7 +226,7 @@ function Lock ([string]$InternalAction, [string]$Machine, [string]$Who, [string]
 }
 
 try {
-    $Version = " -- Version: 3.3.1"
+    
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
