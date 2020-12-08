@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 1.0.2"
 
 # COMMON coding
 CLS
@@ -73,13 +73,13 @@ try {
 
     # Init reporting file
     
-    $dir = $ADHC_TempDirectory + $ADHC_SyncOneDrive.Directory
+    $dir = $ADHC_TempDirectory + $ADHC_OneDriveSync.Directory
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    $Tempfile = $dir + $ADHC_SyncOneDrive.NAme
+    $Tempfile = $dir + $ADHC_OneDriveSync.NAme
     Set-Content $Tempfile $Scriptmsg -force
 
     $ODlist = Get-ChildItem "$ADHC_OneDrive" -file -recurse -force | Select-Object FullName,Attributes 
-    $ODlist | Out-GridView
+    # $ODlist | Out-GridView
     $Totaal = $ODlist.count
     $n = 0
     $percentiel = [math]::floor($totaal / 10)
@@ -200,7 +200,7 @@ finally {
 
     try { # Free resource and copy temp file        
         
-        $deffile = $ADHC_OutputDirectory + $ADHC_SYncOneDrive.Directory + $ADHC_SyncOneDrive.Name 
+        $deffile = $ADHC_OutputDirectory + $ADHC_OneDriveSync.Directory + $ADHC_OneDriveSync.Name 
         & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
     }
     Catch {
