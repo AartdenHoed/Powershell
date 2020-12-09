@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.7.1"
+    $Version = " -- Version: 7.8"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -259,12 +259,17 @@ try {
 
     $wmicdir = ($output + "WmicFiles\").Replace('\','\\')
     $wmicdir2 = $wmicdir.Replace("\\","/")
+    $wmictemp = ($temp + "WmicFiles\").Replace('\','\\')
+    $wmictemp2 = $wmictemp.Replace("\\","/")
     $sympapgm = "C:\AdHC\WmicPgm\WMIC 3.PYW"
 
     $PythonArgCreate = '"' + $sympapgm + '" "--mode=Create" "--outputdir=' + $wmicdir + '"'
  
     Remove-Variable -Name "ADHC_WmicDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_WmicDirectory" -Value $wmicdir2 -Option readonly -Scope global -Description "Wmic OUTPUT directory" -force
+
+    Remove-Variable -Name "ADHC_WmicTempdir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_WmicTempdir" -Value $wmictemp2 -Option readonly -Scope global -Description "Wmic TEMP OUTPUT directory" -force
 
     Remove-Variable -Name "ADHC_PythonArgCreate" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "PYTHON arguments - CREATE" -force
@@ -293,7 +298,9 @@ try {
                                                   ADHC_WmicGenerations = $ADHC_WmicGenerations
                                                   ADHC_WmicDirectory = $ADHC_WmicDirectory;
                                                   ADHC_OutputDirectory = $ADHC_OutputDirectory;
+                                                  ADHC_WmicTempdir = $ADHC_WmicTempdir;
                                                   ADHC_Jobstatus = $ADHC_Jobstatus;
+                                                  ADHC_CopyMoveScript = $ADHC_CopyMoveScript;
                                                   ADHC_LockScript = $ADHC_LockScript}
     
         $ReturnJSON = ConvertTo-JSON $ReturnOBJ 

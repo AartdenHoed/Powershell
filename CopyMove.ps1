@@ -6,10 +6,11 @@
      [string]$Messages = $Null,
      [string]$Lock = ""
 )
-#$InputFile = "D:\AartenHetty\OneDrive\Documents\Bron.txt"
+#$InputFile = "D:/ADHC_Home/ADHC_Temp/WmicFiles/WMIC_ADHC.log"
 #$Action = "move"
 #$Mode = "Append"
-#$OutputFile = "D:\AartenHetty\OneDrive\NogNie\Target.txt"
+#$OutputFile = "D:/ADHC_Home/OneDrive/ADHC Output/WmicFiles/WMIC_ADHC.log"
+#$Messages = "JSON"
 #$Lock ="a,b"
 
 $Action = $Action.ToUpper()
@@ -17,7 +18,7 @@ $Mode = $Mode.ToUpper()
 $Actionlist = @("MOVE","COPY")
 $Modelist = @("REPLACE","APPEND")
 
-$ScriptVersion = " -- Version: 1.1.1"
+$ScriptVersion = " -- Version: 1.2"
 
 function Report ([string]$level, [string]$line) {
     
@@ -53,7 +54,15 @@ function Report ([string]$level, [string]$line) {
         }
     }
     if ($global:writemsg) {
-        Add-Content $Messages $rptline
+        if ($global:JSON) {
+            $msgentry = [PSCustomObject] [ordered] @{Level = $level;
+                                             Message = $line}
+            $global:MessageList += $msgentry
+
+        }
+        else {
+            Add-Content $Messages $rptline
+        }
     }
     else {
         Write-Host $rptline
@@ -61,7 +70,8 @@ function Report ([string]$level, [string]$line) {
 
 }
 
-$scripterror = $false
+$global:scripterror = $false
+$global:MessageList = @()
 
 # COMMON coding
 Try {
@@ -88,7 +98,7 @@ Try {
     }
 }
 Catch {
-    $scripterror = $true
+    $global:scripterror = $true
     $errortext = $error[0]
     $scripterrormsg = "Input validation failed - $errortext"
     Report "E" "$scripterrormsg"
@@ -97,20 +107,29 @@ Catch {
 
 # Determine input parameters and verify input
 
-if (!$scripterror) {
+if (!$global:scripterror) {
     try {
         if ($Messages) {
             $global:writemsg = $true
-            if (!(Test-Path $Messages)) {
-                Throw "Messages file $messages does not exist"
+            if ($Messages.ToUpper() -eq "JSON") {
+                $global:JSON = $true
+            }
+            else {
+                $global:JSON = $false
+                if (!(Test-Path $Messages)) {
+                    Throw "Messages file $messages does not exist"
+                }
             }
         } 
         else {
             $global:writemsg = $false
+            $global:JSON = $false
         }
         $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
-        Report "N" $Scriptmsg 
-        Write-Host $scriptmsg
+        Report "N" $Scriptmsg
+        if (!$global:JSON) { 
+            Write-Host $scriptmsg
+        }
     
         $mymsg = "Input Validation: $Action file $InputFile to $Outputfile (mode: $Mode)"
         Report "I"  $mymsg
@@ -153,14 +172,14 @@ if (!$scripterror) {
     
     }
     catch {    
-        $scripterror = $true
+        $global:scripterror = $true
         $errortext = $error[0]
         $scripterrormsg = "Input validation failed - $errortext"
         Report "E" "$scripterrormsg" 
     }
 }
 
-if (!$scripterror) {
+if (!$global:scripterror) {
     try {
         Report "I" "Perform requested actions"
         if ($lock) {
@@ -188,8 +207,8 @@ if (!$scripterror) {
                 copy-item -path "$inputfile" -destination "$outputfile" -force
             }
             else {
-                Get-Content $inputfile | Out-Null                
-                Add-Content $outputfile $inputfile
+                $o = Get-Content $inputfile                 
+                Add-Content $outputfile $o
             }
 
            
@@ -199,8 +218,8 @@ if (!$scripterror) {
                 move-item -path "$inputfile" -destination "$outputfile" -force
             }
             else {
-                Get-Content $inputfile | Out-Null               
-                Add-Content $outputfile $inputfile
+                $0 = Get-Content $inputfile                
+                Add-Content $outputfile $o
                 Remove-Item $inputfile
             }               
             
@@ -221,21 +240,27 @@ if (!$scripterror) {
               
     }
     catch {
-        $scripterror = $true
+        $global:scripterror = $true
         $errortext = $error[0]
         $scripterrormsg = "Requested actions failed - $errortext"
         Report "E" "$scripterrormsg"
     }
 }
-if ($scripterror) {
-    throw "$FullScriptName ended abnormally"
-} 
-else {
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
-    Report "N" $Scriptmsg 
+
+$d = Get-Date
+$Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+$Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
+$Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $ScriptVersion + $Datum + $Tijd +$Node
+Report "N" $Scriptmsg 
+if (!$global:JSON) {
     Write-Host $scriptmsg
 }
+if ($global:JSON) {
+    $ReturnJSON = ConvertTo-JSON $global:MessageList  
+    return $ReturnJSON 
+}
+else {    
+    Return $global:MessageList   
+}
+
 
