@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 10.2"
+﻿$Version = " -- Version: 10.2.1"
 
 # COMMON coding
 CLS
@@ -176,7 +176,7 @@ try {
             }
             else {
                 Report "W" "==> Unpushed commits       ***"
-                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits (ADHCentral)";
                                                       Repo = $gdir}
                 $alarmlist += $alarm
             
@@ -214,7 +214,7 @@ try {
             }
             else {
                 Report "W" "==> Unpushed commits       ***"
-                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits";
+                $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits (GITHUB)";
                                                       Repo = $gdir}
                 $alarmlist += $alarm
             }
