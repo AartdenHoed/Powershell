@@ -1,6 +1,6 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 3.4"
+$Version = " -- Version: 4.0"
 
 # COMMON coding
 CLS
@@ -57,138 +57,142 @@ foreach ($factory in $factorylist) {
     $factroot = Set_Value($factroot)
     
     $subdevdir = $factory.SubRoot
-    Write-Host "Factory = $subdevdir"
-   
-    $nodes = $factory.ADHCinfo.Nodes
-    $nodes = Set_Value($nodes)  
-    write-host "Target nodes = $nodes"
+    Write-Host "Factory = $subdevdir" 
 
-    [xml]$xmldoc = New-Object System.Xml.XmlDocument
-    $decl = $xmldoc.CreateXmlDeclaration('1.0','UTF-8',$null)
-    [void]$xmldoc.AppendChild($decl)
+    $ADHCinfolist = $factory.Childnodes
 
-    $adhcinfo = $xmldoc.CreateElement("ADHCinfo")
-    $adhcinfo.SetAttribute("Version",$version)
-    $adhcinfo.SetAttribute("Nodes", $nodes)
-    $adhcinfo.SetAttribute("Factory", $factroot)
-    $adhcinfo.SetAttribute("SubRoot", $subdevdir)
+    foreach ($infoentry in $ADHCinfolist) {
+        [xml]$xmldoc = New-Object System.Xml.XmlDocument
+        $decl = $xmldoc.CreateXmlDeclaration('1.0','UTF-8',$null)
+        [void]$xmldoc.AppendChild($decl)
+
+        $nodes = $infoentry.Nodes
+        $nodes = Set_Value($nodes)  
+        write-host "Target nodes = $nodes"
+
+        $adhcinfo = $xmldoc.CreateElement("ADHCinfo")
+        $adhcinfo.SetAttribute("Version",$version)
+        $adhcinfo.SetAttribute("Nodes", $nodes)
+        $adhcinfo.SetAttribute("Factory", $factroot)
+        $adhcinfo.SetAttribute("SubRoot", $subdevdir)
     
 
-    $liblist = $factory.ADHCinfo.CHildNodes
-    Write-Host "Libnames: "
-    foreach ($lib in $liblist) {
-        $Naam = $lib.Name        Write-Host "Naam =   $Naam"
+        $liblist = $infoentry.CHildNodes
+        Write-Host "Libnames: "
+        foreach ($lib in $liblist) {
+            $Naam = $lib.Name            Write-Host "Naam =   $Naam"
 
-        $root = $lib.Root
-        $root = Set_Value($root)
-        Write-Host "Root = $root"
+            $root = $lib.Root
+            $root = Set_Value($root)
+            Write-Host "Root = $root"
 
-        $subroot = $lib.SubRoot
-        If ($subroot -eq "*") {
-            $subroot = $subdevdir
-        }
-        Write-Host "Subroot = $subroot"
+            $subroot = $lib.SubRoot
+            If ($subroot -eq "*") {
+                $subroot = $subdevdir
+            }
+            Write-Host "Subroot = $subroot"
 
-        $Process = $lib.Process
-        Write-Host "Process = $Process"
+            $Process = $lib.Process
+            Write-Host "Process = $Process"
 
-        $Delay = $lib.Delay
-        Write-Host "Delay = $Delay"
+            $Delay = $lib.Delay
+            Write-Host "Delay = $Delay"
                 
-        $ModulesList = $lib.ChildNodes
-        $cnt = $lib.ChildNodes.Count
-        Write-Host "Aantal MODULES entries: $cnt"
+            $ModulesList = $lib.ChildNodes
+            $cnt = $lib.ChildNodes.Count
+            Write-Host "Aantal MODULES entries: $cnt"
 
         
-        $comment = $false
-        switch ($Naam.ToUpper().Trim()) {
-            "STAGELIB" {
-                $thischild = $xmldoc.CreateElement("StageLib")
-                $stageroot = $subroot
+            $comment = $false
+            switch ($Naam.ToUpper().Trim()) {
+                "STAGELIB" {
+                    $thischild = $xmldoc.CreateElement("StageLib")
+                    $stageroot = $subroot
+                }
+                "TARGET" { 
+                    $thischild = $xmldoc.CreateElement("Target") 
+                }
+                "DSL" { 
+                    $thischild = $xmldoc.CreateElement("DSL") 
+                }
+                "#COMMENT" {
+                    $txt = $lib.InnerText 
+                    $thischild = $xmldoc.CreateComment($txt) 
+                    $comment = $true
+                }
+                default {
+                    Write-Error "$Naam niet herkend"
+                    Exit 16
+                } 
             }
-            "TARGET" { 
-                $thischild = $xmldoc.CreateElement("Target") 
-            }
-            "DSL" { 
-                $thischild = $xmldoc.CreateElement("DSL") 
-            }
-            "#COMMENT" {
-                $txt = $lib.InnerText 
-                $thischild = $xmldoc.CreateComment($txt) 
-                $comment = $true
-            }
-            default {
-                Write-Error "$Naam niet herkend"
-                Exit 16
-            } 
-        }
         
             
-        if (!$comment) {  
-            $thischild.SetAttribute("Root",$root)
-            $thischild.SetAttribute("SubRoot", $subroot)                      
-            foreach ($modentry in $ModulesList) {
-                $m = $xmldoc.CreateElement("Modules")
+            if (!$comment) {  
+                $thischild.SetAttribute("Root",$root)
+                $thischild.SetAttribute("SubRoot", $subroot)                      
+                foreach ($modentry in $ModulesList) {
+                    $m = $xmldoc.CreateElement("Modules")
 
-                $p = $modentry.Process
-                if ($p) {
-                    if ($p -eq "*") {
-                        $mprocess = $Process
-                }
-                    else {
-                        $mprocess = $p
+                    $p = $modentry.Process
+                    if ($p) {
+                        if ($p -eq "*") {
+                            $mprocess = $Process
                     }
-                }
-                else {
-                    $mprocess = $Process
-                }
-                $m.SetAttribute("Process",$mprocess)
+                        else {
+                            $mprocess = $p
+                        }
+                    }
+                    else {
+                        $mprocess = $Process
+                    }
+                    $m.SetAttribute("Process",$mprocess)
 
-                $dly = $modentry.Delay
-                if ($dly) {
-                    $mdelay= $dly
-                }
-                else {
-                    $mdelay = $Delay 
-                }    
-                $m.SetAttribute("Delay",$mdelay)
+                    $dly = $modentry.Delay
+                    if ($dly) {
+                        $mdelay= $dly
+                    }
+                    else {
+                        $mdelay = $Delay 
+                    }    
+                    $m.SetAttribute("Delay",$mdelay)
 
-                $Include = $modentry.Include
-                if (!$Include) {
-                    $Include = "*ALL*"
-                } 
-                $Exclude = $modentry.Exclude
-                if (!$Exclude) {
-                    $Exclude = "*None*"
-                } 
+                    $Include = $modentry.Include
+                    if (!$Include) {
+                        $Include = "*ALL*"
+                    } 
+                    $Exclude = $modentry.Exclude
+                    if (!$Exclude) {
+                        $Exclude = "*None*"
+                    } 
 
-                $i = $xmldoc.CreateElement("Include")
-                $i.InnerText = $Include
+                    $i = $xmldoc.CreateElement("Include")
+                    $i.InnerText = $Include
                
-                $e = $xmldoc.CreateElement("Exclude")
-                $e.InnerText = $Exclude
+                    $e = $xmldoc.CreateElement("Exclude")
+                    $e.InnerText = $Exclude
 
-                [void]$m.AppendChild($i)
-                [void]$m.AppendChild($e)
+                    [void]$m.AppendChild($i)
+                    [void]$m.AppendChild($e)
                 
-                [void]$thischild.AppendChild($m)
+                    [void]$thischild.AppendChild($m)
+                }
             }
+
+            [void]$adhcinfo.AppendChild($thischild)
         }
-
-        [void]$adhcinfo.AppendChild($thischild)
-    }
      
-    [void]$xmldoc.AppendChild($adhcinfo)
+        [void]$xmldoc.AppendChild($adhcinfo)
 
-    # Write xml to config dataset
-    $outdir = $ADHC_StagingDir + $stageroot
+        # Write xml to config dataset
+        $outdir = $ADHC_StagingDir + $stageroot
     
-    New-Item -ItemType Directory -Force -Path $outdir | Out-Null
-    $fullname = $outdir + $ADHC_configfile
-    $xmlDoc.Save($fullName)
+        New-Item -ItemType Directory -Force -Path $outdir | Out-Null
+        $fullname = $outdir + $ADHC_configfile
+        $xmlDoc.Save($fullName)
 
-    write-host " "
+        write-host " "
     
+    }
 }
 
 $d = Get-Date
