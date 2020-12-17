@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.8"
+    $Version = " -- Version: 7.9"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -200,6 +200,13 @@ try {
     
     Remove-Variable -Name "ADHC_PRTGlogs" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PRTGlogs" -Value "PRTG\SensorLogs\" -Option readonly -Scope global -Description "PRTG log directory" -force
+
+    $prtgdir = "PRTGoverviewDB\"
+    $prtgname = $ADHC_Computer + "_PRTGoverviewDB.txt"
+    $prtg = [PSCustomObject] [ordered] @{Directory = $prtgdir;
+                                       Name = $prtgname }
+    Remove-Variable -Name "ADHC_PRTGoverviewDB" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PRTGoverviewDB" -Value $prtg -Option readonly -Scope global -Description "Put PRTG overview in database" -force
 
     $vxdir = "VariableXref\"
     $vxname = $ADHC_Computer + "_VariableXref.txt"
