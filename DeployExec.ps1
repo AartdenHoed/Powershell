@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.0.3"
+﻿$Version = " -- Version: 4.1"
 
 # COMMON coding
 CLS
@@ -84,8 +84,16 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         $action = "DELETE"
         Report "C" "Deletion of file $tobedeleted will be initiated because process = $process"
     } 
+    if (($action.ToUpper() -eq "VALIDATE") -and ($process.ToUpper() -eq "IGNORE")) {
+        
+        return
+    } 
 
     if ($action.ToUpper() -eq "DELETE") {
+        If ($process.ToUpper() -eq "IGNORE") {
+            Report "I" "FIle $tobedeleted has process $process and will NOT be deleted"
+            return
+        }
         if ($thisdelay -gt 0) {
             $action = "DELETEX"
         }
@@ -159,6 +167,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
     switch ($process.ToUpper()) {
         "COPY"   { } 
         "NONE"   { }
+        "IGNORE" { } 
         "WINDOWSSCHEDULER" {
             if ($xmlvalid) {
                 $TaskName = $xml.Task.RegistrationInfo.URI
@@ -259,7 +268,11 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
     
     switch ($action.ToUpper()) {
         "ADD" {
-            if ($process.ToUpper() -eq "NONE") {
+            if ($process.ToUpper() -eq "NONE")  {
+                return                               #no action!
+            }
+            if ($process.ToUpper() -eq "IGNORE")  {
+                Report "W" "Module $from should not exist because process is $process. ADD function aborted"
                 return                               #no action!
             }
             if ($copyme) {            
@@ -278,7 +291,11 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
             if ($process.ToUpper() -eq "NONE") {
                 Report "C" "Module $to should not be there, because process = $process. Deletion will be initiated"
                 return
-            }               
+            }   
+            if ($process.ToUpper() -eq "IGNORE") {
+                Report "W" "Module $from should not be there, because process = $process"
+                return
+            }                
             if ($copyme) {
                 Report "C" "Module $to has been updated and will be replaced on computer $ADHC_Computer"
                 Copy-Item "$from" "$to" -force
@@ -424,6 +441,7 @@ function Report ([string]$level, [string]$line) {
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
             $global:scripterror = $true
+            
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
@@ -801,6 +819,7 @@ try {
     }
 }
 catch {
+    write-warning "Catch"
     $global:scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName

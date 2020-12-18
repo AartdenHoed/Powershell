@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.1.1"
+﻿$Version = " -- Version: 3.2"
 
 # COMMON coding
 CLS
@@ -31,42 +31,46 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     }
 
     $currentdate = Get-Date
-
-    foreach ($entry in $filter) {
-        $included = $false
-        $excluded = $false
-        
-        if (($entry.includes.ToUpper() -contains "*ALL*")  -or ($entry.includes.ToUpper() -contains $searchname.ToUpper())) {
-            if ($entry.excludes.ToUpper() -contains $searchname.ToUpper()) {
-                $excluded = $true
-                
-            }
-            else {
-                $included = $true
-            }
-            
-        }
-        else {
-            if ($entry.excludes.ToUpper() -contains "*ALL*") {
-                
-                $excluded = $true
-             
-            }
-        }
-        if ($included -or $excluded) {
+    $included = $false
+    $excluded = $false
+    $inclall = $false
+    $exclall = $false
+    foreach ($entry in $filter) {        
+        # Inlcuded by name prevails, so stop searching directly
+        if ($entry.includes.ToUpper() -contains $searchname.ToUpper()) {
+            $included = $true
             $myprocess = $entry.process.ToUpper()
-            $mydelay = $entry.delay
-            
+            $mydelay = $entry.delay            
             break
         }
-                    
+        # Excluded by name: skip this filter
+        if ($entry.excludes.ToUpper() -contains $searchname.ToUpper()) {
+            $excluded = $true
+            $included = $false
+            continue
+        }
+        # if not excluded by name, include *ALL* takes preference
+        if ($entry.includes.ToUpper() -contains "*ALL*") {
+            $inclall = $true
+            $myprocess = $entry.process.ToUpper()
+            $mydelay = $entry.delay            
+            continue
+            
+        }
+        # at last we look at excluded *ALL*. It just means that the module had a "hit"
+        if ($entry.excludes.ToUpper() -contains "*ALL*") {
+            $exclall = $true
+         
+        }
+                            
     }
-    if ($excluded) { return } 
-    
-    if (!$included) {
+        
+    if (!($included -or $inclall -or $excluded -or $exclall) ) {
         $m = "Module '" + "$shortname" + "' has no corresponding INCLUDE/EXCLUDE statement"
         Report "A" $m 
-        
+        return
+    }
+    if (!($included -or $inclall)) {
         return
     }     
         
@@ -346,6 +350,33 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
         }
         "BACKWARD-C#" {
             Report "A" "$direction process $myprocess not yet implemented for module $shortname" 
+        }
+        "FORWARD-IGNORE" {
+            if (!$existfrom) {
+                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction"
+                               
+            }
+            else {
+                Report "W" "'FROM dataset' $from should not exist because $to is on the $myprocess list"
+                 
+            }
+            if (!$existto) {
+                Report "W" "Checking $direction : Target file $to is on $myprocess list but does not exist"
+                
+            } 
+            Report "I" "Checking $direction : module $to IGNORED" 
+            return        
+        }
+        "BACKWARD-IGNORE" {
+            if (!$existto) {
+                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction"
+               
+            }
+            if ($existfrom) {
+                Report "W" "'FROM dataset' $from should not exist because $to is on the $myprocess list"
+            }
+            Report "I" "Checking $direction : module $to IGNORED" 
+            return
         }
         default {
             Report "E" "$direction process $myprocess UNKNOWN for module $shortname"
