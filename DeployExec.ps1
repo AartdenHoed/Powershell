@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.1"
+﻿$Version = " -- Version: 4.2"
 
 # COMMON coding
 CLS
@@ -19,42 +19,48 @@ $ErrorActionPreference = "Stop"
 # Generic delete function
 
 function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [System.Collections.ArrayList]$filter) {
+
     $included = $false
-    $modulefound = $false
-    foreach ($entry in $filter) {
-        if ($entry.includes.ToUpper() -contains "*ALL*") {
-            $included = $true
-            # Write-Host "include *ALL"
-        }
+    $excluded = $false
+    $inclall = $false
+    $exclall = $false
+    foreach ($entry in $filter) {        
+        # Inlcuded by name prevails, so stop searching directly
         if ($entry.includes.ToUpper() -contains $delname.ToUpper()) {
             $included = $true
-            # Write-Host "include name-match"
-        }
-        if ($entry.excludes.ToUpper() -contains $delname.ToUpper()) {
-            $included = $false
-            $modulefound = $true
-            # Write-Host "exclude name-match"
-        }
-        if ($entry.excludes.ToUpper() -contains "*ALL*") {
-            
-            $modulefound = $true
-            # Write-Host "exclude *ALL*"
-        }
-        if ($included) {
             $process = $entry.process.ToUpper()
-            $thisdelay = $entry.delay
-            $modulefound = $true
+            $thisdelay = $entry.delay            
             break
         }
+        # Excluded by name: skip this filter
+        if ($entry.excludes.ToUpper() -contains $delname.ToUpper()) {
+            $excluded = $true
+            $included = $false
+            continue
+        }
+        # if not excluded by name, include *ALL* takes preference
+        if ($entry.includes.ToUpper() -contains "*ALL*") {
+            $inclall = $true
+            $process = $entry.process.ToUpper()
+            $thisdelay = $entry.delay            
+            continue
             
+        }
+        # at last we look at excluded *ALL*. It just means that the module had a "hit"
+        if ($entry.excludes.ToUpper() -contains "*ALL*") {
+            $exclall = $true
+         
+        }
+                            
     }
+
     if (($delname -match "\w+\.?\w*" ) -or ($delname -match "#\w+\.?\w*")) {
-        if (!$modulefound) {
+        if (!($included -or $inclall -or $excluded -or $exclall) ) {
             Report "W" "Module $delname ($tobedeleted) has no corresponding INCLUDE statement for $action - processing wil be SKIPPED"
             return
         }
         else {
-            if (!$included) {
+            if (!($included -or $inclall)) {
                 Write-Host "Module $delname ($tobedeleted) EXCLUDED for $action - processing wil be SKIPPED"
                 return
             }
@@ -205,39 +211,48 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
 # Generic COPY function
 
 function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$to, [System.Collections.ArrayList]$filter) {
-    $modulefound = $false
+
     $included = $false
-    foreach ($entry in $filter) {
-        if ($entry.includes.ToUpper() -contains "*ALL*") {
-            $included = $true
-        }
+    $excluded = $false
+    $inclall = $false
+    $exclall = $false
+    foreach ($entry in $filter) {        
+        # Inlcuded by name prevails, so stop searching directly
         if ($entry.includes.ToUpper() -contains $shortname.ToUpper()) {
             $included = $true
-        }
-        if ($entry.excludes.ToUpper() -contains $shortname.ToUpper()) {
-            $included = $false
-            $modulefound = $true
-        }
-        if ($entry.excludes.ToUpper() -contains "*ALL*") {
-            
-            $modulefound = $true
-        }
-        if ($included) {
             $process = $entry.process.ToUpper()
-            $delay = $entry.delay
-            $modulefound = $true
+            $delay = $entry.delay            
             break
         }
+        # Excluded by name: skip this filter
+        if ($entry.excludes.ToUpper() -contains $shortname.ToUpper()) {
+            $excluded = $true
+            $included = $false
+            continue
+        }
+        # if not excluded by name, include *ALL* takes preference
+        if ($entry.includes.ToUpper() -contains "*ALL*") {
+            $inclall = $true
+            $process = $entry.process.ToUpper()
+            $delay = $entry.delay            
+            continue
             
+        }
+        # at last we look at excluded *ALL*. It just means that the module had a "hit"
+        if ($entry.excludes.ToUpper() -contains "*ALL*") {
+            $exclall = $true
+         
+        }
+                            
     }
     
     if (($shortname -match "\w+\.?\w*" ) -or ($shortname -match "#\w+\.?\w*")) {
-        if (!$modulefound) {
+        if (!($included -or $inclall -or $excluded -or $exclall))  {
             Report "W" "Module $shortname ($to)has no corresponding INCLUDE statement for $action - processing wil be SKIPPED"
             return
         }
         else {
-            if (!$included) {
+            if (!($included -or $inclall)) {
                 Write-Host "Module $shortname ($to) EXCLUDED for $action - processing wil be SKIPPED"
                 return
             }
