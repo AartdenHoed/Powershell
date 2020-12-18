@@ -18,7 +18,7 @@ $Mode = $Mode.ToUpper()
 $Actionlist = @("MOVE","COPY")
 $Modelist = @("REPLACE","APPEND")
 
-$ScriptVersion = " -- Version: 1.2"
+$ScriptVersion = " -- Version: 1.2.1"
 
 function Report ([string]$level, [string]$line) {
     
@@ -38,19 +38,19 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $global:scriptchangex = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $global:scriptactionx = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
+            $global:scripterrorx = $true
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $global:scripterrorx = $true
         }
     }
     if ($global:writemsg) {
@@ -70,7 +70,7 @@ function Report ([string]$level, [string]$line) {
 
 }
 
-$global:scripterror = $false
+$global:scripterrorx = $false
 $global:MessageList = @()
 
 # COMMON coding
@@ -98,7 +98,7 @@ Try {
     }
 }
 Catch {
-    $global:scripterror = $true
+    $global:scripterrorx = $true
     $errortext = $error[0]
     $scripterrormsg = "Input validation failed - $errortext"
     Report "E" "$scripterrormsg"
@@ -107,7 +107,7 @@ Catch {
 
 # Determine input parameters and verify input
 
-if (!$global:scripterror) {
+if (!$global:scripterrorx) {
     try {
         if ($Messages) {
             $global:writemsg = $true
@@ -172,14 +172,14 @@ if (!$global:scripterror) {
     
     }
     catch {    
-        $global:scripterror = $true
+        $global:scripterrorx = $true
         $errortext = $error[0]
         $scripterrormsg = "Input validation failed - $errortext"
         Report "E" "$scripterrormsg" 
     }
 }
 
-if (!$global:scripterror) {
+if (!$global:scripterrorx) {
     try {
         Report "I" "Perform requested actions"
         if ($lock) {
@@ -240,7 +240,7 @@ if (!$global:scripterror) {
               
     }
     catch {
-        $global:scripterror = $true
+        $global:scripterrorx = $true
         $errortext = $error[0]
         $scripterrormsg = "Requested actions failed - $errortext"
         Report "E" "$scripterrormsg"
