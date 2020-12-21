@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.2"
+﻿$Version = " -- Version: 4.2.1"
 
 # COMMON coding
 CLS
@@ -732,7 +732,7 @@ try {
             }
 
             Set-Location "$targetDir"
-            $TargetModList = Get-ChildItem -file -recurse | Where-Object {($_.FullName -notlike "*\\.git*") -and ($_.FullName -notlike "*MyExample*") } | select-object FullName,Name 
+            $TargetModList = Get-ChildItem -file -recurse | Where-Object {($_.FullName -notlike "*\.git*") -and ($_.FullName -notlike "*MyExample*") } | select-object FullName,Name 
         
             foreach ($targetMod in $TargetModList) {
                 $mod = $Targetmod.FullName
