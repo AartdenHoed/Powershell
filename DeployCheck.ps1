@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.2"
+﻿$Version = " -- Version: 3.2.2"
 
 # COMMON coding
 CLS
@@ -538,7 +538,7 @@ try {
         Report "N" " "
 
         $devmodules = Get-ChildItem "$devdir" -recurse -file  | `
-                                    Where-Object {($_.FullName -notlike "*.git*") -and ($_.FullName -notlike "*MyExample*") } | `
+                                    Where-Object {($_.FullName -notlike "*\.git*") -and ($_.FullName -notlike "*MyExample*") } | `
                                     Select FullName, Name
         foreach ($naam in $devmodules) {
             # Write-Host $module.FullName
@@ -668,7 +668,7 @@ try {
         $Modules = $ConfigXml.ADHCinfo.DSL.Childnodes
         $modulefilter = @()
         foreach ($moduleentry in $Modules) {
-            $process = "COPY"
+            $process = $moduleentry.Process
             $delay = $moduleentry.Delay
             $includes = $moduleentry.Include.SPlit(",")
             $excludes = $moduleentry.Exclude.Split(",")
