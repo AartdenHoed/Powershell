@@ -3,28 +3,37 @@
 # Channel in JSON: https://prtg.shl-groep.nl/api/table.json?noraw=0&content=channels&columns=name,objid,type,active,tags,minimum,maximum,condition,lastvalue&id=1001
 
 cls
-$Version = " -- Version: 2.0"
-
-# This piece of code alllows self signed certificates
-if (-not("dummy" -as [type])) {
-    add-type -TypeDefinition @"
-using System;
-using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-
-public static class Dummy {
-    public static bool ReturnTrue(object sender,
-        X509Certificate certificate,
-        X509Chain chain,
-        SslPolicyErrors sslPolicyErrors) { return true; }
-
-    public static RemoteCertificateValidationCallback GetDelegate() {
-        return new RemoteCertificateValidationCallback(Dummy.ReturnTrue);
+$Version = " -- Version: 2.1"
+class TrustAllCertsPolicy : System.Net.ICertificatePolicy {
+    [bool] CheckValidationResult([System.Net.ServicePoint] $a,
+                                 [System.Security.Cryptography.X509Certificates.X509Certificate] $b,
+                                 [System.Net.WebRequest] $c,
+                                 [int] $d) {
+        return $true
     }
 }
-"@
-}
+[System.Net.ServicePointManager]::CertificatePolicy = [TrustAllCertsPolicy]::new()
+
+# This piece of code alllows self signed certificates
+#if (-not("dummy" -as [type])) {
+#    add-type -TypeDefinition @"
+#using System;
+#using System.Net;
+#using System.Net.Security;
+#using System.Security.Cryptography.X509Certificates;
+#
+#public static class Dummy {
+#    public static bool ReturnTrue(object sender,
+#        X509Certificate certificate,
+#        X509Chain chain,
+#        SslPolicyErrors sslPolicyErrors) { return true; }
+#
+#    public static RemoteCertificateValidationCallback GetDelegate() {
+#        return new RemoteCertificateValidationCallback(Dummy.ReturnTrue);
+#    }
+#}
+#"@
+#}
 
 # init flags
 $global:scripterror = $false
@@ -119,7 +128,7 @@ try {
     }
 
 
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [dummy]::GetDelegate()
+    #[System.Net.ServicePointManager]::ServerCertificateValidationCallback = [dummy]::GetDelegate()
 
     $t = Get-Date
     Report "I" "$t *** Call API for sensors"
