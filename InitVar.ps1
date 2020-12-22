@@ -19,15 +19,11 @@ class InitVarException : System.Exception  {
     }
 }
 
-$MyError = [InitVarException]::new("INITVAR.PS1 failed - fatal error")
 Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
-Remove-Variable -Name "ADHC_InitError" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope global -Description "INITVAR user error" -force
-    
-
+ 
 try {
-    $Version = " -- Version: 7.10"
+    $Version = " -- Version: 7.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -324,6 +320,9 @@ try {
 Catch {
     Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_InitSuccessfull" -Value $false -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
-
+    $em = "INITVAR.PS1 failed - fatal error:  " + $_.Exception.Message
+    $MyError = [InitVarException]::new($em)
+    Remove-Variable -Name "ADHC_InitError" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope global -Description "INITVAR user error" -force
     
 }
