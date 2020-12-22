@@ -27,7 +27,7 @@ Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope glob
     
 
 try {
-    $Version = " -- Version: 7.9"
+    $Version = " -- Version: 7.10"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -148,7 +148,9 @@ try {
     Set-Variable -Name "ADHC_OneDriveSync" -Value $so -Option readonly -Scope global -Description "Force OneDrive synchronisation" -force
 
     $encoder = new-object System.Text.UTF8Encoding
-    $bytes = $encoder.Getbytes('nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A')
+    $regx = Get-ItemProperty -path HKLM:\SOFTWARE\ADHC | Select-Object -ExpandProperty "SecurityString"
+    # Write-Host "String = $regx"
+    $bytes = $encoder.Getbytes($regx)
     $secfile = $output + "PRTG\Security\SaveString.txt"
     $sec = Get-Content $secfile
     $SecureString = ConvertTo-SecureString $sec -Key $bytes
