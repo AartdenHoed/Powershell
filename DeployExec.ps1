@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.3"
+﻿$Version = " -- Version: 4.3.1"
 
 # COMMON coding
 CLS
@@ -697,6 +697,10 @@ try {
 
                 # Check if production differs from staged file
                 $prodname = $stagedfile.FullName.ToUpper().Replace($staginglocation.ToUpper(),$targetdir)
+                $repl1 = "\" + $sname.ToUpper()
+                $repl2 = "\" + $sname
+                $prodname = $prodname.Replace($repl1, $repl2)                         # restore Mixed case
+                
                 
                 # $prodname
                 if (Test-Path $prodname) {
@@ -801,6 +805,9 @@ try {
                        
             # Check if DSL differs from staged file ################################################
             $DSLname = $stagedfile.FullName.ToUpper().Replace($staginglocation.ToUpper(),$dsldir)
+            $repl1 = "\" + $sname.ToUpper()
+            $repl2 = "\" + $sname
+            $DSLname = $DSLname.Replace($repl1, $repl2)                         # restore Mixed case
                
             if (Test-Path $DSLname) {
                 $DSLprops = Get-ItemProperty $DSLname 
