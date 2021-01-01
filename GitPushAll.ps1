@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 6.0.2"
+﻿$Version = " -- Version: 6.1"
 
 # COMMON coding
 CLS
@@ -19,6 +19,7 @@ function WriteLog ([string]$Action, [string]$line) {
     $global:recordslogged = $true
 
     $now = Get-Date
+    $nrofnotkeep = 0
 
     foreach ($record in $oldrecords) {
         $keeprecord = $false
@@ -31,11 +32,22 @@ function WriteLog ([string]$Action, [string]$line) {
             if ($recordage.Days -le 50) {
                 $keeprecord = $true    
             }
+            else {
+                $nrofnotkeep += 1
+            }
         }
         if ($keeprecord) {
             Add-Content $templog $record
         }
     }
+    if ($nrofnotkeep -gt 0 ) {
+        $logdate = Get-Date
+        $line = "Housekeeping: $nrofnotkeep Old log records deleted"
+        $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
+                    (" *** Log Record Purge *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
+        
+        Add-Content $templog $logrec 
+    } 
 
 }
 
