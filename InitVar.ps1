@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.2"
+    $Version = " -- Version: 7.3"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -128,6 +128,20 @@ try {
                                        Name = $ngname }
     Remove-Variable -Name "ADHC_DeployCheck" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DeployCheck" -Value $ng -Option readonly -Scope global -Description "Check correctness deployments" -force
+
+    $ipcdir = "IpScan\"
+    $ipcname = $ADHC_Computer + "_IpScan.txt"
+    $ipc = [PSCustomObject] [ordered] @{Directory = $ipcdir;
+                                       Name = $ipcname }
+    Remove-Variable -Name "ADHC_IpScan" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_IpScan" -Value $ipc -Option readonly -Scope global -Description "Scan of home IP addresses" -force
+    
+    $ipcldir = "IpScan\"
+    $ipclname = $ADHC_Computer + "_IpScan.log"
+    $ipcl = [PSCustomObject] [ordered] @{Directory = $ipcldir;
+                                       Name = $ipclname }
+    Remove-Variable -Name "ADHC_IpScanLog" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_IpScanLog" -Value $ipcl -Option readonly -Scope global -Description "Scan of home IP addresses" -force
     
     $cfdir = "OneDriveCheck\" 
     $cfname = $ADHC_Computer + "_OneDriveCheck.txt"
