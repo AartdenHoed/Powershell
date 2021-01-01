@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1"
+﻿$Version = " -- Version: 1.4"
 
 # COMMON coding
 CLS
@@ -15,11 +15,11 @@ $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 
 # nog:
-# - Standaardiseren
-# - Doorlooptijd noteren
-# - Log met overall statistieken (ping / notping. Bij not ping: welke foutboodschap) 
-# - Reportfile
-# - Hoogste gebruikte jobnummer rapporteren + gebruik per job
+# v - Standaardiseren
+# v - Doorlooptijd noteren
+# v - Log met overall statistieken (ping / notping. Bij not ping: welke foutboodschap) 
+# v - Reportfile
+# v - Hoogste gebruikte jobnummer rapporteren + gebruik per job
 
 function Report ([string]$level, [string]$line) {
     switch ($level) {
@@ -62,7 +62,7 @@ function WriteLog ([string]$Action, [string]$line) {
 
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
-                    (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
+                    (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") 
     Set-Content $templog $logrec
     $global:recordslogged = $true
 
@@ -72,11 +72,12 @@ function WriteLog ([string]$Action, [string]$line) {
 
     foreach ($record in $oldrecords) {
         $keeprecord = $false
-        if ($record.Length -ge 248) {
-            $dtstring = $record.Substring(248)
-            #$dtstring
-            $timest = [datetime]::ParseExact($dtstring,"dd-MM-yyyy HH:mm:ss",$null)
-            # $timest.ToString("yyyy-MMM-dd HH:mm:ss")
+        if ($record.Length -ge 20) {
+            $dtstring = $record.Substring(0,20)
+            #$s = "'" + $dtstring + "'"
+            #$s
+            $timest = [datetime]::ParseExact($dtstring,"yyyy-MMM-dd HH:mm:ss",$null)
+            #$timest.ToString("yyyy-MMM-dd HH:mm:ss")
             $recordage = NEW-TIMESPAN –Start $timest –End $now
             if ($recordage.Days -le 50) {
                 $keeprecord = $true    
@@ -94,14 +95,38 @@ function WriteLog ([string]$Action, [string]$line) {
         $logdate = Get-Date
         $line = "Housekeeping: $nrofnotkeep Old log records deleted"
         $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
-                    (" *** Log Record Purge *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
+                    (" *** Log Record Purge *** ").Padright(40," ") + $line.PadRight(160," ")
         
         Add-Content $templog $logrec 
     } 
 
 }
+function Totals ([string]$ip, [boolean]$pingable, [string]$message) {
+    $found = $false
+    $genericmsg = $message.Replace($ip, "<IPaddress>")
+
+    foreach ($stat in $global:totalslist) {
+        if (($pingable -eq $stat.Pingable) -and ($genericmsg.Trim() -eq $stat.Message.Trim())) {
+            $found = $true
+            break
+        }
+        
+    }
+    if ($found) {
+        $stat.Total += 1
+    }
+    else {
+        $statentry = [PSCustomObject] [ordered] @{Pingable = $pingable;
+                                           Message = $genericmsg;
+                                           Total = 1} 
+        $global:totalslist += $statentry
+    }
+
+
+}
 
 try {
+    $global:totalslist = @()
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -166,7 +191,7 @@ try {
     & $ADHC_CopyMoveScript $deflog $templog "COPY" "REPLACE" $TempFile | Out-Null   
 
 
-    $base = "192.168.178."    $teller = 0
+    $base = "192.168.178."    $maxip = 255    $teller = 0
     $wait = 2 
 
     $resultlist = @()
@@ -175,10 +200,12 @@ try {
     $maxjobs = 8
     $i = 0
 
-    $dt = Get-Date
-    Report "I" ">>>>> Start $dt"
-    WriteLog "START" ">>>>>"
+    $sdt = Get-Date
+    $mline = ">".PadRight(99,">")
+    Report "I" ">>>>> Start $sdt"
+    WriteLog "START" $mline
 
+    # Create the object that will hold the jobs
     do {
         $i += 1
         $jobname = "IPjob" + $i.ToString("000") 
@@ -281,7 +308,7 @@ try {
             $em = $ErrorMessage = $_.Exception.Message
             Report "E" "ERROR *** $em"
         }
-    } until ($teller -ge 255)
+    } until ($teller -ge $maxip)
 
     do {
         $alljobscomplete = $true
@@ -319,9 +346,16 @@ try {
             
 
     } until ($alljobscomplete) 
-    $dt = Get-Date
-    Report "I" ">>>>> End $dt"
-    WriteLog "END" ">>>>>"
+
+    foreach ($entry in $joblist) {
+        $freq = $entry.usecount
+        $name = $entry.jobname
+        Report "I" "Job $name has been used $freq times"
+        WriteLog "UseCount" "$Name :  $freq"
+    }
+
+        
+
 }
 catch {
     
@@ -333,6 +367,34 @@ catch {
 }
 finally {
     $resultlist | Out-Gridview
+
+    foreach ($result in $resultlist) {
+        Totals $result.IpAddress $Result.Pingable $Result.Message
+    }
+    $global:Totalslist | Out-GridView
+    Report "I" "Statistics:" 
+    foreach ($tot in $global:Totalslist) {
+        
+        $t = $tot.Total 
+        if ($tot.Pingable) {
+            $p = "pingable"
+        }
+        else {
+            $p = "NOT pingable"
+        }
+        $m = $tot.Message
+        Report "B" "$t IP Addresses are $p with message: $m"
+        WriteLog "Statistics" "$t IP Addresses are $p with message: $m"
+    }
+    $edt = Get-Date
+    $diff = NEW-TIMESPAN –Start $sdt –End $edt
+    $sec = $diff.Seconds
+    $min = $diff.Minutes
+    WriteLog "Duration" "Script execution took $min minutes and $sec seconds"
+    Report "I" "$Script execution took $min minutes and $sec seconds"
+    Report "I" ">>>>> End $edt"
+    WriteLog "END" $mline
+
     # Copy temp log to definitive BEFORE DEQ
     if ($global:recordslogged) {
         & $ADHC_CopyMoveScript  $Templog $deflog "MOVE" "REPLACE" $TempFile | Out-Null
