@@ -72,6 +72,7 @@ $metalist= @()
 $t = Get-Date
 Write-Information "$t - Start inlezen attributen" 
 $nn = 0
+$cc = 0
 foreach ($dir in $Photodirs) {   
 
     $t = Get-Date
@@ -141,21 +142,32 @@ foreach ($fotobestand in $metalist) {
 
         $uur = $cijfers[3] -replace '[^0-9]', ''
         $iuur = [convert]::ToInt32($uur, 10)
-        # Correctie uren ============================================================================================
-        $uurcorrectie = 0
-        $iuur = $iuur + $uurcorrectie 
-        # Einde correctie ===========================================================================================
-        
         $minuut = $cijfers[4] -replace '[^0-9]', ''
         $iminuut = [convert]::ToInt32($minuut, 10)
-        # Correctie minuten =========================================================================================
-        $minuutcorrectie = 0
-        $imnuut = $iminuut +$minuutcorrectie
-        if ($minuut -ge 60) {
-            $iuur = $iuur + 1
-            $iminuut = $iminuut - 60
+
+        # Filter hier op naam of iets anders voor de foto's die WEL een tijd correctie moeten krijgen
+        if ($naam -like "H~H*"){
+            $cc = $cc + 1
+
+            # Correctie uren ============================================================================================
+            $uurcorrectie = 0
+            $iuur = $iuur + $uurcorrectie 
+            # Einde correctie ===========================================================================================
+                    
+            # Correctie minuten =========================================================================================
+            $minuutcorrectie = 0
+            $iminuut = $iminuut +$minuutcorrectie
+            if ($iminuut -ge 60) {
+                $iuur = $iuur + 1
+                $iminuut = $iminuut - 60
+            }
+            if ($iminuut -lt 0) {
+                $iuur = $iuur - 1
+                $iminuut = $iminuut + 60
+            }
+            # Einde correctie ===========================================================================================
+            
         }
-        # Einde correctie ===========================================================================================
 
         $cuur = $iuur.ToString("00")
         $cminuut = $iminuut.ToString("00")
@@ -176,5 +188,5 @@ foreach ($fotobestand in $metalist) {
     
 }
 $t = Get-Date
-Write-Information "$t - Ready: $nn Bestanden renamed"
+Write-Information "$t - Ready: $nn Bestanden renamed of which $cc have got a time correction"
 
