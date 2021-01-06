@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.4"
+﻿$Version = " -- Version: 1.5"
 
 # COMMON coding
 CLS
@@ -247,10 +247,12 @@ try {
                                         $em = $_.Exception.Message
                                         $ping =$false
                                     }
+                                    $ts = Get-Date -Format “yyyy-MM-dd HH:mm:ss.fff”
                                     $returnobj = [PSCustomObject] [ordered] @{IPaddress = $ipaddress;
                                                                             Pingtime = $t;
                                                                             Pingable = $ping;
-                                                                            Message = $em}
+                                                                            Message = $em;
+                                                                            TimeStamp = $ts}
                                     return $returnobj
                     
                         }  
@@ -366,12 +368,53 @@ catch {
 
 }
 finally {
-    $resultlist | Out-Gridview
+    # $resultlist | Out-Gridview
 
     foreach ($result in $resultlist) {
         Totals $result.IpAddress $Result.Pingable $Result.Message
+
+        $query = "SELECT * FROM [dbo].[IPadressen] WHERE [IPaddress] = '" + $result.IpAddress + "'"
+        $db = invoke-sqlcmd -ServerInstance ".\SQLEXPRESS" -Database "PRTG" `
+                        -Query "$query" `
+                        -ErrorAction Stop
+         If ($Result.Pingable) {
+                $p = "Y"
+            }
+            else {
+                $p = "N"
+            }
+        if (!$db) { 
+            # Insert (record does not yet exist)
+           
+            $query = "INSERT INTO [dbo].[IPadressen]
+           ([Naam]
+           ,[IPaddress]
+           ,[MACaddress]
+           ,[AltMAC]
+           ,[Type]
+           ,[Authorized]
+           ,[Pingable]
+           ,[TimeStamp])
+        VALUES (
+           'FREE','" + 
+           $result.IpAddress + 
+           "','n/a',NULL,'Unused','N','" + 
+           $p + "','"+ $result.TimeStamp + "')"
+           
+        }
+        else {
+            # Update with only pingstatus
+            $query = "UPDATE [dbo].[IPadressen] SET [Pingable] = '" + $p + 
+                                               "', [TimeStamp] = '" + $result.TimeStamp +  "' WHERE [IPaddress] = '" + $result.IpAddress + "'"
+
+        }
+        invoke-sqlcmd -ServerInstance ".\SQLEXPRESS" -Database "PRTG" `
+                        -Query "$query" `
+                        -ErrorAction Stop
+           
+            
     }
-    $global:Totalslist | Out-GridView
+    # $global:Totalslist | Out-GridView
     Report "I" "Statistics:" 
     foreach ($tot in $global:Totalslist) {
         
