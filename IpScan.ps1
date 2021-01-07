@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.5"
+﻿$Version = " -- Version: 1.5.1"
 
 # COMMON coding
 CLS
@@ -197,7 +197,7 @@ try {
     $resultlist = @()
 
     $joblist = @()
-    $maxjobs = 8
+    $maxjobs = 7
     $i = 0
 
     $sdt = Get-Date
