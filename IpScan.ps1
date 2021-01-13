@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.5.1"
+﻿$Version = " -- Version: 1.5.3"
 
 # COMMON coding
 CLS
@@ -79,7 +79,7 @@ function WriteLog ([string]$Action, [string]$line) {
             $timest = [datetime]::ParseExact($dtstring,"yyyy-MMM-dd HH:mm:ss",$null)
             #$timest.ToString("yyyy-MMM-dd HH:mm:ss")
             $recordage = NEW-TIMESPAN –Start $timest –End $now
-            if ($recordage.Days -le 50) {
+            if ($recordage.Days -le 10) {
                 $keeprecord = $true    
             }
             else {
@@ -197,7 +197,7 @@ try {
     $resultlist = @()
 
     $joblist = @()
-    $maxjobs = 7
+    $maxjobs = 9
     $i = 0
 
     $sdt = Get-Date
