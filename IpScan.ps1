@@ -1,11 +1,12 @@
 ﻿param (
     [int]$maxjobs = 9 ,
-    [int]$wait = 2
+    [int]$wait = 2 ,
+    [int]$maxtry = 16
 )
 
 # COMMON coding
 CLS
-$Version = " -- Version: 2.1"
+$Version = " -- Version: 2.2"
 
 # init flags
 $global:scripterror = $false
@@ -100,7 +101,7 @@ function WriteLog ([string]$Action, [string]$line) {
     } 
 
 }
-function Totals ([string]$ip, [boolean]$pingable, [string]$message) {
+function Totals ([string]$ip, [boolean]$pingable, [string]$message, [int]$retrycount) {
     $found = $false
     $genericmsg = $message.Replace($ip, "<IPaddress>")
 
@@ -121,11 +122,28 @@ function Totals ([string]$ip, [boolean]$pingable, [string]$message) {
         $global:totalslist += $statentry
     }
 
+    foreach ($retr in $global:Retrylist) {
+        if ($retr.RetryCount -eq $retrycount) {
+            $foundr = $true
+            break
+        }
+        
+    }
+    if ($foundr) {
+        $retr.Total += 1
+    }
+    else {
+        $retrentry = [PSCustomObject] [ordered] @{RetryCount = $retrycount;
+                                                    Total = 1} 
+        $global:Retrylist += $retrentry
+    }
+
 
 }
 
 try {
     $global:totalslist = @()
+    $global:Retrylist = @()
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -356,11 +374,25 @@ try {
                 foreach ($ip in $iplist) {
                     if ($ip.IPaddress.Trim() -eq $Response.ipaddress.Trim()) {
                         $ip.Pingtime = $Response.Pingtime;
-                        $ip.Pingable = $Response.Pingable
-                        $ip.Processed = $true;
+                        $ip.Pingable = $Response.Pingable                        
                         $ip.Message = $Response.Message;
                         $ip.Trycount += 1
                         $ip.TimeStamp = $Response.TimeStamp
+                        if (($Response.Message.Contains("het zoeken in de database")) -or ($Response.Message.Trim() -eq "OK") -or ($ip.Trycount -ge $maxtry))  {
+                            $ip.Processed = $true;    
+                        }
+                        else {
+                            if ($Response.Message.Contains("Fout vanwege tekort aan bronnen")) {
+                                $ip.Started = $false 
+                                $ip.Processed = $false 
+                                $allIPsprocessed = $false 
+                            }
+                            else {
+                                $m = $Response.Message
+                                Report "W" "Unexpected message encountered: '$m'" 
+                                $ip.Processed = $true;  
+                            }  
+                        }
                         break
                     }
 
@@ -398,7 +430,15 @@ finally {
     # $iplist | Out-Gridview
 
     foreach ($result in $iplist) {
-        Totals $result.IpAddress $Result.Pingable $Result.Message
+        Totals $result.IpAddress $Result.Pingable $Result.Message $Result.Trycount
+
+        if ($result.Trycount -gt 1) {
+            $i = $result.IPaddress
+            $c = $Result.Trycount
+            $m = $Result.Message
+            Report "A" "IP Address $i with try count $c has return message '$m'"
+
+        }
 
         $query = "SELECT * FROM [dbo].[IPadressen] WHERE [IPaddress] = '" + $result.IpAddress + "'"
         $db = invoke-sqlcmd -ServerInstance ".\SQLEXPRESS" -Database "PRTG" `
@@ -455,6 +495,13 @@ finally {
         $m = $tot.Message
         Report "B" "$t IP Addresses are $p with message: $m"
         WriteLog "Statistics" "$t IP Addresses are $p with message: $m"
+    }
+    foreach ($ret in $global:Retrylist) {
+        
+        $r = $ret.Total 
+        $c = $ret.Retrycount
+        Report "B" "$r IP Addresses needed $c tries"
+        WriteLog "Statistics" "$r IP Addresses needed $c tries"
     }
     Report "B" "Number of waits for busy jobs: $nrofwaits"
     WriteLog "Statistics" "Number of waits for busy jobs: $nrofwaits"
