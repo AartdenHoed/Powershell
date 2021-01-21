@@ -1,7 +1,11 @@
-﻿$Version = " -- Version: 1.5.3"
+﻿param (
+    [int]$maxjobs = 9 ,
+    [int]$wait = 2
+)
 
 # COMMON coding
 CLS
+$Version = " -- Version: 2.1"
 
 # init flags
 $global:scripterror = $false
@@ -10,16 +14,11 @@ $global:scriptchange = $false
 
 $global:recordslogged = $false
 
+$nrofwaits = 0
+
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
-
-# nog:
-# v - Standaardiseren
-# v - Doorlooptijd noteren
-# v - Log met overall statistieken (ping / notping. Bij not ping: welke foutboodschap) 
-# v - Reportfile
-# v - Hoogste gebruikte jobnummer rapporteren + gebruik per job
 
 function Report ([string]$level, [string]$line) {
     switch ($level) {
@@ -189,23 +188,16 @@ try {
 
     # Copy current log to templog
     & $ADHC_CopyMoveScript $deflog $templog "COPY" "REPLACE" $TempFile | Out-Null   
-
-
-    $base = "192.168.178."    $maxip = 255    $teller = 0
-    $wait = 2 
-
-    $resultlist = @()
-
-    $joblist = @()
-    $maxjobs = 9
-    $i = 0
-
+    
     $sdt = Get-Date
     $mline = ">".PadRight(99,">")
     Report "I" ">>>>> Start $sdt"
     WriteLog "START" $mline
 
     # Create the object that will hold the jobs
+
+    $joblist = @()
+    $i = 0
     do {
         $i += 1
         $jobname = "IPjob" + $i.ToString("000") 
@@ -216,113 +208,133 @@ try {
                                        
         $joblist += $jobentry
 
-    } until ($i -eq $maxjobs)
+    } until ($i -ge $maxjobs)
 
+    # Create the object that will hold all IP's
+    $base = "192.168.178."    $maxip = 255    $teller = 0
+    $iplist = @()
     do {
         $teller += 1
         $ipaddr = $base + $teller.ToString()
-        Write-Host "Processing $ipaddr"
-        try {
-            $jobslotfound = $false
-            do {
-                # Get free job slot and if available, put this job in free slot
-                foreach ($jobslot in $joblist) {
-                    if ($jobslot.Status -ne "BUSY") {
-                        $jobname = $jobslot.Jobname
-                        $myjob = Start-Job -Name $jobname -ArgumentList $ipaddr -ScriptBlock {
-                                    param (
-                                        [string]$IpAddress = "Iets"   
-                                    )
-                                    $InformationPreference = "Continue"
-                                    $WarningPreference = "Continue"
-                                    $ErrorActionPreference = "Stop"
-        
-                                    try {
-                                        $t = (Test-Connection -ComputerName $ipaddress -Count 2   | Measure-Object -Property ResponseTime -Average).average  
-                                        $ping = $true   
-                                        $em = "OK"
-                                    }
-                                    Catch {
-                                        $t = $null
-                                        $em = $_.Exception.Message
-                                        $ping =$false
-                                    }
-                                    $ts = Get-Date -Format “yyyy-MM-dd HH:mm:ss.fff”
-                                    $returnobj = [PSCustomObject] [ordered] @{IPaddress = $ipaddress;
-                                                                            Pingtime = $t;
-                                                                            Pingable = $ping;
-                                                                            Message = $em;
-                                                                            TimeStamp = $ts}
-                                    return $returnobj
-                    
-                        }  
-                    
-                        if ($jobslot.Status -eq "INIT") {
-                            $jobslot | Add-Member -NotePropertyName Job -NotePropertyValue $myjob 
-                        }
-                        else {
-                            $jobslot.Job = $myjob
-                        }
-                        $jobslot.Status = "BUSY"
-                        $jobslot.UseCount +=1
-                        $jobslotfound = $true
-                        break
-                    } 
-                }
-                # no free slots, wait 1 second and try again
-                if (!$jobslotfound) {
-                    Report "I" "All jobs busy, wait $wait second(s)"
-                    Start-Sleep -s $wait  
-                }
+        $ipobj = [PSCustomObject] [ordered] @{IPaddress = $ipaddr;
+                                              Pingtime = 0;
+                                              Pingable = $false;
+                                              Started = $false;
+                                              Processed = $false;
+                                              Message = "init";
+                                              Trycount = 0;
+                                              TimeStamp = Get-Date }
+        $iplist += $ipobj
 
-                # check all jobs on completion        
-                foreach ($jobslot in $joblist) {
-                    # Only check busy slots
-                    if ($jobslot.Status -ne "BUSY") {
-                        continue
-                    }
-                    #$myjob | Wait-Job -Timeout 30 | Out-Null
-                    if ($jobslot.Job) { 
-                        $mystate = $jobslot.Job.state
-                    }  
-                 
-                    if ($mystate -eq "Completed") {
-                        $mj = $jobslot.Job.Name
-                        
-                        #write-host "YES"
-                        $Response = (Receive-Job -Job $jobslot.Job)
-                        $jobslot.Job | Stop-Job | Out-Null
-                        # $jobslot.Job | Remove-Job | Out-null
-                        $jobslot.Status = "FREE"
-                        $resultlist += $Response
-                        
-                        $ia = $Response.IpAddress
-                        Report "I" "==> Remote job $mj ended with status $mystate for Ip Address $ia"
-                    }
-                       
-            
-                }
-            
-        
-            } until ($jobslotfound)
-        }
-        Catch {
-            $em = $ErrorMessage = $_.Exception.Message
-            Report "E" "ERROR *** $em"
-        }
     } until ($teller -ge $maxip)
+    $ipaddr = "192.168.179.1"
+    $ipobj = [PSCustomObject] [ordered] @{IPaddress = $ipaddr;
+                                              Pingtime = 0;
+                                              Pingable = $false;
+                                              Started = $false;
+                                              Processed = $false;
+                                              Message = "init";
+                                              Trycount = 0;
+                                              TimeStamp = Get-Date }
+    $iplist += $ipobj
 
+    # Loop through IP list and process each IP    
+    
+    $alljobscompleted = $false 
+    $allIPsprocessed = $false  
     do {
-        $alljobscomplete = $true
-        # check all remaning jobs on completion        
+        # Get unprocessed IP
+        $ipfound = $false
+        if (!$allIPsprocessed) {
+            foreach ($ip in $iplist) {
+                if (!$ip.started) {
+                    $ip.started = $true
+                    $ipfound = $true
+                    $currentip = $ip
+                    break
+                }
+            } 
+        }
+
+        # Schedule unprocessed IP in free jobs
+        if ($ipfound) {
+            $ipaddr = $currentip.IPaddress
+            write-Host "Processing $ipaddr"
+            $jobslotfound = $false
+            foreach ($jobslot in $joblist) {
+                if ($jobslot.Status -ne "BUSY") {
+                    $jobname = $jobslot.Jobname
+                    $myjob = Start-Job -Name $jobname -ArgumentList $ipaddr -ScriptBlock {
+                                param (
+                                    [string]$IpAddress = "Iets"   
+                                )
+                                $InformationPreference = "Continue"
+                                $WarningPreference = "Continue"
+                                $ErrorActionPreference = "Stop"
+        
+                                try {
+                                    $t = (Test-Connection -ComputerName $ipaddress -Count 2   | Measure-Object -Property ResponseTime -Average).average  
+                                    $ping = $true   
+                                    $em = "OK"
+                                }
+                                Catch {
+                                    $t = $null
+                                    $em = $_.Exception.Message
+                                    $ping =$false
+                                }
+                                $ts = Get-Date -Format “yyyy-MM-dd HH:mm:ss.fff”
+                                $returnobj = [PSCustomObject] [ordered] @{IPaddress = $ipaddress;
+                                                                        Pingtime = $t;
+                                                                        Pingable = $ping;
+                                                                        Message = $em;
+                                                                        TimeStamp = $ts}
+                                return $returnobj
+                    
+                    }
+                    Report "I" "==> Remote job $jobname started for Ip Address $ipaddr"  
+                    
+                    if ($jobslot.Status -eq "INIT") {
+                        $jobslot | Add-Member -NotePropertyName Job -NotePropertyValue $myjob 
+                    }
+                    else {
+                        $jobslot.Job = $myjob
+                    }
+                    $jobslot.Status = "BUSY"
+                    $jobslot.UseCount +=1
+                    $jobslotfound = $true
+                    break
+                } 
+            }
+            # no free slots, wait xx second(s) and try again
+            if (!$jobslotfound) {
+                # Reset started status
+                foreach ($ip in $iplist) {
+                    if ($ip.IPaddress.Trim() -eq $ipaddr.Trim()) {
+                        $ip.Started = $false
+                        break
+                    }
+
+                }
+                Report "I" "All jobs busy, wait $wait second(s)"
+                $nrofwaits += 1
+                Start-Sleep -s $wait  
+            }
+        }
+        else {
+            $allIPsprocessed = $true 
+            Report "I" "Almost ready, waiting for all jobs to complete"
+            $nrofwaits += 1
+            Start-Sleep -s $wait  
+        }
+
+        # check all jobs on completion 
+        $busyjobsfound = $false       
         foreach ($jobslot in $joblist) {
             # Only check busy slots
             if ($jobslot.Status -ne "BUSY") {
                 continue
             }
-            else {
-                $alljobscomplete = $false
-            }
+            $busyjobsfound = $true
             #$myjob | Wait-Job -Timeout 30 | Out-Null
             if ($jobslot.Job) { 
                 $mystate = $jobslot.Job.state
@@ -336,18 +348,33 @@ try {
                 $jobslot.Job | Stop-Job | Out-Null
                 # $jobslot.Job | Remove-Job | Out-null
                 $jobslot.Status = "FREE"
-                $resultlist += $Response
-                        
+                
                 $ia = $Response.IpAddress
                 Report "I" "==> Remote job $mj ended with status $mystate for Ip Address $ia"
+
+                # set response in IPlist
+                foreach ($ip in $iplist) {
+                    if ($ip.IPaddress.Trim() -eq $Response.ipaddress.Trim()) {
+                        $ip.Pingtime = $Response.Pingtime;
+                        $ip.Pingable = $Response.Pingable
+                        $ip.Processed = $true;
+                        $ip.Message = $Response.Message;
+                        $ip.Trycount += 1
+                        $ip.TimeStamp = $Response.TimeStamp
+                        break
+                    }
+
+                }
+
             }
-
-        }
-        Report "I" "Waiting on busy jobs to complete, wait $wait second(s)"
-        Start-Sleep -s $wait                         
+                       
             
+        }
+        if (!$busyjobsfound) {
+            $alljobscompleted = $true
+        }
 
-    } until ($alljobscomplete) 
+    } until ($alljobscompleted -and $allIPsprocessed) 
 
     foreach ($entry in $joblist) {
         $freq = $entry.usecount
@@ -368,9 +395,9 @@ catch {
 
 }
 finally {
-    # $resultlist | Out-Gridview
+    # $iplist | Out-Gridview
 
-    foreach ($result in $resultlist) {
+    foreach ($result in $iplist) {
         Totals $result.IpAddress $Result.Pingable $Result.Message
 
         $query = "SELECT * FROM [dbo].[IPadressen] WHERE [IPaddress] = '" + $result.IpAddress + "'"
@@ -429,6 +456,8 @@ finally {
         Report "B" "$t IP Addresses are $p with message: $m"
         WriteLog "Statistics" "$t IP Addresses are $p with message: $m"
     }
+    Report "B" "Number of waits for busy jobs: $nrofwaits"
+    WriteLog "Statistics" "Number of waits for busy jobs: $nrofwaits"
     $edt = Get-Date
     $diff = NEW-TIMESPAN –Start $sdt –End $edt
     $sec = $diff.Seconds
