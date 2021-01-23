@@ -1,12 +1,12 @@
 ﻿param (
-    [int]$maxjobs = 9 ,
+    [int]$maxjobs = 8 ,
     [int]$wait = 2 ,
     [int]$maxtry = 4
 )
 
 # COMMON coding
 CLS
-$Version = " -- Version: 2.2.1"
+$Version = " -- Version: 2.2.2"
 
 # init flags
 $global:scripterror = $false
