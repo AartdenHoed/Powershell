@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.2.2"
+﻿$Version = " -- Version: 3.3.1"
 
 # COMMON coding
 CLS
@@ -129,7 +129,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             return
         }
     }
-
+   
     if ($myprocess.ToUpper() -eq "WINDOWSSCHEDULER") { 
         $situation = $direction + "-" + "COPY"
     }
@@ -345,12 +345,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
 
             }
         }
-        "FORWARD-C#" {
-            Report "A" "$direction process $myprocess not yet implemented for module $shortname"
-        }
-        "BACKWARD-C#" {
-            Report "A" "$direction process $myprocess not yet implemented for module $shortname" 
-        }
+       
         "FORWARD-IGNORE" {
             if (!$existfrom) {
                 Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction"
