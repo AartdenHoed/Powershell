@@ -1,5 +1,5 @@
 ﻿# Rename photos so they can easily be sorted by date
-$Version = " -- Version: 1.2"
+$Version = " -- Version: 1.3"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
@@ -72,7 +72,7 @@ $metalist= @()
 $t = Get-Date
 Write-Information "$t - Start inlezen attributen" 
 $nn = 0
-$cc = 0
+
 foreach ($dir in $Photodirs) {   
 
     $t = Get-Date
@@ -106,6 +106,8 @@ Write-Information "$t - Attributen van $nn bestanden ingelezen"
 $t = Get-Date
 Write-Information "$t - Start renamen bestanden"
 $nn = 0
+$cc = 0
+$nc = 0
 foreach ($fotobestand in $metalist) {
     $nn = $nn + 1
     if ($fotobestand.Bestandsextensie -eq ".JPG" -or `
@@ -115,6 +117,13 @@ foreach ($fotobestand in $metalist) {
 
         $naam = $fotobestand.Naam
         $pad = $fotobestand.'Pad naar map'
+        if ($fotobestand.Cameramodel) {
+            $cameramodel = $fotobestand.Cameramodel.Trim()
+        }
+        else {
+            $Cameramodel = "Onbekend"
+        }
+        
             
         if ($fotobestand.'Genomen op' -ne $null) {
             $timestamp = $fotobestand.'Genomen op'
@@ -146,26 +155,84 @@ foreach ($fotobestand in $metalist) {
         $iminuut = [convert]::ToInt32($minuut, 10)
 
         # Filter hier op naam of iets anders voor de foto's die WEL een tijd correctie moeten krijgen
-        if ($naam -like "H~H*"){
-            $cc = $cc + 1
-
-            # Correctie uren ============================================================================================
-            $uurcorrectie = 0
-            $iuur = $iuur + $uurcorrectie 
-            # Einde correctie ===========================================================================================
+        if ($naam -like "*"){            
+            
+            switch ($Cameramodel.Trim()) {
+                "DMC-TZ30" {
+                    $cc = $cc + 1
+                    # Correctie uren ============================================================================================
+                    $uurcorrectie = -1
+                    $iuur = $iuur + $uurcorrectie 
+                    # Einde correctie ===========================================================================================
                     
-            # Correctie minuten =========================================================================================
-            $minuutcorrectie = 0
-            $iminuut = $iminuut +$minuutcorrectie
-            if ($iminuut -ge 60) {
-                $iuur = $iuur + 1
-                $iminuut = $iminuut - 60
+                    # Correctie minuten =========================================================================================
+                    $minuutcorrectie = 0
+                    $iminuut = $iminuut +$minuutcorrectie
+                    if ($iminuut -ge 60) {
+                        $iuur = $iuur + 1
+                        $iminuut = $iminuut - 60
+                    }
+                    if ($iminuut -lt 0) {
+                        $iuur = $iuur - 1
+                        $iminuut = $iminuut + 60
+                    }
+                    # Einde correctie ===========================================================================================
+                
+                }
+                "DMC-TZ5"  {
+                    $cc = $cc + 1
+                    # Correctie uren ============================================================================================
+                    $uurcorrectie = -2
+                    $iuur = $iuur + $uurcorrectie 
+                    # Einde correctie ===========================================================================================
+                    
+                    # Correctie minuten =========================================================================================
+                    $minuutcorrectie = 0
+                    $iminuut = $iminuut +$minuutcorrectie
+                    if ($iminuut -ge 60) {
+                        $iuur = $iuur + 1
+                        $iminuut = $iminuut - 60
+                    }
+                    if ($iminuut -lt 0) {
+                        $iuur = $iuur - 1
+                        $iminuut = $iminuut + 60
+                    }
+                    # Einde correctie ===========================================================================================
+                
+                }
+                "iPhone 4" {
+                    $nc = $nc + 1
+                } 
+                "Onbekend" {
+                    $nc = $nc + 1
+                
+                }   
+                default {
+                    $cc = $cc + 1
+                    Write-Warning "$Naam heeft Unexpected camera model $Cameramodel"
+                    # Correctie uren ============================================================================================
+                    $uurcorrectie = -1
+                    $iuur = $iuur + $uurcorrectie 
+                    # Einde correctie ===========================================================================================
+                    
+                    # Correctie minuten =========================================================================================
+                    $minuutcorrectie = 0
+                    $iminuut = $iminuut +$minuutcorrectie
+                    if ($iminuut -ge 60) {
+                        $iuur = $iuur + 1
+                        $iminuut = $iminuut - 60
+                    }
+                    if ($iminuut -lt 0) {
+                        $iuur = $iuur - 1
+                        $iminuut = $iminuut + 60
+                    }
+                    # Einde correctie ===========================================================================================
+                
+                }   
+
             }
-            if ($iminuut -lt 0) {
-                $iuur = $iuur - 1
-                $iminuut = $iminuut + 60
-            }
-            # Einde correctie ===========================================================================================
+
+            
             
         }
 
@@ -178,6 +245,7 @@ foreach ($fotobestand in $metalist) {
         
         $cstr = $prefix + "*"
         if (-not ($naam -like $cstr)) {
+            # Write-Host "$pad\$naam ==> $pad\$prefix$naam"
             Rename-Item "$pad\$naam"  "$pad\$prefix$naam" 
         }
         else {
@@ -188,5 +256,5 @@ foreach ($fotobestand in $metalist) {
     
 }
 $t = Get-Date
-Write-Information "$t - Ready: $nn Bestanden renamed of which $cc have got a time correction"
+Write-Information "$t - Ready: $nn Bestanden renamed. $cc with time correction, $nc without timecorrection"
 
