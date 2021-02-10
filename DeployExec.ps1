@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.3.1"
+﻿$Version = " -- Version: 4.4"
 
 # COMMON coding
 CLS
@@ -291,8 +291,18 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 return                               #no action!
             }
             if ($copyme) {            
+                $dirbase = Split-Path -Path $to 
+                $td = Test-Path $dirbase
+                if (!$td) {
+                    Report "C" "Directory $dirbase does not exist and will be created on computer $ADHC_COmputer prior to COPY/ADD"
+                
+                    New-Item -ItemType Directory -Force -Path "$dirbase"
+                    Writelog "CREATED" $dirbase
+                }
+
                 Report "C" "Module $to does not exist and will be added to computer $ADHC_Computer"
-                Copy-Item "$from" "$to" -force
+
+                Copy-Item "$from" "$to" -force 
                 
                 Writelog "ADDED" $to
             }
@@ -313,7 +323,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
             }                
             if ($copyme) {
                 Report "C" "Module $to has been updated and will be replaced on computer $ADHC_Computer"
-                Copy-Item "$from" "$to" -force
+                Copy-Item "$from" "$to" -force 
                 
                 WriteLog "REPLACED" $to
             }
