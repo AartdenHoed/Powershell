@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 10.2.1"
+﻿$Version = " -- Version: 10.3"
 
 # COMMON coding
 CLS
@@ -93,6 +93,13 @@ try {
     if ($ENQfailed) {
         throw "Could not lock resource 'Git'"
     }
+
+    Report "N" ""
+    $a = & git --version
+    $msg = "GIT version: $a" 
+    Report "I" $msg
+    Report "N" ""
+
 
     Set-Location -Path $ADHC_DevelopDir
     $gitdirs = Get-ChildItem "*.git" -Force -Directory

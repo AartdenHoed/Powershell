@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 6.1"
+﻿$Version = " -- Version: 6.2"
 
 # COMMON coding
 CLS
@@ -159,6 +159,12 @@ try {
     $gitdirs = Get-ChildItem "*.git"  -Force -Directory
         
     $line = "=".PadRight(120,"=")
+
+    Report "N" ""
+    $a = & git --version
+    $msg = "GIT version: $a" 
+    Report "I" $msg
+    Report "N" ""
     
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName
