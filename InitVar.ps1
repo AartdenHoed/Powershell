@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.4"
+    $Version = " -- Version: 7.5"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -242,7 +242,7 @@ try {
 
     $master = $staging + "ADHCmaster\ADHCmaster.xml"
     Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to PYTHON arguments - ANALYZE" -force
+    Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to ADHC master XML" -force
 
     # DSL directory   
 
@@ -275,10 +275,10 @@ try {
 
     switch ($ADHC_Computer)
         {         
-            "Ahmrdh-Netbook"{$PythonExec = "C:\Program Files\Python36-32\pythonw.exe"}
-            "Holiday"       {$PythonExec = "D:\Program Files\Python38\pythonw.exe"}
+            
+            "Holiday"       {$PythonExec = "D:\Program Files\Python\pythonw.exe"}
        
-            default         {$PythonExec = "C:\Program Files\Python38\pythonw.exe"} 
+            default         {$PythonExec = "C:\Program Files\Python\pythonw.exe"} 
         }
     Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
