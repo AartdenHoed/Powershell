@@ -1,5 +1,5 @@
 ﻿CLS
-$Version = " -- Version: 1.0"
+$Version = " -- Version: 1.1"
 
 function Report ([string]$level, [string]$line) {
     switch ($level) {
@@ -89,7 +89,7 @@ try {
                 Report "I" "TempDb skipped for backup"
             };
             default { 
-                Backup-SqlDatabase -ServerInstance '.\sqlexpress' -Database "$dbname" | Out-Null  
+                Backup-SqlDatabase -ServerInstance '.\sqlexpress' -Database "$dbname" -Initialize -Checksum | Out-Null  
                 Report "I" "SQL backup for $dbname completed" 
             }
         }
