@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.5"
+    $Version = " -- Version: 7.6"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -219,6 +219,13 @@ try {
                                        Name = $prtgname }
     Remove-Variable -Name "ADHC_PRTGoverviewDB" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PRTGoverviewDB" -Value $prtg -Option readonly -Scope global -Description "Put PRTG overview in database" -force
+
+    $prtcdir = "PRTGoverviewDB\"
+    $prtcname = $ADHC_Computer + "_PrtgDbCheck.txt"
+    $prtc = [PSCustomObject] [ordered] @{Directory = $prtcdir;
+                                       Name = $prtcname }
+    Remove-Variable -Name "ADHC_PrtgDbCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PrtgDbCheck" -Value $prtc -Option readonly -Scope global -Description "Put PRTG overview in database" -force
 
     $sqlbdir = "DatabaseBackup\"
     $sqlbname = $ADHC_Computer + "_DatabaseBackup.txt"
