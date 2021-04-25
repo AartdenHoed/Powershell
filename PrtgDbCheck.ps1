@@ -1,7 +1,7 @@
 ﻿# Dit script checkt de PTG database op onregelmatigheden
 
 cls
-$Version = " -- Version: 1.1"
+$Version = " -- Version: 1.2"
 
 # init flags
 $global:scripterror = $false
@@ -134,69 +134,69 @@ try {
         Report "B" " "
     }
 
-
+    # Check for non-standard sensor attributes
     $query = "SELECT   Type,  Object, Sensor, Tags, Interval, Priority, Group_Device, ID
                   FROM [PRTG].[dbo].[Sensors]
                   order by Type,  Object"
     $result = invoke-sqlcmd -ServerInstance '.\sqlexpress' -Database "PRTG" `
                         -Query "$query" `
                         -ErrorAction Stop
-    if ($result -eq $null) {
-        Report "I" "No invalid sensor states found"
-    }                        
-    else {
-        $curtype = "plop"
-        $curobject = "plop"
-        foreach ($rec in $result) {
-            If (($curtype -ne $rec.Type) -or ($curobject -ne $rec.Object)) {
+    $curtype = "plop"
+    $curobject = "plop"
+    $nonstandardfound = $false
+    foreach ($rec in $result) {
+        If (($curtype -ne $rec.Type) -or ($curobject -ne $rec.Object)) {
                 
-                $curtype = $rec.Type
-                $curobject = $rec.Object
-                $std_Interval = $rec.Interval
-                $std_Priority = $rec.Priority
-                $std_Tags = $rec.Tags
-            }
-                       
-            if (($rec.Interval -ne $std_Interval) -or 
-                ($rec.Priority -ne $std_Priority) -or 
-                ($rec.Tags -ne $std_Tags)) {
-                $standaard = $false
-            }
-            else {
-                $standaard = $true
-            }
-            if (!$standaard) {
-                Report "B" " "
-                Report "W" "Sensor Attributes not Standard"
-                $msg = "Sensor       = " + $rec.ID 
-                Report "B" $msg
-                $msg = "Group/Device = " + $rec.Group_Device             
-                Report "B" $msg
-                $msg = "Sensor Name  = " + $rec.Sensor 
-                Report "B" $msg
-                $msg = "Object       = " + $rec.Object
-                Report "B" $msg
-                $msg = "Type         = " + $rec.Type 
-                Report "B" $msg
-                if ($rec.Interval -ne $std_Interval) {
-                    $msg = "Interval     = " + $rec.Interval + " ====> Should be: " + $std_Interval
-                    Report "B" $msg 
-                }
-                if ($rec.Priority -ne $std_Priority) {
-                    $msg = "Priority     = " + $rec.Priority + " ====> Should be: " + $std_Priority
-                    Report "B" $msg 
-                }
-                if ($rec.Tags -ne $std_Tags) {
-                    $msg = "Tags         = " + $rec.Tags + " ====> Should be: " + $std_Tags
-                    Report "B" $msg 
-                }
-
-            }
-            
+            $curtype = $rec.Type
+            $curobject = $rec.Object
+            $std_Interval = $rec.Interval
+            $std_Priority = $rec.Priority
+            $std_Tags = $rec.Tags
         }
-        Report "B" " "
+                       
+        if (($rec.Interval -ne $std_Interval) -or 
+            ($rec.Priority -ne $std_Priority) -or 
+            ($rec.Tags -ne $std_Tags)) {
+            $standaard = $false
+        }
+        else {
+            $standaard = $true
+        }
+        if (!$standaard) {
+            $nonstandardfound = $true
+            Report "B" " "
+            Report "W" "Sensor Attributes not Standard"
+            $msg = "Sensor       = " + $rec.ID 
+            Report "B" $msg
+            $msg = "Group/Device = " + $rec.Group_Device             
+            Report "B" $msg
+            $msg = "Sensor Name  = " + $rec.Sensor 
+            Report "B" $msg
+            $msg = "Object       = " + $rec.Object
+            Report "B" $msg
+            $msg = "Type         = " + $rec.Type 
+            Report "B" $msg
+            if ($rec.Interval -ne $std_Interval) {
+                $msg = "Interval     = " + $rec.Interval + " ====> Should be: " + $std_Interval
+                Report "B" $msg 
+            }
+            if ($rec.Priority -ne $std_Priority) {
+                $msg = "Priority     = " + $rec.Priority + " ====> Should be: " + $std_Priority
+                Report "B" $msg 
+            }
+            if ($rec.Tags -ne $std_Tags) {
+                $msg = "Tags         = " + $rec.Tags + " ====> Should be: " + $std_Tags
+                Report "B" $msg 
+            }
 
+        }
+ 
     }
+    if (!$nonstandardfound) {
+        Report "I" "No nonstandard sensor attributes found"
+        Report "B" " "
+    }
+   
 
     # Check fot empty channels
     $query = " Select * FROM
@@ -209,7 +209,8 @@ try {
                         -Query "$query" `
                         -ErrorAction Stop
     if ($result -eq $null) {
-        Report "I" "No invalid sensor states found"
+        Report "I" "No empty channels found"
+        Report "B" " "
     }                        
     else {
          foreach ($rec in $result) {
@@ -242,12 +243,14 @@ try {
     $result = invoke-sqlcmd -ServerInstance '.\sqlexpress' -Database "PRTG" `
                         -Query "$query" `
                         -ErrorAction Stop
+    $unmonitored = $false
     foreach ($ip in $result) {
         $query2 = "SELECT * FROM [PRTG].[dbo].[Devices] where host = '" + $ip.IPaddress.Trim() + "'"
         $result2 = invoke-sqlcmd -ServerInstance '.\sqlexpress' -Database "PRTG" `
                         -Query "$query2" `
                         -ErrorAction Stop
         if ($result2 -eq $null) {
+            $unmonitored = $true
             Report "B" " "
             Report "W" "Core device not being monitored in PRTG"
             $msg = "Naam         = " + $ip.Naam 
@@ -258,7 +261,11 @@ try {
             Report "B" $msg
         }
     }
-
+    if (!$unmonitored) {
+         Report "I" "All core equipment is being monitored"
+         Report "B" " "
+    }
+   
     
 
 }
