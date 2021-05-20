@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.6"
+    $Version = " -- Version: 7.7"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -121,6 +121,10 @@ try {
     $drive = "PRTG\DriveInfo\" + $ADHC_Computer + "_DriveInfo.txt"
     Remove-Variable -Name "ADHC_DriveInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DriveInfo" -Value "$drive" -Option readonly -Scope global -Description "Drive info file" -force
+
+    $vpn = "PRTG\VpnInfo\" + $ADHC_Computer + "_VpnInfo.txt"
+    Remove-Variable -Name "ADHC_VpnInfo" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_VpnInfo" -Value "$vpn" -Option readonly -Scope global -Description "VPN info file" -force
     
     $ngdir = "DeployCheck\"
     $ngname = $ADHC_Computer + "_DeployCheck.txt"
