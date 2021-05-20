@@ -1,7 +1,7 @@
 ﻿# Dit script checkt de PTG database op onregelmatigheden
 
 cls
-$Version = " -- Version: 1.2"
+$Version = " -- Version: 1.2.2"
 
 # init flags
 $global:scripterror = $false
@@ -48,7 +48,8 @@ $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"             
 
-try {                                             
+try { 
+    $line = "=".PadRight(120,"=")                                            
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -102,8 +103,12 @@ try {
     $result = invoke-sqlcmd -ServerInstance '.\sqlexpress' -Database "PRTG" `
                         -Query "$query" `
                         -ErrorAction Stop
+    Report "N" $line
+    
     if ($result -eq $null) {
+        Report "B" " "
         Report "I" "No invalid sensor states found"
+        
     }                        
     else {
         foreach ($rec in $result) {
@@ -131,8 +136,11 @@ try {
             $msg = "Last Value   = " + $rec.Lastvalue
             Report "B" $msg
         }
-        Report "B" " "
+       
     }
+    Report "B" " "
+    Report "N" $line
+    
 
     # Check for non-standard sensor attributes
     $query = "SELECT   Type,  Object, Sensor, Tags, Interval, Priority, Group_Device, ID
@@ -193,9 +201,12 @@ try {
  
     }
     if (!$nonstandardfound) {
-        Report "I" "No nonstandard sensor attributes found"
         Report "B" " "
+        Report "I" "No nonstandard sensor attributes found"
+        
     }
+    Report "B" " "
+    Report "N" $line
    
 
     # Check fot empty channels
@@ -209,8 +220,9 @@ try {
                         -Query "$query" `
                         -ErrorAction Stop
     if ($result -eq $null) {
-        Report "I" "No empty channels found"
         Report "B" " "
+        Report "I" "No empty channels found"
+        
     }                        
     else {
          foreach ($rec in $result) {
@@ -234,9 +246,11 @@ try {
             $msg = "Last Value   = " + $rec.Lastvalue
             Report "B" $msg
         }
-        Report "B" " "
-
+        
     }
+    Report "B" " "
+    Report "N" $line
+
 
     # Check whether all CORE equipment is presented as DEVICE
     $query = "SELECT [IPaddress], Naam, [Type] FROM [PRTG].[dbo].[IPadressen] where type = 'CORE'"
@@ -262,9 +276,12 @@ try {
         }
     }
     if (!$unmonitored) {
-         Report "I" "All core equipment is being monitored"
-         Report "B" " "
+        Report "B" " "
+        Report "I" "All core equipment is being monitored"
+         
     }
+    Report "B" " "
+    Report "N" $line
    
     
 
