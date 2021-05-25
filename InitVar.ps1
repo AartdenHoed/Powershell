@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.7"
+    $Version = " -- Version: 7.8"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -125,6 +125,10 @@ try {
     $vpn = "PRTG\VpnInfo\" + $ADHC_Computer + "_VpnInfo.txt"
     Remove-Variable -Name "ADHC_VpnInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_VpnInfo" -Value "$vpn" -Option readonly -Scope global -Description "VPN info file" -force
+
+    $cput = "PRTG\CpuTemperature\" + $ADHC_Computer + "_CpuTemperature.txt"
+    Remove-Variable -Name "ADHC_CpuTempInfo" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_CpuTempInfo" -Value "$cput" -Option readonly -Scope global -Description "CPU temperature info file" -force
     
     $ngdir = "DeployCheck\"
     $ngname = $ADHC_Computer + "_DeployCheck.txt"
