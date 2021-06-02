@@ -1,12 +1,12 @@
 ﻿param (
-    [int]$maxjobs = 10 ,
+    [int]$maxjobs = 9 ,
     [int]$wait = 2 ,
     [int]$maxtry = 4
 )
 
 # COMMON coding
 CLS
-$Version = " -- Version: 2.2.3"
+$Version = " -- Version: 2.2.5"
 
 # init flags
 $global:scripterror = $false
@@ -229,7 +229,7 @@ try {
     } until ($i -ge $maxjobs)
 
     # Create the object that will hold all IP's
-    $base = "192.168.178."    $maxip = 255    $teller = 0
+    $base = "192.168.178."    $maxip = 254    $teller = 0
     $iplist = @()
     do {
         $teller += 1
