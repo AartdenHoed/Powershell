@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.1"
+﻿$Version = " -- Version: 3.1.1"
 
 # COMMON coding
 CLS
@@ -135,7 +135,8 @@ try {
         }        
     }
     
-    Write-Host "$FileCount Files have been scanned with $varcount search strings"  
+    Report "N"  " "
+    Report "I"  "$FileCount Files have been scanned with $varcount search strings"  
 
     $Sorted = $Resultlist | Sort-Object -Property Searchstring,SourceFile  
 
@@ -270,7 +271,7 @@ finally {
     Report "N" $scriptmsg
     Report "N" " "
 
-     try { # Free resource and copy temp file        
+    try { # Free resource and copy temp file        
         
         $deffile = $ADHC_OutputDirectory + $ADHC_VariableXref.Directory + $ADHC_VariableXref.Name 
         & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
