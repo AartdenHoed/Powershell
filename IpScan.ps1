@@ -1,12 +1,12 @@
 ﻿param (
-    [int]$maxjobs = 9 ,
+    [int]$maxjobs = 8 ,
     [int]$wait = 2 ,
     [int]$maxtry = 4
 )
 
 # COMMON coding
 CLS
-$Version = " -- Version: 2.2.5"
+$Version = " -- Version: 2.3"
 
 # init flags
 $global:scripterror = $false
@@ -378,11 +378,14 @@ try {
                         $ip.Message = $Response.Message;
                         $ip.Trycount += 1
                         $ip.TimeStamp = $Response.TimeStamp
-                        if (($Response.Message.Contains("het zoeken in de database")) -or ($Response.Message.Trim() -eq "OK") -or ($ip.Trycount -ge $maxtry))  {
+                        if (($Response.Message.Contains("het zoeken in de database")) -or 
+                            ($Response.Message.Trim() -eq "OK") -or 
+                            ($ip.Trycount -ge $maxtry))  {
                             $ip.Processed = $true;    
                         }
                         else {
-                            if ($Response.Message.Contains("Fout vanwege tekort aan bronnen")) {
+                            if (($Response.Message.Contains("Fout vanwege tekort aan bronnen")) -or 
+                                ($Response.Message.Contains("Unexpected error")) ) {
                                 $ip.Started = $false 
                                 $ip.Processed = $false 
                                 $allIPsprocessed = $false 
