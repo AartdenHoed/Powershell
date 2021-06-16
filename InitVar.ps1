@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.9"
+    $Version = " -- Version: 7.10"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -248,6 +248,13 @@ try {
                                        Name = $sxname }
     Remove-Variable -Name "ADHC_SourceXref" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_SourceXref" -Value $sx -Option readonly -Scope global -Description "XREF between sources" -force
+
+    $cldir = "CmdletXref\"
+    $clname = $ADHC_Computer + "_CmdletXref.txt"
+    $cl = [PSCustomObject] [ordered] @{Directory = $cldir;
+                                       Name = $clname }
+    Remove-Variable -Name "ADHC_CmdletXref" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_CmdletXref" -Value $cl -Option readonly -Scope global -Description "XREF between cmdlets and sources" -force
 
     $vxdir = "VariableXref\"
     $vxname = $ADHC_Computer + "_VariableXref.txt"
