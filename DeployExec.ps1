@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.4"
+﻿$Version = " -- Version: 4.4.1"
 
 # COMMON coding
 CLS
@@ -353,7 +353,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
             }
             if ($xmlvalid) {       
                 $Author = $xml.task.RegistrationInfo.Author; 
-                if ($Author) { 
+                if (($Author) -and ($Author.Length -ge 7)) { 
                     # write $Author.substring(0,6); 
                     if  ($Author.substring(0,6) -eq '$ADHC_'){ 
                         $xml.task.RegistrationInfo.Author = Invoke-Expression($Author); 
@@ -372,7 +372,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
 
 
                 $Userid = $xml.task.Triggers.LogonTrigger.UserId ; 
-                if ($Userid) { 
+                if (($Userid) -and ($userid.Length -ge 7)) { 
                     # write $Userid.substring(0,6); 
                     if  ($Userid.substring(0,6) -eq '$ADHC_'){ 
                         $xml.task.Triggers.LogonTrigger.UserId = Invoke-Expression($Userid); 
@@ -381,7 +381,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 }
 
                 $Userid = $xml.task.Principals.Principal.Userid ; 
-                if ($Userid) { 
+                if (($Userid) -and ($userid.Length -ge 7)) { 
                     # write $Userid.substring(0,6); 
                     if  ($Userid.substring(0,6) -eq '$ADHC_'){ 
                         $xml.task.Principals.Principal.Userid = Invoke-Expression($Userid); 
@@ -399,7 +399,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 }
 
                 $PythonExec = $xml.task.Actions.Exec.Command ; 
-                if ($PythonExec) { 
+                if (($PythonExec) -and ($PythonExec.Length -ge 7)) { 
                     # write $PythonExec.substring(0,6); 
                     if  ($PythonExec.substring(0,6) -eq '$ADHC_'){ 
                         $xml.task.Actions.Exec.Command = Invoke-Expression($PythonExec); 
@@ -408,7 +408,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 }
 
                 $PythonArguments = $xml.task.Actions.Exec.Arguments ; 
-                if ($PythonArguments) { 
+                if (($PythonArguments) -and ($PythonArguments.Length -ge 7)) { 
                     # write $PythonExec.substring(0,6); 
                     if  ($PythonArguments.substring(0,6) -eq '$ADHC_'){ 
                         $xml.task.Actions.Exec.Arguments = Invoke-Expression($PythonArguments); 
