@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.10"
+    $Version = " -- Version: 7.11"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -130,6 +130,13 @@ try {
     Remove-Variable -Name "ADHC_CpuTempInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_CpuTempInfo" -Value "$cput" -Option readonly -Scope global -Description "CPU temperature info file" -force
     
+    $lcdir = "LocalCpuTemperature\"
+    $lcname = $ADHC_Computer + "_LocalCpuTemperature.txt"
+    $lc = [PSCustomObject] [ordered] @{Directory = $lcdir;
+                                       Name = $lcname }
+    Remove-Variable -Name "ADHC_LocalCpuTemperature" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_LocalCpuTemperature" -Value $lc -Option readonly -Scope global -Description "Local CPU temperature" -force
+
     $ngdir = "DeployCheck\"
     $ngname = $ADHC_Computer + "_DeployCheck.txt"
     $ng = [PSCustomObject] [ordered] @{Directory = $ngdir;
