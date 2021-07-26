@@ -1,5 +1,5 @@
 ﻿# Rename photos so they can easily be sorted by date
-$Version = " -- Version: 1.3"
+$Version = " -- Version: 1.3.1"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
@@ -158,7 +158,7 @@ foreach ($fotobestand in $metalist) {
         if ($naam -like "*"){            
             
             switch ($Cameramodel.Trim()) {
-                "DMC-TZ30" {
+                "iets" {
                     $cc = $cc + 1
                     # Correctie uren ============================================================================================
                     $uurcorrectie = -1
@@ -179,28 +179,10 @@ foreach ($fotobestand in $metalist) {
                     # Einde correctie ===========================================================================================
                 
                 }
-                "DMC-TZ5"  {
-                    $cc = $cc + 1
-                    # Correctie uren ============================================================================================
-                    $uurcorrectie = -2
-                    $iuur = $iuur + $uurcorrectie 
-                    # Einde correctie ===========================================================================================
-                    
-                    # Correctie minuten =========================================================================================
-                    $minuutcorrectie = 0
-                    $iminuut = $iminuut +$minuutcorrectie
-                    if ($iminuut -ge 60) {
-                        $iuur = $iuur + 1
-                        $iminuut = $iminuut - 60
-                    }
-                    if ($iminuut -lt 0) {
-                        $iuur = $iuur - 1
-                        $iminuut = $iminuut + 60
-                    }
-                    # Einde correctie ===========================================================================================
-                
+                "DMC-TZ80"  {
+                   $nc = $nc + 1                
                 }
-                "iPhone 4" {
+                "iPhone XR" {
                     $nc = $nc + 1
                 } 
                 "Onbekend" {
@@ -208,26 +190,7 @@ foreach ($fotobestand in $metalist) {
                 
                 }   
                 default {
-                    $cc = $cc + 1
-                    Write-Warning "$Naam heeft Unexpected camera model $Cameramodel"
-                    # Correctie uren ============================================================================================
-                    $uurcorrectie = -1
-                    $iuur = $iuur + $uurcorrectie 
-                    # Einde correctie ===========================================================================================
-                    
-                    # Correctie minuten =========================================================================================
-                    $minuutcorrectie = 0
-                    $iminuut = $iminuut +$minuutcorrectie
-                    if ($iminuut -ge 60) {
-                        $iuur = $iuur + 1
-                        $iminuut = $iminuut - 60
-                    }
-                    if ($iminuut -lt 0) {
-                        $iuur = $iuur - 1
-                        $iminuut = $iminuut + 60
-                    }
-                    # Einde correctie ===========================================================================================
-                
+                    $nc = $nc + 1                
                 }   
 
             }
