@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.11"
+    $Version = " -- Version: 7.12"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -86,7 +86,7 @@ try {
 
     # POWERSHELL PATHs 
 
-    $usr = $env:USERPROFILE + "\Documents\"
+    $usr = "C:\ADHC_User\Documents\"
     Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
 
