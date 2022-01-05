@@ -3,7 +3,7 @@
 # Channel in JSON: https://prtg.shl-groep.nl/api/table.json?noraw=0&content=channels&columns=name,objid,type,active,tags,minimum,maximum,condition,lastvalue&id=1001
 
 cls
-$Version = " -- Version: 2.1.1"
+$Version = " -- Version: 3.0"
 class TrustAllCertsPolicy : System.Net.ICertificatePolicy {
     [bool] CheckValidationResult([System.Net.ServicePoint] $a,
                                  [System.Security.Cryptography.X509Certificates.X509Certificate] $b,
@@ -138,7 +138,7 @@ try {
     $pass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
     $SensorCSV = $null
     $SensorOBJ = $null
-    $uri = 'https://192.168.178.100/api/table.xml?content=sensors&output=csvtable&columns=objid,type,name,tags,active,
+    $uri = 'https://192.168.178.143/api/table.xml?content=sensors&output=csvtable&columns=objid,type,name,tags,active,
     downtime,downtimetime,downtimesince,uptime,uptimetime,uptimesince,knowntime,cumsince,
     sensor,interval,lastcheck,lastup,lastdown,device,group,probe,grpdev,
     access,dependency,probegroupdevice,
@@ -441,7 +441,7 @@ if (!$scripterror) {
         Report "I" "$t *** Reload Channel table"
         foreach ($entry1 in $SensorOBJ) {
             $currid = $entry1.id
-            $uri = "https://192.168.178.100/api/table.json?noraw=0&content=channels&columns=name,objid,minimum,maximum,condition,lastvalue&id=$currid"
+            $uri = "https://192.168.178.143/api/table.json?noraw=0&content=channels&columns=name,objid,minimum,maximum,condition,lastvalue&id=$currid"
             $uri = $uri + '&username=' + $user + '&password=' + $pass
             $nr = 0
             $ChannelJson = Invoke-RestMethod  -Uri $uri 
@@ -540,7 +540,7 @@ if (!$scripterror) {
 
         $DeviceCSV = $null
         $DeviceOBJ = $null
-        $uri = 'https://192.168.178.100/api/table.xml?content=devices&output=csvtable&columns=objid,type,name,tags,active,
+        $uri = 'https://192.168.178.143/api/table.xml?content=devices&output=csvtable&columns=objid,type,name,tags,active,
         device,group,probe,grpdev,
         notifiesx,intervalx,access,dependency,probegroupdevice,
         status,message,priority,favorite,schedule,comments,basetype,baselink,parentid,host,location

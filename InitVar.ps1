@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 7.12"
+    $Version = " -- Version: 9.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -52,7 +52,7 @@ try {
     Remove-Variable -Name "ADHC_Computer" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -Scope global -Description "Name of this computer" -force
 
-    $Hostlist = "ADHC","Hoesto","Holiday" 
+    $Hostlist = "Hoesto","Holiday","ADHC-2" 
     Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
 
@@ -72,7 +72,14 @@ try {
     
     $prof = $env:USERPROFILE -split '\\'
 
-    $OneDrive = "D:\ADHC_Home\OneDrive\"
+    switch ($ADHC_Computer)
+        {         
+            "xxxx"     {$OneDrive = "O:\"}
+            default    {$OneDrive = "O:\"}
+
+        }
+
+    
     Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force    
 
@@ -106,7 +113,13 @@ try {
     Set-Variable -Name "ADHC_NodeInfoScript" -Value "$ni" -Option readonly -Scope global -Description "Name of IpNodeInfok script" -force
 
     # OUTPUT FILES
-    $temp = "D:\ADHC_Home\ADHC_Temp\"
+     switch ($ADHC_Computer)
+        {         
+            "ADHC-2"          {$temp = "C:\ADHC_Home\ADHC_Temp\"}
+            default           {$temp = "D:\ADHC_Home\ADHC_Temp\"}
+
+        }
+    
     Remove-Variable -Name "ADHC_TempDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_TempDirectory" -Value $temp -Option readonly -Scope global -Description "Common root directory for temp files" -force
     
@@ -280,10 +293,16 @@ try {
     Remove-Variable -Name "ADHC_MasterXml" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_MasterXml" -Value $master -Option readonly -Scope global -Description "Path to ADHC master XML" -force
 
-    # DSL directory   
+    # DSL directory 
+     switch ($ADHC_Computer)
+        {         
+            "ADHC-2"          {$dsl = "C:\Data\Sync ADHC\DSL\"}
+            default           {$dsl = "D:\Software\DSL\"}
+
+        }  
 
     Remove-Variable -Name "ADHC_DSLDir" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_DSLDir" -Value "D:\Software\DSL\" -Option readonly -Scope global -Description "DSL root directory" -force
+    Set-Variable -Name "ADHC_DSLDir" -Value $dsl -Option readonly -Scope global -Description "DSL root directory" -force
 
     #PRODUCTION DIRECTORY
     
@@ -313,7 +332,7 @@ try {
         {         
             
             "Holiday"       {$PythonExec = "D:\Program Files\Python\pythonw.exe"}
-       
+                   
             default         {$PythonExec = "C:\Program Files\Python\pythonw.exe"} 
         }
     Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
