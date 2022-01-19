@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.1"
+    $Version = " -- Version: 9.3"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -69,6 +69,21 @@ try {
     Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope global -Description "List of known hosts (string)" -force
 
     # ONEDRIVE
+    try {
+        If (!(Test-Path O:)) {
+            &subst o: /d
+            switch ($ADHC_Computer)
+            {         
+                "HOESTO"     {&subst o: "d:\Data\Sync ADHC\OneDrive" } 
+                "ADHC-2"     {&subst o: "c:\Data\Sync ADHC\OneDrive" } 
+                default      {}
+
+            }
+
+
+        }
+    }
+    catch {Write-Warning "Subst fails"}
     
     $prof = $env:USERPROFILE -split '\\'
 
@@ -296,8 +311,8 @@ try {
     # DSL directory 
      switch ($ADHC_Computer)
         {         
-            "ADHC-2"          {$dsl = "C:\Data\Sync ADHC\DSL\"}
-            default           {$dsl = "D:\Software\DSL\"}
+            "ADHC-2"          {$dsl = "O:\DSL\"}
+            default           {$dsl = "O:\DSL\"}
 
         }  
 
