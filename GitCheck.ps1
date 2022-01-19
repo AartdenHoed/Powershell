@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 10.3"
+﻿$Version = " -- Version: 10.4"
 
 # COMMON coding
 CLS
@@ -171,8 +171,8 @@ try {
         Report "N" $line
         
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Push command (dry run) failed"
-            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run) failed";
+            Report "W" "==> Git Push command (dry run ADHCentral) failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run ADHCentral) failed";
                                                   Repo = $gdir}
             $alarmlist += $alarm            
         }
@@ -209,8 +209,8 @@ try {
         Report "N" $line
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Push command (dry run) failed"
-            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run) failed";
+            Report "W" "==> Git Push command (dry run GITHUB) failed"
+            $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run GITHUB) failed";
                                                   Repo = $gdir}
             $alarmlist += $alarm            
         }
