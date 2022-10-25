@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.4.1"
+﻿$Version = " -- Version: 4.4.2"
 
 # COMMON coding
 CLS
@@ -877,8 +877,10 @@ finally {
         & $ADHC_CopyMoveScript  $Templog $deflog "MOVE" "REPLACE" $TempFile 
     }
     else {
-        Report "I" "No records logged, delete $templog without copy-back"
-        Remove-Item $templog
+        if ($templog) {
+            Report "I" "No records logged, delete $templog without copy-back"
+            Remove-Item $templog
+        }
     }
 
     $m = & $ADHC_LockScript "Free" "Deploy" "$enqprocess"
