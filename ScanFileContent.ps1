@@ -1,12 +1,12 @@
 ﻿cls
-Write-Warning "Version 1.0"
+Write-Warning "Version 2.0"
 Write-Warning "Scannen van files op bepaalde literals"
 Write-Warning "Selecteer een directory" 
 
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms")    
 
 $OpenFolderDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$OpenFolderDialog.SelectedPath = "D:\AartenHetty\OneDrive\ADHC Development"
+$OpenFolderDialog.SelectedPath = "o:\"
 $Show = $OpenFolderDialog.ShowDialog()
 if ($Show -eq "OK") {
     $FileDirectory = $OpenFolderDialog.SelectedPath
@@ -16,14 +16,51 @@ else {
     return
 }
 
-$t = Get-Date
-Write-Host $t
+$avi = 0
+$dll = 0
+$exe = 0
+$jpeg = 0
+$jpg = 0
+$mov = 0
+$mp3 = 0
+$mp4 = 0
+$png = 0
 
  
-$FileList = Get-ChildItem $FileDirectory -Recurse -File  -Exclude *.png,*.jpg,*.dll #|  #`
+$TotalList = Get-ChildItem $FileDirectory -Recurse -File | Select-Object Name,Fullname,Extension
+$FileList = @()
 
-       # Where-Object {(($_.FullName -notlike "*.git*") -and `       #                 ($_.FullName -notlike "*\.vs\*") -and `       #                 ($_.FullName -notlike "*\debug\*") -and `       #                 ($_.FullName -notlike "*\packages\*") -and `       #                 ($_.FullName -notlike "*\bin\*")) } | `    	Select-Object Name,Fullname
+foreach ($foundfile in $TotalList) {
+
+    switch ($foundfile.Extension.ToUpper()) {
+        ".AVI" {$avi +=1}
+        ".DLL" {$dll +=1}
+        ".EXE" {$exe +=1}
+        ".JPEG" {$jpeg +=1}
+        ".JPG" {$jpg +=1}
+        ".MOV" {$mov +=1}
+        ".MP3" {$mp3 +=1}
+        ".MP4" {$mp4 +=1}
+        ".PNG" {$png +=1}
+        default {$FileList += $foundfile}
+    }
+
+} 
+
+Write-Host "Excluded files:"
+Write-Host "$avi AVI files"
+Write-Host "$dll DLL files"
+Write-Host "$exe EXE files"
+Write-Host "$jpeg JPEG files"
+Write-Host "$jpg JPG files"
+Write-Host "$mov MOV files"
+Write-Host "$mp3 MP3 files"
+Write-Host "$mp4 MP4 files"
+Write-Host "$png PNG files"
+
+      
 $Totaal = $FileList.count
+Write-Host "=============================="
 Write-host "$Totaal Files will be analyzed"
 
 $n = 0
@@ -36,8 +73,29 @@ $part = $percentiel
 $FileCount = 0
 
 
-#$searchlist = @("Credential","Userid","USR","PSW","PASSWORD")
-$searchlist = @("Aartenhetty","AHMRDH")
+$TempFile = New-TemporaryFile
+Set-Content $TempFile "~ Specificeer hieronder de zoekargumenten en save the file."
+Add-Content $TempFile "~ Eén zoekargument per regel"
+Add-Content $TempFile "~ (Het ~-teken in positie 1 geeft een commentaarregel aan)"
+
+Start-Process -FilePath 'C:\Windows\Notepad.exe' -ArgumentList $TempFile -wait
+
+# Write-Host "Passed"
+
+$searchlist = @()
+$searchargs = (Get-Content $Tempfile)   
+
+$t = Get-Date
+Write-Host $t             
+    
+foreach ($searcharg in $searchargs) {      
+    if ($searcharg.Substring(0,1) -ne "~") {
+        $searcharg = $searcharg.Trim()
+        # $searcharg
+        $searchlist += $searcharg     
+    }
+}         
+
 
 $Resultlist = @()
 
@@ -82,3 +140,5 @@ Write-Host $t
 
 
 $Resultlist | Out-GridView    
+Remove-Item $TempFile
+Write-Host "$Tempfile Deleted"
