@@ -1,7 +1,7 @@
 ﻿# Dit script checkt de PTG database op onregelmatigheden
 
 cls
-$Version = " -- Version: 1.4"
+$Version = " -- Version: 1.4.1"
 
 # init flags
 $global:scripterror = $false
@@ -210,15 +210,15 @@ try {
    
 
     # Check fot empty channels
-    $query = " Select * FROM
+    $query = "Select * FROM
                 (SELECT  [SensorID],[Name],[Number],[Lastvalue]      
                 FROM [PRTG].[dbo].[Channels]
-                 where lastvalue = 'geen gegevens' ) AS a 
+                 where ((lastvalue = 'geen gegevens') or (lastvalue = '')) and (Name <> 'Uitvaltijd') ) AS a 
                  join 
                 (SELECT  [ID],[Sensor],[Type],[Status],[Object],[Group_Device]      
                 FROM [PRTG].[dbo].[Sensors]) AS b 
                 on a.SensorID = b.ID 
-                where b.[Status] = 'ok'"
+                where (b.[Status] = 'ok' and b.[Type] = 'EXE/Script Geavanceerd')"
     $result = invoke-sqlcmd -ServerInstance '.\sqlexpress' -Database "PRTG" `
                         -Query "$query" `
                         -ErrorAction Stop
