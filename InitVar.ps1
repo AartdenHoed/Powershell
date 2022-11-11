@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.3"
+    $Version = " -- Version: 9.4"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -128,7 +128,22 @@ try {
     Set-Variable -Name "ADHC_NodeInfoScript" -Value "$ni" -Option readonly -Scope global -Description "Name of IpNodeInfok script" -force
 
     # OUTPUT FILES
-     switch ($ADHC_Computer)
+    switch ($ADHC_Computer)
+        {         
+            "ADHC-2"          {$syncdrive = "C:\"}
+            default           {$syncdrive = "D:\"}
+
+        }
+    $outlookinput = $syncdrive + "Data\Sync Gedeeld\Agenda & Mail\Outlook back-up\OUTLOOK.CSV"
+    Remove-Variable -Name "ADHC_OutlookInput" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_OutlookInput" -Value $outlookinput -Option readonly -Scope global -Description "Input CSV with iCloud contacts" -force
+
+    $thisdate = Get-Date -Format "yyyyMMdd"
+    $outlookoutput = $syncdrive + "Data\Sync Gedeeld\Agenda & Mail\Outlook back-up\Upload XML " + $thisdate + ".xml"
+    Remove-Variable -Name "ADHC_Outlookoutput" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_Outlookoutput" -Value $outlookoutput -Option readonly -Scope global -Description "output XML with contacts for Fritz!Box" -force
+        
+    switch ($ADHC_Computer)
         {         
             "ADHC-2"          {$temp = "C:\ADHC_Home\ADHC_Temp\"}
             default           {$temp = "D:\ADHC_Home\ADHC_Temp\"}
@@ -137,7 +152,7 @@ try {
     
     Remove-Variable -Name "ADHC_TempDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_TempDirectory" -Value $temp -Option readonly -Scope global -Description "Common root directory for temp files" -force
-    
+      
     $output = $ADHC_OneDrive + "ADHC Output\"
     Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
