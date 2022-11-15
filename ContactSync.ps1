@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 1.1"
 
 # COMMON coding
 CLS
@@ -219,7 +219,14 @@ try {
             [void]$contact.AppendChild($setup)
 
             $mod_time = $xmldoc.CreateElement('mod_time')
-            $mod_time.InnerText = "1500000010"
+            $epoch = Get-Date -UFormat %s 
+            if ($epoch -match '(.*?),'){
+                $unixtime = $matches[1]
+            }
+            else {
+                $unixtime = "1600000000"
+            }
+            $mod_time.InnerText = $unixtime
             [void]$contact.AppendChild($mod_time)
 
             $uniqueid = $xmldoc.CreateElement('uniqueid')
