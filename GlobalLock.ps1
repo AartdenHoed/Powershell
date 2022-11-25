@@ -14,7 +14,7 @@ param (
 #$waittime = 15
 #$Mode = "SILENT"
 #TestValues####################################
-$Version = " -- Version: 3.3.2"
+$Version = " -- Version: 3.4.1"
 $Mode = $mode.ToUpper()
 $Waittime = 150
 
@@ -282,32 +282,53 @@ try {
     Switch ($Action.ToUpper()) {
         "LOCK" {
             $lockset = $false
+            $trycount = 0
             DO {
-                    
-                $a = Lock "Init" $Computer $process $EnqName
-                # Check if lock is free
-                $b = Lock "Test" $Computer $process $EnqName
-                # write-host "test return"
-                # If Test returns, the lock is free, so get it!
-                $c = Lock "Lock" $Computer $process $EnqName 
-                # After this, verify that no other process crossed the lock 
-                $d = Lock "VRFY" $Computer $process $EnqName
+                $trycount += 1
+                try {
+                    $a = Lock "Init" $Computer $process $EnqName
+                    # Check if lock is free
+                    $b = Lock "Test" $Computer $process $EnqName
+                    # write-host "test return"
+                    # If Test returns, the lock is free, so get it!
+                    $c = Lock "Lock" $Computer $process $EnqName 
+                    # After this, verify that no other process crossed the lock 
+                    $d = Lock "VRFY" $Computer $process $EnqName
 
-                if ($d -eq "ok") {
-                    $lockset = $true
+                    if ($d -eq "ok") {
+                        $lockset = $true
+                    }
+                    else {                    
+                        AddMessage "A" "Resource $what could not be verified, retry..." 
+                        $e = Lock "FREE" $Computer $process $EnqName
+                    }
                 }
-                else {                    
-                    AddMessage "A" "Resource $what could not be verified, retry..." 
-                    $e = Lock "FREE" $Computer $process $EnqName
+                Catch {                   
+                   $ErrorMessage = $_.Exception.Message
+                   AddMessage "A" "Lock failed due to external reason: " 
+                   AddMessage "A" $ErrorMessage
+                   $lockset = $false
+                   Start-Sleep -Seconds 5
+                   if ($trycount -ge 5) {
+                        AddMessage "A" "Persistent lock failure (5 attempts executed)"
+                        $MyError = [GlobalLockException]::new("Persistent lock failure (5 attempts executed)")
+                        throw $MyError
+                   }
                 }
+    
             } until ($lockset)
 
             
         }
 
         "FREE" {
-            $f = Lock "FREE" $Computer $process $EnqName
-            
+            try {
+                $f = Lock "FREE" $Computer $process $EnqName
+            }
+            catch {
+                $ErrorMessage = $_.Exception.Message
+                AddMessage "A" "FREE action failed due to error: $Errormessage"
+            }           
 
         }
         Default {
