@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.4"
+    $Version = " -- Version: 9.6"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -156,14 +156,22 @@ try {
     $output = $ADHC_OneDrive + "ADHC Output\"
     Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
-    
-    $boot = "PRTG\BootTime\" + $ADHC_Computer + "_BootTime.txt"
+        
+    $bootdir = "PRTG\BootTime\"
+    Remove-Variable -Name "ADHC_BootDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_BootDir" -Value "$bootdir" -Option readonly -Scope global -Description "Last BOOT time file directory" -force
+
+    $boot = $bootdir + $ADHC_Computer + "_BootTime.txt"
     Remove-Variable -Name "ADHC_BootTime" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_BootTime" -Value "$boot" -Option readonly -Scope global -Description "Last BOOT time file" -force
 
     $drive = "PRTG\DriveInfo\" + $ADHC_Computer + "_DriveInfo.txt"
     Remove-Variable -Name "ADHC_DriveInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DriveInfo" -Value "$drive" -Option readonly -Scope global -Description "Drive info file" -force
+
+    $outp = "PRTG\OutputCheck\" + "OutputCheck.txt"
+    Remove-Variable -Name "ADHC_OutputCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_OutputCheck" -Value "$outp" -Option readonly -Scope global -Description "Output check info file" -force
 
     $vpn = "PRTG\VpnInfo\" + $ADHC_Computer + "_VpnInfo.txt"
     Remove-Variable -Name "ADHC_VpnInfo" -force -ErrorAction SilentlyContinue
