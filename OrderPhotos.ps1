@@ -1,5 +1,5 @@
 ﻿# Rename photos so they can easily be sorted by date
-$Version = " -- Version: 1.3.1"
+$Version = " -- Version: 1.3.2"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
@@ -84,7 +84,7 @@ foreach ($dir in $Photodirs) {
  
     foreach ($File in $objFolder.items()) 
     {  
-        $nn = $nn + 1
+        $tot = $tot + 1
         $FileMetaData = New-Object PSOBJECT
         for ($a ; $a  -le 266; $a++) 
         {  
@@ -102,21 +102,28 @@ foreach ($dir in $Photodirs) {
     } #end foreach $file 
 }
 $t = Get-Date
-Write-Information "$t - Attributen van $nn bestanden ingelezen"
+Write-Information "$t - Attributen van $tot bestanden ingelezen"
 $t = Get-Date
 Write-Information "$t - Start renamen bestanden"
 $nn = 0
 $cc = 0
 $nc = 0
 foreach ($fotobestand in $metalist) {
-    $nn = $nn + 1
-    if ($fotobestand.Bestandsextensie -eq ".JPG" -or `
-        $fotobestand.Bestandsextensie -eq ".PNG" -or `
-        $fotobestand.Bestandsextensie -eq ".MOV" -or `
-        $fotobestand.Bestandsextensie -eq ".MP4") {
+    
+    if ($fotobestand.Bestandsextensie.ToUpper() -eq ".JPG" -or `
+        $fotobestand.Bestandsextensie.ToUpper() -eq ".PNG" -or `
+        $fotobestand.Bestandsextensie.ToUpper() -eq ".MOV" -or `
+        $fotobestand.Bestandsextensie.ToUpper() -eq ".MP4") {
+
+        $nn = $nn + 1
 
         $naam = $fotobestand.Naam
-        $pad = $fotobestand.'Pad naar map'
+        if ($fotobestand.'Pad naar map') {
+            $pad = $fotobestand.'Pad naar map'
+        }
+        else {
+            $pad = $fotobestand.Bestandslocatie
+        }
         if ($fotobestand.Cameramodel) {
             $cameramodel = $fotobestand.Cameramodel.Trim()
         }
@@ -219,5 +226,5 @@ foreach ($fotobestand in $metalist) {
     
 }
 $t = Get-Date
-Write-Information "$t - Ready: $nn Bestanden renamed. $cc with time correction, $nc without timecorrection"
+Write-Information "$t - Ready: $tot Bestanden found, $nn Bestanden renamed, $cc with time correction, $nc without timecorrection"
 
