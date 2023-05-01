@@ -1,5 +1,5 @@
 ﻿# Rename photos so they can easily be sorted by date
-$Version = " -- Version: 1.3.2"
+$Version = " -- Version: 1.3.3"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
@@ -72,6 +72,7 @@ $metalist= @()
 $t = Get-Date
 Write-Information "$t - Start inlezen attributen" 
 $nn = 0
+$tot = 0
 
 foreach ($dir in $Photodirs) {   
 
@@ -109,11 +110,18 @@ $nn = 0
 $cc = 0
 $nc = 0
 foreach ($fotobestand in $metalist) {
+
+    if ($fotobestand.Bestandsextensie) {
+        $ext = $fotobestand.Bestandsextensie.ToUpper() 
+    }
+    else {
+        $ext = "n/a"
+    }
     
-    if ($fotobestand.Bestandsextensie.ToUpper() -eq ".JPG" -or `
-        $fotobestand.Bestandsextensie.ToUpper() -eq ".PNG" -or `
-        $fotobestand.Bestandsextensie.ToUpper() -eq ".MOV" -or `
-        $fotobestand.Bestandsextensie.ToUpper() -eq ".MP4") {
+    if ($ext -eq ".JPG" -or `
+        $ext -eq ".PNG" -or `
+        $ext -eq ".MOV" -or `
+        $ext -eq ".MP4") {
 
         $nn = $nn + 1
 
