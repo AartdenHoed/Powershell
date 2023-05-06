@@ -28,9 +28,23 @@ foreach ($service in $b) {
     }
     if (-not $ProgramName) {
         $ProgramName = "Unknown"
+    }
+    $software = " "
+    $spl = $ProgramName.Split("\")
+    if ($spl.count -eq 3) {
+        $software = $spl[1]
+    }
+    else {
+        $software = $spl[2]
+    }
+    if (-not $Software) {
+        $Software = "Unknown"
+    }
+    if ( ($Software -eq "Unknown") -or ($ProgramName -eq "Unknown")) {
         $service
     }
     $service | Add-Member NoteProperty ProgramName($ProgramName)
+    $service | Add-Member NoteProperty Software($software)
     $mylist += $service
 }
 
