@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 1.0.1"
 
 # COMMON coding
 CLS
@@ -222,16 +222,16 @@ try {
             $MoviePresent += 1
             if ($entry.DVDsaved -eq "No") {
                 $MovieNoDvd +=1
-                $myline = $entry.Name.PadRight(60," ") + "===> But No DVD copy found"
+                $myline = $entry.Name.PadRight(60," ") + "!! ===> No DVD copy found"
                 
             }
             else {
                 if ($entry.ISO -eq "No") {
-                    $myline = $entry.Name.PadRight(60," ") + "===> But DVD copy is not in ISO format"
+                    $myline = $entry.Name.PadRight(60," ") + "ok (But DVD copy is not in ISO format)"
                     $MovieNoIso += 1 
                 }
                 else {
-                    $myline = $entry.Name    
+                    $myline = $entry.Name.PadRight(60," ") + "ok"  
                 }                
             }             
             Report "N" $myline 
@@ -244,7 +244,7 @@ try {
         Report "W" "$MovieNoDvd Holidays with a movie don't have a DVD copy"
     } 
     if ($MovieNoIso -gt 0 ) {
-        Report "C" "$MovieNoIso Holidays with a movie have a NON-ISO DVD copy"
+        Report "A" "$MovieNoIso Holidays with a movie have a NON-ISO DVD copy"
     } 
     Report "N" " "
     Report "N" "-".PadRight(120,"-")
