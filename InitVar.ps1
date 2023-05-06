@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.6"
+    $Version = " -- Version: 9.7"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -143,6 +143,14 @@ try {
     Remove-Variable -Name "ADHC_Outlookoutput" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Outlookoutput" -Value $outlookoutput -Option readonly -Scope global -Description "output XML with contacts for Fritz!Box" -force
         
+    $holdir = $syncdrive + "Data\Sync Gedeeld\Vakanties"
+    Remove-Variable -Name "ADHC_HolidayDir" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_HolidayDir" -Value $holdir -Option readonly -Scope global -Description "Vakantie directory" -force 
+    
+    $isodir = "L:\Sync Films\Vakanties"
+    Remove-Variable -Name "ADHC_IsoDirectory" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_IsoDirectory" -Value $isodir -Option readonly -Scope global -Description "Vakantie ISO bestanden" -force      
+    
     switch ($ADHC_Computer)
         {         
             "ADHC-2"          {$temp = "C:\ADHC_Home\ADHC_Temp\"}
@@ -209,6 +217,13 @@ try {
     Remove-Variable -Name "ADHC_IpScanLog" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_IpScanLog" -Value $ipcl -Option readonly -Scope global -Description "Scan of home IP addresses" -force
     
+    $movdir = "MovieIsoCheck\" 
+    $movname = $ADHC_Computer + "_MovieIsoCheck.txt"
+    $mov = [PSCustomObject] [ordered] @{Directory = $movdir;
+                                       Name = $movname }
+    Remove-Variable -Name "ADHC_MovieIsoCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_MovieIsoCheck" -Value $mov -Option readonly -Scope global -Description "Check ISO movie files" -force
+
     $cfdir = "OneDriveCheck\" 
     $cfname = $ADHC_Computer + "_OneDriveCheck.txt"
     $cf = [PSCustomObject] [ordered] @{Directory = $cfdir;
