@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0.1"
+﻿$Version = " -- Version: 1.1"
 
 # COMMON coding
 CLS
@@ -95,9 +95,19 @@ try {
         if (Test-Path $filmdir) {
             $filmpresent = $true
         }
+        $filmdir = $holentry.FullName + "\Video"
+        if (Test-Path $filmdir) {
+            $filmpresent = $true
+        }
         $mphtest = Get-ChildItem -Path $holentry.Fullname -Filter *.mph -Recurse -File 
         $mphcount = $mphtest.Count
         if ($mphcount -gt 0) {
+            # Write-Host $filmdir $mphcount
+            $filmpresent = $true
+        }
+        $wp3test = Get-ChildItem -Path $holentry.Fullname -Filter *.wp3 -Recurse -File 
+        $wp3count = $wp3test.Count
+        if ($wp3count -gt 0) {
             # Write-Host $filmdir $mphcount
             $filmpresent = $true
         }
