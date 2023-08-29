@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1"
+﻿$Version = " -- Version: 1.1.2"
 
 # COMMON coding
 CLS
@@ -195,7 +195,8 @@ try {
             $NoMovie += 1
             if ($entry.DVDsaved -eq "Yes") {
                 $NoMovieBut +=1
-                $myline = $entry.Name.PadRight(60," ") + "===> But $DVDaantal DVD copies found"
+                $a = $entry.DVDaantal
+                $myline = $entry.Name.PadRight(60," ") + "===> But $a DVD copies found"
                 
             }
             else {
@@ -270,7 +271,7 @@ try {
     foreach ($entry in $NoParent) {
         
         if ($entry.Parentfound -eq "No") {
-            $NoParentcount +=1
+            $NoParentCount +=1
             $myline = $entry.Name.PadRight(60," ") 
             Report "N" $myline 
         }       
@@ -278,7 +279,7 @@ try {
     } 
     Report "N" " "
     
-    if ($NoParentFound -gt 0 ) {
+    if ($NoParentCount -gt 0 ) {
         Report "W" "$NoParentCount DVD copies found without parent (source files)"
     } 
     else {
