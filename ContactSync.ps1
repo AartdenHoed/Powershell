@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1"
+﻿$Version = " -- Version: 1.1.1"
 
 # COMMON coding
 CLS
@@ -267,6 +267,9 @@ finally {
         Write-Host $jobstatus "Dump info = $dump"
     }
     else {
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
         $Scriptmsg = "*** ENDED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
         Write-Information $Scriptmsg 
 
