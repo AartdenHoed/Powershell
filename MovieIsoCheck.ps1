@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1.2"
+﻿$Version = " -- Version: 1.2"
 
 # COMMON coding
 CLS
@@ -124,15 +124,20 @@ try {
         # Check existence DVD copy 
 
         $DVDSaved = "No"
-        $isofile = "No"
+        $isofile = "??"
         $DVDaantal = 0
+        $isoaantal = 0
+        $otheraantal = 0
 
         foreach ($iso in $IsoList) {
             if ($iso.Name.Contains("$filmname")) {
                 $DVDSaved = "Yes"
                 $DVDaantal += 1
                 if ($iso.Extension.ToUpper() -eq ".ISO") {
-                    $isofile = "Yes"
+                    $isoaantal += 1
+                }
+                else {
+                    $otheraantal += 1
                 }
                 
             } 
@@ -144,7 +149,9 @@ try {
                                             Filmexists = $filmexists; 
                                             DVDsaved = $DVDsaved;
                                             DVDaantal = $DVDaantal;
-                                            ISO = $isofile}
+                                            ISOaantal = $isoaantal;
+                                            OTHERaantal = $otheraantal
+                                            }
         $MovieList += $Movie
 
     }
@@ -237,12 +244,20 @@ try {
                 
             }
             else {
-                if ($entry.ISO -eq "No") {
-                    $myline = $entry.Name.PadRight(60," ") + "ok (But DVD copy is not in ISO format)"
+                $aantal = $entry.DVDaantal
+                if ($aantal -eq 1) {
+                    $line = "ok"
+                }
+                else {
+                    $line = "ok - Aantal = $aantal -" 
+                }
+                if ($entry.OTHERaantal -ne 0) {
+                    $o = $entry.OTHERaantal
+                    $myline = $entry.Name.PadRight(60," ") + $line.PadRight(20," ") + "(But $o DVD copies without ISO format)"
                     $MovieNoIso += 1 
                 }
                 else {
-                    $myline = $entry.Name.PadRight(60," ") + "ok"  
+                    $myline = $entry.Name.PadRight(60," ") + $line  
                 }                
             }             
             Report "N" $myline 
@@ -250,7 +265,7 @@ try {
 
     } 
     Report "N" " "
-    Report "I" "$MoviePresent Holidays with movie"
+    Report "I" "$MoviePresent Holidays with one or more movies"
     if ($MovieNoDvd -gt 0 ) {
         Report "W" "$MovieNoDvd Holidays with a movie don't have a DVD copy"
     } 
