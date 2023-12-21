@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.8"
+    $Version = " -- Version: 9.10"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -74,9 +74,9 @@ try {
             &subst o: /d
             switch ($ADHC_Computer)
             {         
-                "HOESTO"     {&subst o: "d:\Data\Sync ADHC\OneDrive" } 
                 "ADHC-2"     {&subst o: "c:\Data\Sync ADHC\OneDrive" } 
-                default      {}
+                "HOLIDAY"    {&subst o: "c:\Data\Sync ADHC\OneDrive" }
+                default      {&subst o: "d:\Data\Sync ADHC\OneDrive"}
 
             }
 
@@ -196,6 +196,10 @@ try {
     Remove-Variable -Name "ADHC_LocalCpuTemperature" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LocalCpuTemperature" -Value $lc -Option readonly -Scope global -Description "Local CPU temperature" -force
 
+    $srvc = "PRTG\ServiceList\" + $ADHC_Computer + "_ServiceList.txt"
+    Remove-Variable -Name "ADHC_ServiceLIst" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ServiceList" -Value "$srvc" -Option readonly -Scope global -Description "Service List info file" -force
+    
     $btdir = "BootTimeLog\"
     $btname = $ADHC_Computer + "_BootTimeLog.txt"
     $bt = [PSCustomObject] [ordered] @{Directory = $btdir;
@@ -398,6 +402,16 @@ try {
     Remove-Variable -Name "ADHC_PythonExec" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PythonExec" -Value $PythonExec -Option readonly -Scope global -Description "Path to PYTHON executable" -force
 
+    switch ($ADHC_Computer)
+        {         
+            
+            "ADHC-2"       {$WmicDbload = "Y"}
+                   
+            default        {$WmicDbload = "N"}
+        }
+    Remove-Variable -Name "ADHC_WmicDbload" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_WmicDbload" -Value $WmicDbload -Option readonly -Scope global -Description "Execute WMIC dbload on this machine?" -force
+
     $wmicdir = ($output + "WmicFiles\").Replace('\','\\')
     $wmicdir2 = $wmicdir.Replace("\\","/")
     $wmictemp = ($temp + "WmicFiles\").Replace('\','\\')
@@ -438,6 +452,7 @@ try {
                                                   ADHC_User = $ADHC_User;
                                                   ADHC_WmicGenerations = $ADHC_WmicGenerations
                                                   ADHC_WmicDirectory = $ADHC_WmicDirectory;
+                                                  ADHC_WmicDbload = $ADHC_WmicDbload;
                                                   ADHC_OutputDirectory = $ADHC_OutputDirectory;
                                                   ADHC_WmicTempdir = $ADHC_WmicTempdir;
                                                   ADHC_Jobstatus = $ADHC_Jobstatus;
