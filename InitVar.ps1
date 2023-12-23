@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.10"
+    $Version = " -- Version: 9.11"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -430,12 +430,16 @@ try {
     Set-Variable -Name "ADHC_PythonArgCreate" -Value $PythonArgCreate -Option readonly -Scope global -Description "PYTHON arguments - CREATE" -force
 
     $PythonArgAnalyze = '"' + $sympapgm + '" "--mode=Analyze" "--outputdir=' + $wmicdir + '"'
+    $PythonArgDbload = '"' + $sympapgm + '" "--mode=Dbload" "--outputdir=' + $wmicdir + '"'
 
     Remove-Variable -Name "ADHC_WmicGenerations" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_WmicGenerations" -Value "12" -Option readonly -Scope global -Description "Number of WMIC output file generations to keep" -force
  
     Remove-Variable -Name "ADHC_PythonArgAnalyze" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PythonArgAnalyze" -Value $PythonArgAnalyze -Option readonly -Scope global -Description "PYTHON arguments - ANALYZE" -force
+
+    Remove-Variable -Name "ADHC_PythonArgDbload" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_PythonArgDbload" -Value $PythonArgDbload -Option readonly -Scope global -Description "PYTHON arguments - DBLOAD" -force
     
     # Return JSON if requested
     $d = Get-Date
