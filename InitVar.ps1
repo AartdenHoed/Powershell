@@ -23,7 +23,7 @@ Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
 Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.11"
+    $Version = " -- Version: 9.12"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -195,10 +195,6 @@ try {
                                        Name = $lcname }
     Remove-Variable -Name "ADHC_LocalCpuTemperature" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LocalCpuTemperature" -Value $lc -Option readonly -Scope global -Description "Local CPU temperature" -force
-
-    $srvc = "PRTG\ServiceList\" + $ADHC_Computer + "_ServiceList.txt"
-    Remove-Variable -Name "ADHC_ServiceLIst" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_ServiceList" -Value "$srvc" -Option readonly -Scope global -Description "Service List info file" -force
     
     $btdir = "BootTimeLog\"
     $btname = $ADHC_Computer + "_BootTimeLog.txt"
