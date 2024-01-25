@@ -1,12 +1,11 @@
 ﻿# Rename photos so they can easily be sorted by date
-$Version = " -- Version: 1.3.3"
+$Version = " -- Version: 1.3.4"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
 Write-Warning "Er kan ook een correctie worden aagebracht op het timestamp 'GENOMEN OP'"
 
 # COMMON coding
-CLS
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
