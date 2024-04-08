@@ -1,5 +1,5 @@
 ﻿cls
-Write-Warning "Version 2.0"
+Write-Warning "Version 2.1"
 Write-Warning "Scannen van files op bepaalde literals"
 Write-Warning "Selecteer een directory" 
 
@@ -73,8 +73,8 @@ $part = $percentiel
 $FileCount = 0
 
 
-$TempFile = New-TemporaryFile
-Set-Content $TempFile "~ Specificeer hieronder de zoekargumenten en save the file."
+$TempFile = "C:\ADHC_Home\ADHC_Temp\ScanInput.txt"
+Set-Content $TempFile "~ Specificeer hieronder de zoekargumenten en save the file." -Force
 Add-Content $TempFile "~ Eén zoekargument per regel"
 Add-Content $TempFile "~ (Het ~-teken in positie 1 geeft een commentaarregel aan)"
 
@@ -140,5 +140,3 @@ Write-Host $t
 
 
 $Resultlist | Out-GridView    
-Remove-Item $TempFile
-Write-Host "$Tempfile Deleted"

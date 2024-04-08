@@ -1,13 +1,18 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 1.1"
 
 # COMMON coding
 CLS
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
-function Report ([string]$level, [string]$line) {
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          }
+
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
         ("I") {
@@ -21,25 +26,25 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $obj.scriptchange = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $obj.scriptaction = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
+            $obj.scripterror = $true
         }
         ("G") {
             $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $Obj.Scripterror = $true
         }
     }
-    Add-Content $tempfile $rptline
+    Add-Content $file $rptline
 
 }
 
@@ -57,17 +62,14 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
+    $InitObj = & "$LocalInitVar" "OBJECT"
 
-    if (!$ADHC_InitSuccessfull) {
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
-    }
+        throw "INIT script $LocalInitVar Failed"
 
-     # init flags
-    $global:scripterror = $false
-    $global:scriptaction = $false
-    $global:scriptchange = $false
+    }
+      
 
 # END OF COMMON CODING   
 
@@ -77,6 +79,10 @@ try {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $Tempfile = $dir + $ADHC_CmdletXref.NAme
     Set-Content $Tempfile $Scriptmsg -force
+
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
 
     $Cmdletlist = Get-Command | Where-Object {$_.Name -like "*-*"} 
     $Cmdletcount = $Cmdletlist.Count
@@ -141,36 +147,36 @@ try {
         }        
     }
     
-    Report "N"  " "
-    Report "I"   "In scope were $FileCount files (of which $Scanned scanned and $skipped skipped) with $cmdletcount search strings"  
+    Report "N"  " " $StatusObj $Tempfile
+    Report "I"   "In scope were $FileCount files (of which $Scanned scanned and $skipped skipped) with $cmdletcount search strings" $StatusObj $Tempfile
 
     $Sorted = $Resultlist | Sort-Object -Property Searchstring,SourceFile  
 
     $curname = "@#$"
-    Report "N"  " "
+    Report "N"  " " $StatusObj $Tempfile
     $rptline = " === Cross reference between PowerShell cmdlets and sources in $ADHC_Stagingdir === "
-    Report "N"  $rptline
+    Report "N"  $rptline $StatusObj $Tempfile
 
     foreach ($hit in $Sorted) {
         $cmdname = $hit.Searchstring
         if ($cmdname -ne $curname) {
-            Report "N"  " "
+            Report "N"  " " $StatusObj $Tempfile
             $rptline = $cmdname.Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile.PadRight(100," ") + "Command Type = '"+ $hit.CMDtype + "'"
-            Report "N"  $rptline
+            Report "N"  $rptline $StatusObj $Tempfile
             $curname = $cmdname
         }
         else {
             $rptline = " ".Padright(32," ") + "hits = " + $hit.nrofhits.ToString().Padright(8," ") +  $hit.Sourcefile.PadRight(100," ") 
-            Report "N"  $rptline
+            Report "N"  $rptline $StatusObj $Tempfile
         }
      
 
     } 
 
     # report Cmdlets that are not being used
-    Report "N"  " "
+    Report "N"  " " $StatusObj $Tempfile
     $rptline = " === Powershell cmdlets that are not being referenced in any source in $ADHC_Stagingdir === "
-    Report "N"  $rptline
+    Report "N"  $rptline $StatusObj $Tempfile
 
     $written = $false
 
@@ -185,7 +191,7 @@ try {
         }
         if (!$foundit) {
             $rptline = " >>> $cmdname"
-            Report "N"  $rptline
+            Report "N"  $rptline $StatusObj $Tempfile
             # write-warning "$cmdname not referenced in any source"
             $written = $true
         }
@@ -194,7 +200,7 @@ try {
     }
     if (!$written) { 
         $rptline = " >>> N O N E"
-        Report "N"  $rptline
+        Report "N"  $rptline $StatusObj $Tempfile
     } 
     else {
         # nothing
@@ -202,7 +208,7 @@ try {
 
 }
 catch {
-    $global:scripterror = $true
+    $StatusObj.Scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
@@ -215,13 +221,13 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N"  " "
+    Report "N"  " " $StatusObj $Tempfile
     $returncode = 99
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
+    if (($StatusObj.Scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
-        Report "N"  $msg
-        Report "N"  " "
+        Report "N"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -230,16 +236,16 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode =  16        
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
+    if (($StatusObj.Scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
-        Report "W"  $msg
-        Report "N"  " "
+        Report "W"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -247,10 +253,10 @@ finally {
         $returncode =  8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
+    if (($StatusObj.Scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Report "C"  $msg
-        Report "N"  " "
+        Report "C"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -261,8 +267,8 @@ finally {
     if ($returncode -eq 99) {
 
         $msg = ">>> Script ended normally without reported changes, and no action required"
-        Report "I"  $msg
-        Report "N"  " "
+        Report "I"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -274,13 +280,13 @@ finally {
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
     $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    Report "N" $scriptmsg
-    Report "N" " "
+    Report "N" $scriptmsg $StatusObj $Tempfile
+    Report "N" " " $StatusObj $Tempfile
 
     try { # Free resource and copy temp file        
         
         $deffile = $ADHC_OutputDirectory + $ADHC_CmdletXref.Directory + $ADHC_CmdletXref.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
+        $Copmov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -297,6 +303,7 @@ finally {
     }
     Finally {
         Write-Information $Scriptmsg
+        Add-Content $deffile $scriptmsg
         Exit $Returncode
         
     }  

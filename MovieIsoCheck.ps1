@@ -5,9 +5,15 @@ CLS
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
-function Report ([string]$level, [string]$line) {
+# init flags
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          }
+
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
         ("I") {
@@ -21,27 +27,25 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $obj.scriptchange = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $obj.scriptaction = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
+            $obj.scripterror = $true
         }
         ("G") {
             $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $Obj.Scripterror = $true
         }
     }
-
-
-    Add-Content $tempfile $rptline
+    Add-Content $file $rptline
 
 }
 
@@ -59,18 +63,15 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
+    $InitObj = & "$LocalInitVar" "OBJECT"
 
-    if (!$ADHC_InitSuccessfull) {
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
+        throw "INIT script $LocalInitVar Failed"
+
     }
 
-     # init flags
-    $global:scripterror = $false
-    $global:scriptaction = $false
-    $global:scriptchange = $false
-
+    
 # END OF COMMON CODING   
 
     # Init reporting file
@@ -79,6 +80,9 @@ try {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $Tempfile = $dir + $ADHC_MovieIsoCheck.Name
     Set-Content $Tempfile $Scriptmsg -force
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
 
 # ==============================================
 
@@ -182,18 +186,18 @@ try {
 
     # Create reports
 
-    Report "N" " "
-    Report "N" "-".PadRight(120,"-")
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "-".PadRight(120,"-") $StatusObj $Tempfile
 
     # 1 Holidays without movie
     
     $NoMovie = 0
     $NoMovieBut = 0
-    Report "N" " "
-    Report "N" "##########                                                                          ##########"
-    Report "N" "########## Holdays without movie                                                    ##########"
-    Report "N" "##########                                                                          ##########"   
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "##########                                                                          ##########" $StatusObj $Tempfile
+    Report "N" "########## Holdays without movie                                                    ##########" $StatusObj $Tempfile
+    Report "N" "##########                                                                          ##########" $StatusObj $Tempfile 
+    Report "N" " " $StatusObj $Tempfile
     foreach ($entry in $Movielist) {
         if ($entry.Name -like "##*") {
             continue
@@ -210,28 +214,28 @@ try {
                 $myline = $entry.Name
             } 
             
-            Report "N" $myline 
+            Report "N" $myline $StatusObj $Tempfile
         } 
 
     } 
-    Report "N" " "
-    Report "I" "$NoMovie Holidays without movie"
+    Report "N" " " $StatusObj $Tempfile
+    Report "I" "$NoMovie Holidays without movie" $StatusObj $Tempfile
     if ($NoMovieBut -gt 0 ) {
-        Report "W" "$NoMovieBut Holidays without movie source but with DVD files"
+        Report "W" "$NoMovieBut Holidays without movie source but with DVD files" $StatusObj $Tempfile
     } 
-    Report "N" " "
-    Report "N" "-".PadRight(120,"-")
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "-".PadRight(120,"-") $StatusObj $Tempfile
 
      # 2 Holidays with movie but without DVD copy
     
     $MoviePresent = 0
     $MovieNoDvd = 0
     $MovieNoIso = 0 
-    Report "N" " "
-    Report "N" "##########                                                                          ##########"
-    Report "N" "########## Holidays with movie                                                      ##########"
-    Report "N" "##########                                                                          ##########"   
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "##########                                                                          ##########" $StatusObj $Tempfile
+    Report "N" "########## Holidays with movie                                                      ##########" $StatusObj $Tempfile
+    Report "N" "##########                                                                          ##########" $StatusObj $Tempfile 
+    Report "N" " " $StatusObj $Tempfile
     foreach ($entry in $Movielist) {
         if ($entry.Name -like "##*") {
             continue
@@ -260,48 +264,48 @@ try {
                     $myline = $entry.Name.PadRight(60," ") + $line  
                 }                
             }             
-            Report "N" $myline 
+            Report "N" $myline $StatusObj $Tempfile
         } 
 
     } 
-    Report "N" " "
-    Report "I" "$MoviePresent Holidays with one or more movies"
+    Report "N" " " $StatusObj $Tempfile
+    Report "I" "$MoviePresent Holidays with one or more movies" $StatusObj $Tempfile
     if ($MovieNoDvd -gt 0 ) {
-        Report "W" "$MovieNoDvd Holidays with a movie don't have a DVD copy"
+        Report "W" "$MovieNoDvd Holidays with a movie don't have a DVD copy" $StatusObj $Tempfile
     } 
     if ($MovieNoIso -gt 0 ) {
-        Report "A" "$MovieNoIso Holidays with a movie have a NON-ISO DVD copy"
+        Report "A" "$MovieNoIso Holidays with a movie have a NON-ISO DVD copy" $StatusObj $Tempfile
     } 
-    Report "N" " "
-    Report "N" "-".PadRight(120,"-")
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "-".PadRight(120,"-") $StatusObj $Tempfile
 
     # 3 DVD copies without parent
     
     $NoParentCount = 0
-    Report "N" " "
-    Report "N" "##########                                                                          ##########"
-    Report "N" "########## DVD copies without parent (source files)                                 ##########"
-    Report "N" "##########                                                                          ##########"   
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "##########                                                                          ##########" $StatusObj $Tempfile
+    Report "N" "########## DVD copies without parent (source files)                                 ##########" $StatusObj $Tempfile
+    Report "N" "##########                                                                          ##########" $StatusObj $Tempfile  
+    Report "N" " " $StatusObj $Tempfile
     foreach ($entry in $NoParent) {
         
         if ($entry.Parentfound -eq "No") {
             $NoParentCount +=1
             $myline = $entry.Name.PadRight(60," ") 
-            Report "N" $myline 
+            Report "N" $myline $StatusObj $Tempfile
         }       
  
     } 
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
     
     if ($NoParentCount -gt 0 ) {
-        Report "W" "$NoParentCount DVD copies found without parent (source files)"
+        Report "W" "$NoParentCount DVD copies found without parent (source files)" $StatusObj $Tempfile
     } 
     else {
-        Report "I" "All DVD copies have a parent (source files)"
+        Report "I" "All DVD copies have a parent (source files)" $StatusObj $Tempfile
     } 
-    Report "N" " "
-    Report "N" "-".PadRight(120,"-")
+    Report "N" " " $StatusObj $Tempfile
+    Report "N" "-".PadRight(120,"-") $StatusObj $Tempfile
 
 
      
@@ -326,13 +330,13 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N"  " "
+    Report "N"  " " $StatusObj $Tempfile
     $returncode = 99
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
+    if (($StatusObj.Scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
-        Report "N"  $msg
-        Report "N"  " "
+        Report "N"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -341,16 +345,16 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode =  16        
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
+    if (($StatusObj.Scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
-        Report "W"  $msg
-        Report "N"  " "
+        Report "W"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -358,10 +362,10 @@ finally {
         $returncode =  8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
-        $msg = ">>> Script ended normally with reported changes, but no action required"
-        Report "C"  $msg
-        Report "N"  " "
+    if (($StatusObj.Scriptchange) -and ($returncode -eq 99)) {
+        $msg = ">>> Script ended normally with reported changes, but no action required" 
+        Report "C"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -371,9 +375,9 @@ finally {
 
     if ($returncode -eq 99) {
 
-        $msg = ">>> Script ended normally without reported changes, and no action required"
-        Report "I"  $msg
-        Report "N"  " "
+        $msg = ">>> Script ended normally without reported changes, and no action required" 
+        Report "I"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -381,17 +385,11 @@ finally {
         $returncode = 0
     }
 
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    Report "N" $scriptmsg
-    Report "N" " "
-
+    
     try { # Free resource and copy temp file        
         
         $deffile = $ADHC_OutputDirectory + $ADHC_MovieIsoCheck.Directory + $ADHC_MovieIsoCheck.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
+        $CopMov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -407,7 +405,13 @@ finally {
 
     }
     Finally {
-        Write-Information $Scriptmsg
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+        $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+        Report "N" $scriptmsg $StatusObj $deffile
+        Report "N" " " $StatusObj $deffile
+        Write-Host $scriptmsg
         Exit $Returncode
         
     }  

@@ -1,29 +1,26 @@
 ﻿# Setting of all global variables named ADHC_<something>
 param (
-    [string]$JSON = "NO"    
+    [string]$Mode = "MSG"    
 )
-# $JSON = 'YES'
+# JSON   - return JSON
+# MSG    - write-host messages
+# SILENT - suppress messages
+# OBJECT - return messages in object
+
+# $mode = "JSON"
 
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
+$scripterror = $false
+$mode = $mode.ToUpper()
+$msglist = @()
 
-class InitVarException : System.Exception  { 
-    InitVarException( [string]$message) : base($message) {
 
-    }
-
-    InitVarException() {
-
-    }
-}
-
-Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
-Set-Variable -Name "ADHC_InitSuccessfull" -Value $true -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
  
 try {
-    $Version = " -- Version: 9.12"
+    $Version = " -- Version: 10.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -32,8 +29,20 @@ try {
     $FullScriptName = $MyInvocation.MyCommand.Definition
     $mypath = $FullScriptName.Replace($MyName, "")
     $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
-        Write-Information $Scriptmsg 
+
+    switch ($mode) {
+        "MSG" {Write-Information $Scriptmsg}
+        "JSON" {
+            $msgentry = [PSCustomObject] [ordered] @{Message = $scriptmsg;
+                                                     Level = "I"}
+            $msglist += $msgentry    
+        }
+        "SILENT" { }
+        "OBJECT" { 
+            $msgentry = [PSCustomObject] [ordered] @{Message = $scriptmsg;
+                                                     Level = "I"}
+            $msglist += $msgentry  }
+        Default  { throw "$mode is an invalid value for MODE"}    
     }
 
     # GENERAL
@@ -83,7 +92,18 @@ try {
 
         }
     }
-    catch {Write-Warning "Subst fails"}
+    catch {$Scriptmsg = "SUBST command has failed"
+        switch ($mode) {
+            "MSG" {Write-Information $Scriptmsg}
+            "SILENT" { }
+            Default { 
+                $msgentry = [PSCustomObject] [ordered] @{Message = $scriptmsg;
+                                                         Level = "W"}
+                $msglist += $msgentry  
+                $scripterror = $true
+            }   
+        }
+    }
     
     $prof = $env:USERPROFILE -split '\\'
 
@@ -111,9 +131,6 @@ try {
     $usr = "C:\ADHC_User\Documents\"
     Remove-Variable -Name "ADHC_PSUdir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_PSUdir" -Value "$usr" -Option readonly -Scope global -Description "Powershell production user directory" -force
-
-    Remove-Variable -Name "ADHC_PsPath" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_PsPath" -Value "$mypath" -Option readonly -Scope global -Description "Name of powershell path" -force
 
     $cm = $mypath + "CopyMove.ps1"
     Remove-Variable -Name "ADHC_CopyMoveScript" -force -ErrorAction SilentlyContinue
@@ -443,12 +460,38 @@ try {
     $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $myname = $MyInvocation.MyCommand.Name
     $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    if (($JSON.ToUpper() -ne "YES") -and ($JSON.ToUpper() -ne "SILENT")) {
-        Write-Information $Scriptmsg 
+    switch ($mode) {
+        "MSG" {Write-Information $Scriptmsg}
+        "SILENT" { }
+        Default { 
+            $msgentry = [PSCustomObject] [ordered] @{Message = $scriptmsg;
+                                                     Level = "I"}
+            $msglist += $msgentry  }
+           
     }
+    
+         
 
-    if ($JSON.ToUpper() -eq  "YES" ) {
-         $ReturnOBJ = [PSCustomObject] [ordered] @{ADHC_Computer = $ADHC_Computer;
+}
+Catch {
+    
+    $Scriptmsg = "INITVAR.PS1 failed - fatal error:  " + $_.Exception.Message
+    
+    $scripterror = $true
+    switch ($mode) {
+        "MSG" {Write-Information $Scriptmsg}
+        "SILENT" { }
+        Default { 
+            $msgentry = [PSCustomObject] [ordered] @{Message = $scriptmsg;
+                                                     Level = "I"}
+            $msglist += $msgentry  }
+           
+    }
+    
+}
+$ReturnOBJ = [PSCustomObject] [ordered] @{AbEnd = $scripterror;
+                                                  MessageList = $msglist;
+                                                  ADHC_Computer = $ADHC_Computer;
                                                   ADHC_User = $ADHC_User;
                                                   ADHC_WmicGenerations = $ADHC_WmicGenerations
                                                   ADHC_WmicDirectory = $ADHC_WmicDirectory;
@@ -457,23 +500,16 @@ try {
                                                   ADHC_WmicTempdir = $ADHC_WmicTempdir;
                                                   ADHC_Jobstatus = $ADHC_Jobstatus;
                                                   ADHC_CopyMoveScript = $ADHC_CopyMoveScript;
-                                                  ADHC_LockScript = $ADHC_LockScript}
-    
+                                                  ADHC_LockScript = $ADHC_LockScript;}
+
+switch ($mode) {
+        
+    "JSON" {
         $ReturnJSON = ConvertTo-JSON $ReturnOBJ 
-        return $ReturnJSON
-    
+        return $ReturnJSON 
     }
-    else {
-        return 
-   
+    Default { 
+        return $Returnobj
     }
-}
-Catch {
-    Remove-Variable -Name "ADHC_InitSuccesfull" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_InitSuccessfull" -Value $false -Option readonly -Scope global -Description "INITVAR Succesfull or not" -force
-    $em = "INITVAR.PS1 failed - fatal error:  " + $_.Exception.Message
-    $MyError = [InitVarException]::new($em)
-    Remove-Variable -Name "ADHC_InitError" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_InitError" -Value $MyError -Option readonly -Scope global -Description "INITVAR user error" -force
-    
+       
 }

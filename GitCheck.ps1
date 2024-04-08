@@ -1,15 +1,23 @@
-﻿$Version = " -- Version: 10.4"
+﻿$Version = " -- Version: 10.5"
 
 # COMMON coding
 CLS
 # init flags
-$global:scripterror = $false
-$global:scriptaction = $false
-$global:scriptchange = $false
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          }
 
-function Report ([string]$level, [string]$line) {
+$InformationPreference = "Continue"
+$WarningPreference = "Continue"
+$ErrorActionPreference = "Continue"
+
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
+        ("H") {
+            $rptline = "-------->".Padright(10," ") + $line
+        }
         ("I") {
             $rptline = "Info    *".Padright(10," ") + $line
         }
@@ -21,31 +29,27 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $obj.scriptchange = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $obj.scriptaction = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
+            $obj.scripterror = $true
         }
         ("G") {
             $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $Obj.Scripterror = $true
         }
     }
-    Add-Content $tempfile $rptline
+    Add-Content $file $rptline
 
 }
-
-$InformationPreference = "Continue"
-$WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"              
 
 try {                                        
     $Node = " -- Node: " + $env:COMPUTERNAME
@@ -62,13 +66,14 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar" 
-    
-    if (!$ADHC_InitSuccessfull) {
+    $InitObj = & "$LocalInitVar" "OBJECT"
+
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
-    }  
-    $m = & $ADHC_LockScript "Lock" "Git" "$enqprocess"    
+        throw "INIT script $LocalInitVar Failed"
+
+    }
+    $m = & $ADHC_LockScript "Lock" "Git" "$enqprocess" 10 "OBJECT"   
 
 # END OF COMMON CODING
 
@@ -78,27 +83,31 @@ try {
     $tempfile = $odir + $ADHC_Gitcheck.Name
 
     Set-Content $tempfile $Scriptmsg -force 
+
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
     
     $ENQfailed = $false  
-    foreach ($msgentry in $m) {
+    foreach ($msgentry in $m.MessageList) {
         $msglvl = $msgentry.level
         if ($msglvl -eq "E") {
             # ENQ failed
             $ENQfailed = $true
         }
         $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
+        Report $msglvl $msgtext $StatusObj $Tempfile
     }
     
     if ($ENQfailed) {
         throw "Could not lock resource 'Git'"
     }
 
-    Report "N" ""
+    Report "N" "" $StatusObj $Tempfile
     $a = & git --version
     $msg = "GIT version: $a" 
-    Report "I" $msg
-    Report "N" ""
+    Report "I" $msg $StatusObj $Tempfile
+    Report "N" "" $StatusObj $Tempfile
 
 
     Set-Location -Path $ADHC_DevelopDir
@@ -111,9 +120,9 @@ try {
     foreach ($gitentry in $gitdirs) {
         $gdir = $gitentry.FullName          
         
-        Report "N" ""
+        Report "N" "" $StatusObj $Tempfile
         $msg = "----------Directory $gdir".PadRight(120,"-") 
-        Report "N" $msg
+        Report "N" $msg $StatusObj $Tempfile
 
         Set-Location $gdir
         Write-Host ">>> $gdir"
@@ -124,18 +133,18 @@ try {
 
         $ErrorActionPreference = "Stop"  
         
-        Report "N" " "
-        Report "B" "git status"
-        Report "N" $line
-        Report "B" "==> Start of GIT output"
+        Report "N" " " $StatusObj $Tempfile
+        Report "B" "git status" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
+        Report "B" "==> Start of GIT output" $StatusObj $Tempfile
         foreach ($l in $a) {
-            Report "G" $l
+            Report "G" $l $StatusObj $Tempfile
         }
-        Report "B" "==> End of GIT output"
-        Report "N" $line
+        Report "B" "==> End of GIT output" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Status command failed"
+            Report "W" "==> Git Status command failed" $StatusObj $Tempfile
             $alarm = [PSCustomObject] [ordered] @{Desc = "Git Status Command failed";
                                                   Repo = $gdir}
             $alarmlist += $alarm            
@@ -143,10 +152,10 @@ try {
         else {
         
             if ($a -like "*nothing to commit, working tree clean*") {
-                Report "I" "==> No uncommitted changes"
+                Report "I" "==> No uncommitted changes" $StatusObj $Tempfile
             }
             else {
-                Report "C" "==> Uncommitted changes    ***"
+                Report "C" "==> Uncommitted changes    ***" $StatusObj $Tempfile
                 $alarm = [PSCustomObject] [ordered] @{Desc = "Uncommitted changes";
                                                       Repo = $gdir}
                 $alarmlist += $alarm
@@ -160,18 +169,18 @@ try {
 
         $ErrorActionPreference = "Stop" 
         
-        Report "N" " "
-        Report "B" "git push ADHCentral master --dry-run"
-        Report "N" $line
-        Report "B" "==> Start of GIT output"
+        Report "N" " " $StatusObj $Tempfile
+        Report "B" "git push ADHCentral master --dry-run" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
+        Report "B" "==> Start of GIT output" $StatusObj $Tempfile
         foreach ($l in $a) {
-            Report "G" $l
+            Report "G" $l $StatusObj $Tempfile
         }
-        Report "B" "==> End of GIT output"
-        Report "N" $line
+        Report "B" "==> End of GIT output" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
         
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Push command (dry run ADHCentral) failed"
+            Report "W" "==> Git Push command (dry run ADHCentral) failed" $StatusObj $Tempfile
             $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run ADHCentral) failed";
                                                   Repo = $gdir}
             $alarmlist += $alarm            
@@ -179,18 +188,18 @@ try {
         else { 
                         
             if ($a -like "*Everything up-to-date*")  {
-                Report "I" "==> No unpushed commits"
+                Report "I" "==> No unpushed commits" $StatusObj $Tempfile
             }
             else {
-                Report "W" "==> Unpushed commits       ***"
+                Report "W" "==> Unpushed commits       ***" $StatusObj $Tempfile
                 $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits (ADHCentral)";
                                                       Repo = $gdir}
                 $alarmlist += $alarm
             
             }
         }
-        Report "N" $line
-        Report "N" " "
+        Report "N" $line $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
 
          $ErrorActionPreference = "Continue"  
 
@@ -198,18 +207,18 @@ try {
 
         $ErrorActionPreference = "Stop"  
                                    
-        Report "N" " "
-        Report "B" "git push GITHUB master --dry-run"
-        Report "N" $line
-        Report "B" "==> Start of GIT output"
+        Report "N" " " $StatusObj $Tempfile
+        Report "B" "git push GITHUB master --dry-run" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
+        Report "B" "==> Start of GIT output" $StatusObj $Tempfile
         foreach ($l in $a) {
-            Report "G" $l
+            Report "G" $l $StatusObj $Tempfile
         }
-        Report "B" "==> End of GIT output"
-        Report "N" $line
+        Report "B" "==> End of GIT output" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Push command (dry run GITHUB) failed"
+            Report "W" "==> Git Push command (dry run GITHUB) failed" $StatusObj $Tempfile
             $alarm = [PSCustomObject] [ordered] @{Desc = "Git Push command (dry run GITHUB) failed";
                                                   Repo = $gdir}
             $alarmlist += $alarm            
@@ -217,17 +226,17 @@ try {
         else { 
                 
             if ($a -like "*Everything up-to-date*")  {
-                 Report "I" "==> No unpushed commits"
+                 Report "I" "==> No unpushed commits" $StatusObj $Tempfile
             }
             else {
-                Report "W" "==> Unpushed commits       ***"
+                Report "W" "==> Unpushed commits       ***" $StatusObj $Tempfile
                 $alarm = [PSCustomObject] [ordered] @{Desc = "Unpushed commits (GITHUB)";
                                                       Repo = $gdir}
                 $alarmlist += $alarm
             }
         }
-        Report "N" $line
-        Report "N" " " 
+        Report "N" $line $StatusObj $Tempfile
+        Report "N" " "  $StatusObj $Tempfile
    
         
         
@@ -239,9 +248,9 @@ try {
     foreach ($rementry in $remdirs) {
         $rdir = $rementry.FullName
 
-        Report "N" ""
+        Report "N" "" $StatusObj $Tempfile
         $msg = "----------Remote Repository $rdir".PadRight(120,"-") 
-        Report "N" $msg
+        Report "N" $msg $StatusObj $Tempfile
 
         Set-Location $rdir
         Write-Host ">>> $rdir"
@@ -252,28 +261,28 @@ try {
 
         $ErrorActionPreference = "Stop"  
         
-        Report "N" " "
-        Report "B" "git rev-parse --is-bare-repository"
-        Report "N" $line
-        Report "B" "==> Start of GIT output"
+        Report "N" " " $StatusObj $Tempfile
+        Report "B" "git rev-parse --is-bare-repository" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
+        Report "B" "==> Start of GIT output" $StatusObj $Tempfile
         foreach ($l in $a) {
-            Report "G" $l
+            Report "G" $l $StatusObj $Tempfile
         }
-        Report "B" "==> End of GIT output"
-        Report "N" $line
+        Report "B" "==> End of GIT output" $StatusObj $Tempfile
+        Report "N" $line $StatusObj $Tempfile
 
         if (($a -like "*error:*") -or ($a -like "*fatal:*")) {
-            Report "W" "==> Git Status command failed"
+            Report "W" "==> Git Status command failed" $StatusObj $Tempfile
             $alarm = [PSCustomObject] [ordered] @{Desc = "Git Status Command failed";
                                                   Repo = $rdir}
             $alarmlist += $alarm            
         }
         else {
             if ($a -like "*true*")  {
-                 Report "I" "==> Repository is bare (= OK)"
+                 Report "I" "==> Repository is bare (= OK)" $StatusObj $Tempfile
             }
             else {
-                Report "W" "==> Non-bare repository ***"
+                Report "W" "==> Non-bare repository ***" $StatusObj $Tempfile
                 $alarm = [PSCustomObject] [ordered] @{Desc = "Non-bare repository";
                                                       Repo = $rdir}
                 $alarmlist += $alarm
@@ -287,7 +296,7 @@ try {
     
 }
 catch {
-    $global:scripterror = $true
+    $StatusObj.scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
@@ -301,23 +310,23 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
 
-    Report "I" "Short report:"
+    Report "I" "Short report:" $StatusObj $Tempfile
     foreach ($al in $alarmlist) {
         $d = $al.Desc
         $r = $al.Repo
         $l = $r.PadRight(80," ") + "===> " + $d
-        Report "B" "$l"
+        Report "B" "$l" $StatusObj $Tempfile
     }
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
 
     $returncode = 99
 
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
-        Report "E" $msg
-        Report "N" " "
+        Report "E" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -326,17 +335,17 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode = 12       
 
     }
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
+    if (($StatusObj.scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
-        Report "E" $msg
-        Report "N" " "
+        Report "E" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -345,16 +354,16 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $retruncode = 16       
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
+    if (($StatusObj.scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
-        Report "W" $msg
-        Report "N" " "
+        Report "W" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -362,10 +371,10 @@ finally {
         $returncode = 8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
+    if (($StatusObj.scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Report "C" $msg
-        Report "N" " "
+        Report "C" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -376,8 +385,8 @@ finally {
     if ($returncode -eq 99) {
 
         $msg = ">>> Script ended normally without reported changes, and no action required"
-        Report "I" $msg
-        Report "N" " "
+        Report "I" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -385,26 +394,19 @@ finally {
         $returncode = 0
 
     }
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    
-    Report "N" $scriptmsg
-    Report "N" " "
-       
+        
     
     try { # Free resource and copy temp file
         
-        $m = & $ADHC_LockScript "Free" "Git" "$enqprocess" "10" "SILENT" 
-        foreach ($msgentry in $m) {
+        $m = & $ADHC_LockScript "Free" "Git" "$enqprocess" "10" "OBJECT" 
+        foreach ($msgentry in $m.MessageList) {
             $msglvl = $msgentry.level
             $msgtext = $msgentry.Message
-            Report $msglvl $msgtext
+            Report $msglvl $msgtext $StatusObj $Tempfile
         }
 
         $deffile = $ADHC_OutputDirectory + $ADHC_GitCheck.Directory + $ADHC_GitCheck.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "GIT,$enqprocess"  
+        $CopMov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "GIT,$enqprocess"  
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -420,7 +422,13 @@ finally {
 
     }
     Finally {
-        Write-Information $Scriptmsg 
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+        $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+        Report "N" $scriptmsg $StatusObj $deffile
+        Report "N" " " $StatusObj $deffile
+        Write-Host $scriptmsg
         Exit $Returncode
         
     }  

@@ -1,13 +1,56 @@
-﻿$Version = " -- Version: 3.3.1"
+﻿$Version = " -- Version: 3.4"
 
 # COMMON coding
 CLS
-# init flags
-$global:scripterror = $false
-$global:scriptaction = $false
-$global:scriptchange = $false
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          }
 
-function CheckModule ([string]$direction, [string]$shortname, [string]$from, [string]$to, [System.Collections.ArrayList]$filter) {
+$InformationPreference = "Continue"
+$WarningPreference = "Continue"
+$ErrorActionPreference = "Continue"
+
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
+    switch ($level) {
+        ("N") {$rptline = $line}
+        ("H") {
+            $rptline = "-------->".Padright(10," ") + $line
+        }
+        ("I") {
+            $rptline = "Info    *".Padright(10," ") + $line
+        }
+        ("A") {
+            $rptline = "Caution *".Padright(10," ") + $line
+        }
+        ("B") {
+            $rptline = "        *".Padright(10," ") + $line
+        }
+        ("C") {
+            $rptline = "Change  *".Padright(10," ") + $line
+            $obj.scriptchange = $true
+        }
+        ("W") {
+            $rptline = "Warning *".Padright(10," ") + $line
+            $obj.scriptaction = $true
+        }
+        ("E") {
+            $rptline = "Error   *".Padright(10," ") + $line
+            $obj.scripterror = $true
+        }
+        ("G") {
+            $rptline = "GIT:    *".Padright(10," ") + $line
+        }
+        default {
+            $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
+            $Obj.Scripterror = $true
+        }
+    }
+    Add-Content $file $rptline
+
+}
+
+function CheckModule ([string]$direction, [string]$shortname, [string]$from, [string]$to, [System.Collections.ArrayList]$filter, [object]$obj, [string]$rptfile) {
     # $r = "$direction"+ " ~ " + $from + " ~ " +  $to
     # write-host $r
     $direction = $direction.ToUpper()
@@ -67,7 +110,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
         
     if (!($included -or $inclall -or $excluded -or $exclall) ) {
         $m = "Module '" + "$shortname" + "' has no corresponding INCLUDE/EXCLUDE statement"
-        Report "A" $m 
+        Report "A" $m $obj $rptfile
         return
     }
     if (!($included -or $inclall)) {
@@ -121,11 +164,11 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     
     if (($to.ToUpper().Contains("#ADHC_DELETED_")) -and ($direction -eq "BACKWARD")) {
         if ($shouldbedone) {
-            Report "W" "File $to should have been deleted by now"
+            Report "W" "File $to should have been deleted by now" $obj $rptfile
             return
         }
         else {
-            Report "I" "File $to will be deleted in $timeleap days"
+            Report "I" "File $to will be deleted in $timeleap days" $obj $rptfile
             return
         }
     }
@@ -142,16 +185,16 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
     switch ($situation) {
         "FORWARD-COPY" {
             if  (!$existfrom) {
-                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction" $obj $rptfile
                 return                
             }
             if (!$existto) {
                 if ($shouldbedone) {
-                    Report "W" "Target file $to not found for source file $from "
+                    Report "W" "Target file $to not found for source file $from " $obj $rptfile
                     return
                 }
                 else {
-                    Report "I" "Target file $to does not exist yet but will be added in $timeleap days"
+                    Report "I" "Target file $to does not exist yet but will be added in $timeleap days" $obj $rptfile
                     return
                 }
             }
@@ -159,15 +202,15 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             $attention = $false
             if (($toprops.Length -ne $fromprops.Length) -or ($toprops.LastWriteTime.ToString().Trim() -ne $fromprops.LastWriteTime.ToString().Trim())) {
                 if ($fromprops.LastWriteTime -lt $toprops.LastWriteTime) {
-                    Report "w" "Source file $from is OLDER than target file $to"
+                    Report "w" "Source file $from is OLDER than target file $to" $obj $rptfile
                 }
                 else {
                     If ($shouldbedone) {
-                        Report "W" "Target file differs from source file" 
+                        Report "W" "Target file differs from source file"  $obj $rptfile
                         $attention = $true                      
                     }
                     else {
-                        Report "I" "Target file differs from sourcefile but will be replaced in $timeleap days"  
+                        Report "I" "Target file differs from sourcefile but will be replaced in $timeleap days"   $obj $rptfile
                         $attention = $true                     
                     }
                 }
@@ -175,7 +218,7 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             else {
                 # if properties are the same, check if this is meant to be
                 if (!$shouldbedone) {
-                     Report "W" "Source and target file are identical, but this should be the case only after $timeleap days from now"  
+                     Report "W" "Source and target file are identical, but this should be the case only after $timeleap days from now"   $obj $rptfile
                      $attention = $true 
                   
                 }
@@ -183,22 +226,22 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             if ($attention) {
                 $l =  "Source file = ".Padright(20," ") + $from.Padright(90," ") + 
                             "Length = ".PadRight(10," ") + $fromprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $fromprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm") 
-                Report "B" $l
+                Report "B" $l $obj $rptfile
 						
                 $l = "Target file = ".Padright(20," ") + $to.Padright(90," ") + 
                         "Length = ".PadRight(10," ") + $toprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $toprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm") 
-                Report "B" $l
+                Report "B" $l $obj $rptfile
             }
 			return
 
         }
         "BACKWARD-COPY" {
             if (!$existto) {
-                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction" $obj $rptfile
                 return
             }
             if (!$existfrom) {
-                Report "W" "Target file $To does not have a corresponding source file $from"
+                Report "W" "Target file $To does not have a corresponding source file $from" $obj $rptfile
                 return 
                                
             }
@@ -206,16 +249,16 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
         
         "FORWARD-SOURCECOPY" {
             if  (!$existfrom) {
-                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction" $obj $rptfile
                 return                
             }
             if (!$existto) {
                 if ($shouldbedone) {
-                    Report "W" "Target file $to not found for source file $from "
+                    Report "W" "Target file $to not found for source file $from " $obj $rptfile
                     return
                 }
                 else {
-                    Report "C" "Target file $to does not exist yet and should be added in $timeleap days"
+                    Report "C" "Target file $to does not exist yet and should be added in $timeleap days" $obj $rptfile
                     return
                 }
             }
@@ -223,15 +266,15 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             $attention = $false
             if (($toprops.Length -ne $fromprops.Length) -or ($toprops.LastWriteTime.ToString().Trim() -ne $fromprops.LastWriteTime.ToString().Trim())) {
                 if ($fromprops.LastWriteTime -lt $toprops.LastWriteTime) {
-                    Report "w" "Source file $from is OLDER than target file $to"
+                    Report "w" "Source file $from is OLDER than target file $to" $obj $rptfile
                 }
                 else {
                     If ($shouldbedone) {
-                        Report "W" "Target file differs from source file" 
+                        Report "W" "Target file differs from source file"  $obj $rptfile
                         $attention = $true                      
                     }
                     else {
-                        Report "C" "Target file differs from sourcefile and should be replaced in $timeleap days"  
+                        Report "C" "Target file differs from sourcefile and should be replaced in $timeleap days"   $obj $rptfile
                         $attention = $true                     
                     }
                 }
@@ -240,72 +283,72 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
             if ($attention) {
                 $l =  "Source file = ".Padright(20," ") + $from.Padright(90," ") + 
                             "Length = ".PadRight(10," ") + $fromprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $fromprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm")  
-                Report "B" $l
+                Report "B" $l $obj $rptfile
 						
                 $l = "Target file = ".Padright(20," ") + $to.Padright(90," ") + 
                         "Length = ".PadRight(10," ") + $toprops.Length.ToString().PadRight(10," ") + "Last update = ".Padright(16," ") + $toprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm") 
-                Report "B" $l
+                Report "B" $l $obj $rptfile
             }
 			return
 
         }
         "BACKWARD-SOURCECOPY" {
             if (!$existto) {
-                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction" $obj $rptfile
                 return
             }
             if (!$existfrom) {
                 
                 if ($from.ToUpper().Contains("#ADHC_DELETED_")) {
-                    Report "I" "Target file $from will be deleted after programmed delay"
+                    Report "I" "Target file $from will be deleted after programmed delay" $obj $rptfile
                     return
                 } 
                 else {
-                    Report "W" "Target file $To does not have a corresponding source file $from"
+                    Report "W" "Target file $To does not have a corresponding source file $from" $obj $rptfile
                     return 
                 }               
             }
         }
         "FORWARD-NONE" {
             if (!$existfrom) {
-                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction" $obj $rptfile
                 return                
             }
             if ($existto) {
-                Report "W" "Target file $to not expected for source file $from because process is $myprocess"
+                Report "W" "Target file $to not expected for source file $from because process is $myprocess" $obj $rptfile
                 return
             }                   
     
         }
         "BACKWARD-NONE" {
             if (!$existto) {
-                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction" $obj $rptfile
                 return
             }
             if ($existfrom) {
-                Report "W" "Target file $to not expected for source file $from because process is $myprocess"
+                Report "W" "Target file $to not expected for source file $from because process is $myprocess" $obj $rptfile
                 return                
             }
             else {
-                Report "W" "Target file $to not expected because process is $myprocess (NOTE: source file $from NOT FOUND!)"
+                Report "W" "Target file $to not expected because process is $myprocess (NOTE: source file $from NOT FOUND!)" $obj $rptfile
                 return 
             }
         }
         "FORWARD-MASTER" {
-             Report "W" "$direction process $myprocess not expected for module $shortname"
+             Report "W" "$direction process $myprocess not expected for module $shortname" $obj $rptfile
              return
         }
         "BACKWARD-MASTER" {
              if ($shortname.ToUpper() -ne $ADHC_ConfigFile.ToUpper()) {
-                Report "W" "Target file $from is not known for proces $myprocess"
+                Report "W" "Target file $from is not known for proces $myprocess" $obj $rptfile
                 return
             } 
             if ($existfrom) {
-                Report "W" "Target file $from not expected for source file $to because process is $myprocess"
+                Report "W" "Target file $from not expected for source file $to because process is $myprocess" $obj $rptfile
             }
             $existmaster = Test-Path $ADHC_MasterXml
             if (!$existmaster) {
-                Report "W" "Master XML file $ADHC_MasterXml does not exist foro $to"
+                Report "W" "Master XML file $ADHC_MasterXml does not exist for $to" $obj $rptfile
                 return
             }
             else {
@@ -325,20 +368,20 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
                            
                     }
                     If ($shouldbedone) {
-                        Report "W" "Master file is more recent than config file - regeneration is required" 
+                        Report "W" "Master file is more recent than config file - regeneration is required"  $obj $rptfile
                                               
                     }
                     else {
-                        Report "I" "Master file $ADHC_MasterXml is more recent than $to - regeneration will be required within $timeleap days"  
+                        Report "I" "Master file $ADHC_MasterXml is more recent than $to - regeneration will be required within $timeleap days"   $obj $rptfile
                                            
                     }
                     $l =  "Master file = ".Padright(20," ") + $ADHC_MasterXml.Padright(90," ") + 
                             "Last update = ".Padright(16," ") + $masterprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm")  
-                    Report "B" $l
+                    Report "B" $l $obj $rptfile
 						
                     $l = "Config file = ".Padright(20," ") + $to.Padright(90," ") + 
                          "Last update = ".Padright(16," ") + $toprops.LastWriteTime.ToString("yyyy-MMM-dd HH:mm")  
-                    Report "B" $l
+                    Report "B" $l $obj $rptfile
                 }
                             
                    
@@ -348,74 +391,37 @@ function CheckModule ([string]$direction, [string]$shortname, [string]$from, [st
        
         "FORWARD-IGNORE" {
             if (!$existfrom) {
-                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'FROM dataset' $from does not exist while checking $direction" $obj $rptfile
                                
             }
             else {
-                Report "W" "'FROM dataset' $from should not exist because $to is on the $myprocess list"
+                Report "W" "'FROM dataset' $from should not exist because $to is on the $myprocess list" $obj $rptfile
                  
             }
             if (!$existto) {
-                Report "W" "Checking $direction : Target file $to is on $myprocess list but does not exist"
+                Report "W" "Checking $direction : Target file $to is on $myprocess list but does not exist" $obj $rptfile
                 
             } 
-            Report "I" "Checking $direction : module $to IGNORED" 
+            Report "I" "Checking $direction : module $to IGNORED"  $obj $rptfile
             return        
         }
         "BACKWARD-IGNORE" {
             if (!$existto) {
-                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction"
+                Report "E" "Unexpected situation: 'TO dataset' $to does not exist while checking $direction" $obj $rptfile
                
             }
             if ($existfrom) {
-                Report "W" "'FROM dataset' $from should not exist because $to is on the $myprocess list"
+                Report "W" "'FROM dataset' $from should not exist because $to is on the $myprocess list" $obj $rptfile
             }
-            Report "I" "Checking $direction : module $to IGNORED" 
+            Report "I" "Checking $direction : module $to IGNORED"  $obj $rptfile
             return
         }
         default {
-            Report "E" "$direction process $myprocess UNKNOWN for module $shortname"
+            Report "E" "$direction process $myprocess UNKNOWN for module $shortname" $obj $rptfile
             
         }     
     }  
 }
-
-function Report ([string]$level, [string]$line) {
-    switch ($level) {
-        ("N") {$rptline = $line}
-        ("I") {
-            $rptline = "Info    *".Padright(10," ") + $line
-        }
-        ("A") {
-            $rptline = "Caution *".Padright(10," ") + $line
-        }
-        ("B") {
-            $rptline = "        *".Padright(10," ") + $line
-        }
-        ("C") {
-            $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
-        }
-        ("W") {
-            $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
-        }
-        ("E") {
-            $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
-        }
-        default {
-            $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
-        }
-    }
-    Add-Content $TempFile $rptline
-
-}
-
-$InformationPreference = "Continue"
-$WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
 
 try {
     $Node = " -- Node: " + $env:COMPUTERNAME
@@ -432,14 +438,15 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
+    $InitObj = & "$LocalInitVar" "OBJECT"
 
-    if (!$ADHC_InitSuccessfull) {
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
+        throw "INIT script $LocalInitVar Failed"
+
     }
 
-    $m = & $ADHC_LockScript "Lock" "Deploy" "$enqprocess" "10" "SILENT"   
+    $m = & $ADHC_LockScript "Lock" "Deploy" "$enqprocess" "10" "OBJECT"   
 
 # END OF COMMON CODING
 
@@ -449,16 +456,19 @@ try {
     $TempFile = $dir + $ADHC_DeployCheck.Name
         
     Set-Content $TempFile $Scriptmsg -force
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
 
     $ENQfailed = $false 
-    foreach ($msgentry in $m) {
+    foreach ($msgentry in $m.MessageList) {
         $msglvl = $msgentry.level
         if ($msglvl -eq "E") {
         # ENQ failed
             $ENQfailed = $true
         }
         $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
+        Report $msglvl $msgtext $StatusObj $Tempfile
     }
     
     if ($ENQfailed) {
@@ -471,30 +481,30 @@ try {
     # LOOP through all config files
     foreach ($StageDir in $StagingList) {
         
-        Report "N" " "
+        Report "N" " " $StatusObj $Tempfile
         $msg = "----------"+ $Stagedir.FullName.PadRight(100,"-") 
-        Report "N" $msg
+        Report "N" $msg $StatusObj $Tempfile
         $configfile = $StageDir.Fullname + "\" + $ADHC_ConfigFile             
         
         if (Test-Path $configfile) {
             [xml]$ConfigXML = Get-Content $configfile
             $configversion = $ConfigXml.ADHCinfo.Version
-            Report "I" "Config file = $configfile, version = $configversion"           
+            Report "I" "Config file = $configfile, version = $configversion" $StatusObj $Tempfile
         }
         else {
             $scriptaction = $true
-            Report "W" "Configuration file $configfile not found, skipping directory"
-            Report "N" " "
+            Report "W" "Configuration file $configfile not found, skipping directory" $StatusObj $Tempfile
+            Report "N" " " $StatusObj $Tempfile
             continue
         }
         $nodes = $ConfigXml.ADHCinfo.Nodes
-        Report "I" "Target node list: $nodes"
+        Report "I" "Target node list: $nodes" $StatusObj $Tempfile
         
         $targetnodelist = $nodes.Split(",")     
                 
         if (!($targetnodelist -contains $ADHC_Computer.ToUpper())) {
-            Report "I" "Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped"
-            Report "N" " "
+            Report "I" "Node $ADHC_Computer dus not match nodelist {$targetnodelist}, directory skipped" $StatusObj $Tempfile
+            Report "N" " " $StatusObj $Tempfile
             Continue
         }
 #=========================================================================================================
@@ -523,14 +533,14 @@ try {
         }
 
         # 1 - Forward  check with FROM = DEV     and TO   = STAGING
-        Report "N" " "
-        Report "N" "##########                                                                          ########## $subroot"
-        Report "N" "########## Checking FORWARD:  D E V E L O P M E N T versus S T A G I N G directory  ########## $subroot"
-        Report "N" "##########                                                                          ########## $subroot"
+        Report "N" " " $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
+        Report "N" "########## Checking FORWARD:  D E V E L O P M E N T versus S T A G I N G directory  ########## $subroot" $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
         
-        Report "I" "Development directory: $devdir"
-        Report "I" "Staging directory: $stagingdir"
-        Report "N" " "
+        Report "I" "Development directory: $devdir" $StatusObj $Tempfile
+        Report "I" "Staging directory: $stagingdir" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
 
         $devmodules = Get-ChildItem "$devdir" -recurse -file  | `
                                     Where-Object {($_.FullName -notlike "*\.git*") -and ($_.FullName -notlike "*MyExample*") } | `
@@ -538,26 +548,26 @@ try {
         foreach ($naam in $devmodules) {
             # Write-Host $module.FullName
             $toname = $naam.Fullname.ToUpper().Replace($devdir.ToUpper(),$stagingdir)
-            CheckModule "Forward" $naam.Name $naam.FullName $toname $modulefilter
+            CheckModule "Forward" $naam.Name $naam.FullName $toname $modulefilter $StatusObj $Tempfile
 
         } 
 
         # 2 - Backward check with TO   = STAGING and FROM = DEV
-        Report "N" " "
-        Report "N" "##########                                                                          ########## $subroot"
-        Report "N" "########## Checking BACKWARD: S T A G I N G versus D E V E L O P M E N T directory  ########## $subroot"
-        Report "N" "##########                                                                          ########## $subroot"
+        Report "N" " " $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
+        Report "N" "########## Checking BACKWARD: S T A G I N G versus D E V E L O P M E N T directory  ########## $subroot" $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
 
-        Report "I" "Staging directory: $stagingdir"
-        Report "I" "Development directory: $devdir"
-        Report "N" " "
+        Report "I" "Staging directory: $stagingdir" $StatusObj $Tempfile
+        Report "I" "Development directory: $devdir" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
 
         $stagingmodules = Get-ChildItem $stagingdir -recurse -file  | `
                                      Select FullName, Name
         foreach ($naam in $stagingmodules) {
             # Write-Host $module.FullName
             $fromname = $naam.Fullname.ToUpper().Replace($stagingdir.ToUpper(), $devdir)
-            CheckModule "Backward" $naam.Name $fromname $naam.FullName $modulefilter
+            CheckModule "Backward" $naam.Name $fromname $naam.FullName $modulefilter $StatusObj $Tempfile
 
         } 
        
@@ -575,14 +585,14 @@ try {
             $targetsubroot = $targetentry.SubRoot
             $targetdir = $targetroot + $targetsubroot
             $x = $x + 1
-            Report "N" " "
-            Report "N" "##########                                                                          ########## $subroot"
-            Report "N" "########## Checking FORWARD:  S T A G I N G versus T A R G E T directory ($x)        ########## $subroot"
-            Report "N" "##########                                                                          ########## $subroot"   
+            Report "N" " " $StatusObj $Tempfile
+            Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
+            Report "N" "########## Checking FORWARD:  S T A G I N G versus T A R G E T directory ($x)        ########## $subroot" $StatusObj $Tempfile
+            Report "N" "##########                                                                          ########## $subroot"    $StatusObj $Tempfile
 
-            Report "I" "Staging directory: $stagingdir"
-            Report "I" "Target directory: $targetdir"
-            Report "N" " " 
+            Report "I" "Staging directory: $stagingdir" $StatusObj $Tempfile
+            Report "I" "Target directory: $targetdir" $StatusObj $Tempfile
+            Report "N" " "  $StatusObj $Tempfile
            
         
             $Modules = $targetentry.Childnodes
@@ -603,7 +613,7 @@ try {
             foreach ($naam in $stagingmodules) {
                 # Write-Host $module.FullName
                 $toname = $naam.Fullname.ToUpper().Replace($stagingdir.ToUpper(), $targetdir)
-                CheckModule "FORWARD" $naam.Name $naam.FullName $toname $modulefilter
+                CheckModule "FORWARD" $naam.Name $naam.FullName $toname $modulefilter $StatusObj $Tempfile
             }
         }
 
@@ -619,14 +629,14 @@ try {
             $x = $x + 1
 
 
-            Report "N" " "
-            Report "N" "##########                                                                          ########## $subroot"
-            Report "N" "########## Checking BACKWARD: T A R G E T versus S T A G I N G directory ($x)        ########## $subroot"
-            Report "N" "##########                                                                          ########## $subroot" 
+            Report "N" " " $StatusObj $Tempfile
+            Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
+            Report "N" "########## Checking BACKWARD: T A R G E T versus S T A G I N G directory ($x)        ########## $subroot" $StatusObj $Tempfile
+            Report "N" "##########                                                                          ########## $subroot"  $StatusObj $Tempfile
 
-            Report "I" "Target directory: $targetdir"
-            Report "I" "Staging directory: $stagingdir"
-            Report "N" " "
+            Report "I" "Target directory: $targetdir" $StatusObj $Tempfile
+            Report "I" "Staging directory: $stagingdir" $StatusObj $Tempfile
+            Report "N" " " $StatusObj $Tempfile
         
             $targetmodules = Get-ChildItem $targetdir -recurse -file  | `
                                      Select FullName, Name
@@ -649,7 +659,7 @@ try {
             foreach ($naam in $targetmodules) {
                 # Write-Host $module.FullName
                 $fromname = $naam.Fullname.ToUpper().Replace($targetdir.ToUpper(), $stagingdir)
-                CheckModule "Backward" $naam.Name $fromname $naam.FullName $modulefilter
+                CheckModule "Backward" $naam.Name $fromname $naam.FullName $modulefilter $StatusObj $Tempfile
             }
 
         }   
@@ -676,31 +686,31 @@ try {
         }       
 
         # 5 - Forward  check with FROM = STAGING  and TO   = DSL
-        Report "N" " "
-        Report "N" "##########                                                                          ########## $subroot"
-        Report "N" "########## Checking FORWARD:  S T A G I N G versus D S L directory                  ########## $subroot"
-        Report "N" "##########                                                                          ########## $subroot"   
+        Report "N" " " $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
+        Report "N" "########## Checking FORWARD:  S T A G I N G versus D S L directory                  ########## $subroot" $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot"    $StatusObj $Tempfile
 
-        Report "I" "Staging directory: $stagingdir"
-        Report "I" "DSL directory: $dsldir"
-        Report "N" " "
+        Report "I" "Staging directory: $stagingdir" $StatusObj $Tempfile
+        Report "I" "DSL directory: $dsldir" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
 
         foreach ($naam in $stagingmodules) {
             # Write-Host $module.FullName
             $toname = $naam.Fullname.ToUpper().Replace($stagingdir.ToUpper(), $dsldir)
-            CheckModule "FORWARD" $naam.Name $naam.FullName $toname $modulefilter
+            CheckModule "FORWARD" $naam.Name $naam.FullName $toname $modulefilter $StatusObj $Tempfile
         }
 
         
         # 6 - Backward check with TO   = DSL     and FROM = STAGING
-        Report "N" " "
-        Report "N" "##########                                                                          ########## $subroot"
-        Report "N" "########## Checking BACKWARD: D S L versus S T A G I N G directory                  ########## $subroot"
-        Report "N" "##########                                                                          ########## $subroot"       
+        Report "N" " " $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot" $StatusObj $Tempfile
+        Report "N" "########## Checking BACKWARD: D S L versus S T A G I N G directory                  ########## $subroot" $StatusObj $Tempfile
+        Report "N" "##########                                                                          ########## $subroot"        $StatusObj $Tempfile
         
-        Report "I" "DSL directory: $dsldir"
-        Report "I" "Staging directory: $stagingdir"
-        Report "N" " "
+        Report "I" "DSL directory: $dsldir" $StatusObj $Tempfile
+        Report "I" "Staging directory: $stagingdir" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dslmodules = Get-ChildItem $dsldir -recurse -file  | `
                                      Select FullName, Name 
@@ -708,13 +718,13 @@ try {
         foreach ($naam in $dslmodules) {
             # Write-Host $module.FullName
             $fromname = $naam.Fullname.ToUpper().Replace($dsldir.ToUpper(), $stagingdir)
-            CheckModule "BACKWARD" $naam.Name $fromname $naam.FullName $modulefilter
+            CheckModule "BACKWARD" $naam.Name $fromname $naam.FullName $modulefilter $StatusObj $Tempfile
         }
     }
 } 
 
 catch {
-    $global:scripterror = $true
+    $StatusObj.scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToSTring()
@@ -729,14 +739,14 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
 
     $returncode = 99
 
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
-        Report "E" $msg
-        Report "N" " "
+        Report "E" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -745,21 +755,21 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $Returncode = 12        
 
     }
 
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $Dump"
+    if (($StatusObj.scripterror) -and ($returncode -eq 99)) {
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $Dump" $StatusObj $Tempfile
         $msg = ">>> Script ended abnormally"
-        Report "E" $msg
-        Report "N" " "
+        Report "E" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
 
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -770,10 +780,10 @@ finally {
         $Returncode = 16       
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
+    if (($StatusObj.scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
-        Report "W" $msg
-        Report "N" " "
+        Report "W" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -781,10 +791,10 @@ finally {
         $Returncode = 8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
+    if (($StatusObj.scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Report "C" $msg
-        Report "N" " "
+        Report "C" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -793,32 +803,25 @@ finally {
     }
     if ($returncode -eq 99) {
         $msg = ">>> Script ended normally without reported changes, and no action required"
-        Report "I" $msg
-        Report "N" " "
+        Report "I" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
        
         $Returncode = 0
     }
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     
-    Report "N" $scriptmsg
-    Report "N" " "
-
     try { # Free resource and copy temp file
-        $m = & $ADHC_LockScript "Free" "Deploy" "$enqprocess" "10" "SILENT" 
-        foreach ($msgentry in $m) {
+        $m = & $ADHC_LockScript "Free" "Deploy" "$enqprocess" "10" "OBJECT" 
+        foreach ($msgentry in $m.MessageList) {
             $msglvl = $msgentry.level
             $msgtext = $msgentry.Message
-            Report $msglvl $msgtext
+            Report $msglvl $msgtext $StatusObj $Tempfile
         }
 
         $deffile = $ADHC_OutputDirectory + $ADHC_DeployCheck.Directory + $ADHC_DeployCheck.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "Deploy,$enqprocess"  
+        $CopMov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "Deploy,$enqprocess"  
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -834,7 +837,13 @@ finally {
 
     }
     Finally {
-        Write-Information $Scriptmsg 
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+        $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+        Report "N" $scriptmsg $StatusObj $deffile
+        Report "N" " " $StatusObj $deffile
+        Write-Host $scriptmsg
         Exit $Returncode
         
     }  

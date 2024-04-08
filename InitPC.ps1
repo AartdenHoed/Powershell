@@ -1,6 +1,7 @@
 ﻿# Dit script zowel in 32 als in 64 bit mode draaien, in ADMIN mode!
 
 # Set securuty string
+$Version = " -- Version: 1.1"
 
 New-Item –Path "HKLM:\SOFTWARE\" –Name ADHC
 New-ItemProperty -Path "HKLM:\SOFTWARE\ADHC" -Name "SecurityString" -Value 'nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A'  -PropertyType "String"
@@ -23,11 +24,12 @@ $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName +
 Write-Information $Scriptmsg 
 
 $LocalInitVar = $mypath + "InitVar.PS1"
-& "$LocalInitVar"
+$InitObj = & "$LocalInitVar" "MSG"
 
-if (!$ADHC_InitSuccessfull) {
+if ($Initobj.Abend) {
     # Write-Warning "YES"
-    throw $ADHC_InitError
+    throw "INIT script $LocalInitVar Failed"
+
 }
 
 # Enable remote powershell

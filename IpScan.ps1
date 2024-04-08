@@ -6,29 +6,29 @@
 
 # COMMON coding
 CLS
-$Version = " -- Version: 2.3"
+$Version = " -- Version: 2.4"
 
 # init flags
-$global:scripterror = $false
-$global:scriptaction = $false
-$global:scriptchange = $false
-
-$global:recordslogged = $false
-
-$nrofwaits = 0
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          RecordsLogged = $false
+                                          }
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
-function Report ([string]$level, [string]$line) {
+$nrofwaits = 0
+
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
-        ("I") {
-            $rptline = "Info    *".Padright(10," ") + $line
-        }
         ("H") {
             $rptline = "-------->".Padright(10," ") + $line
+        }
+        ("I") {
+            $rptline = "Info    *".Padright(10," ") + $line
         }
         ("A") {
             $rptline = "Caution *".Padright(10," ") + $line
@@ -38,33 +38,36 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $obj.scriptchange = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $obj.scriptaction = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
-            
+            $obj.scripterror = $true
+        }
+        ("G") {
+            $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $Obj.Scripterror = $true
         }
     }
-    Add-Content $tempfile $rptline
+    Add-Content $file $rptline
 
 }
-function WriteLog ([string]$Action, [string]$line) {
-    $oldrecords = Get-Content $templog 
+
+function WriteLog ([string]$Action, [string]$line, [object]$obj, [string]$logfile) {
+    $oldrecords = Get-Content $logfile 
 
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
                     (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") 
-    Set-Content $templog $logrec
-    $global:recordslogged = $true
+    Set-Content $logfile $logrec
+    $obj.recordslogged = $true
 
     $now = Get-Date
 
@@ -87,7 +90,7 @@ function WriteLog ([string]$Action, [string]$line) {
             }
         }
         if ($keeprecord) {
-            Add-Content $templog $record
+            Add-Content $logfile $record
         }
         
     }
@@ -97,15 +100,16 @@ function WriteLog ([string]$Action, [string]$line) {
         $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
                     (" *** Log Record Purge *** ").Padright(40," ") + $line.PadRight(160," ")
         
-        Add-Content $templog $logrec 
+        Add-Content $logfile $logrec 
     } 
 
 }
-function Totals ([string]$ip, [boolean]$pingable, [string]$message, [int]$retrycount) {
+
+function Totals ([string]$ip, [boolean]$pingable, [string]$message, [int]$retrycount, [object]$mylists) {
     $found = $false
     $genericmsg = $message.Replace($ip, "<IPaddress>")
 
-    foreach ($stat in $global:totalslist) {
+    foreach ($stat in $mylists.totalslist) {
         if (($pingable -eq $stat.Pingable) -and ($genericmsg.Trim() -eq $stat.Message.Trim())) {
             $found = $true
             break
@@ -119,10 +123,10 @@ function Totals ([string]$ip, [boolean]$pingable, [string]$message, [int]$retryc
         $statentry = [PSCustomObject] [ordered] @{Pingable = $pingable;
                                            Message = $genericmsg;
                                            Total = 1} 
-        $global:totalslist += $statentry
+        $mylists.totalslist += $statentry
     }
 
-    foreach ($retr in $global:Retrylist) {
+    foreach ($retr in $mylists.Retrylist) {
         if ($retr.RetryCount -eq $retrycount) {
             $foundr = $true
             break
@@ -135,15 +139,19 @@ function Totals ([string]$ip, [boolean]$pingable, [string]$message, [int]$retryc
     else {
         $retrentry = [PSCustomObject] [ordered] @{RetryCount = $retrycount;
                                                     Total = 1} 
-        $global:Retrylist += $retrentry
+        $mylists.Retrylist += $retrentry
     }
 
 
 }
 
 try {
-    $global:totalslist = @()
-    $global:Retrylist = @()
+    $Totalslist = @()
+    $Retrylist = @()
+    $ListOBJ = [PSCustomObject] [ordered] @{TotalsList =$Totalslist;
+                                            RetryList = $RetryList;
+                                            }
+
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -158,13 +166,14 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
+    $InitObj = & "$LocalInitVar" "OBJECT"
 
-    if (!$ADHC_InitSuccessfull) {
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
+        throw "INIT script $LocalInitVar Failed"
+
     }
-    $m = & $ADHC_LockScript "Lock" "IpScan" "$enqprocess" 
+    $m = & $ADHC_LockScript "Lock" "IpScan" "$enqprocess" 10 "OBJECT"
     
     # END OF COMMON CODING   
 
@@ -175,15 +184,19 @@ try {
 
     Set-Content $Tempfile $Scriptmsg -force
 
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
+
     $ENQfailed = $false 
-    foreach ($msgentry in $m) {
+    foreach ($msgentry in $m.MessageList) {
         $msglvl = $msgentry.level
         if ($msglvl -eq "E") {
             # ENQ failed
             $ENQfailed = $true
         }
         $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
+        Report $msglvl $msgtext $StatusObj $Tempfile
     }
     
     if ($ENQfailed) {
@@ -205,12 +218,12 @@ try {
     } 
 
     # Copy current log to templog
-    & $ADHC_CopyMoveScript $deflog $templog "COPY" "REPLACE" $TempFile | Out-Null   
+    $CopMov = & $ADHC_CopyMoveScript $deflog $templog "COPY" "REPLACE" $TempFile    
     
     $sdt = Get-Date
     $mline = ">".PadRight(99,">")
-    Report "I" ">>>>> Start $sdt"
-    WriteLog "START" $mline
+    Report "I" ">>>>> Start $sdt" $StatusObj $Tempfile
+    WriteLog "START" $mline $StatusObj $templog
 
     # Create the object that will hold the jobs
 
@@ -286,8 +299,7 @@ try {
                                 param (
                                     [string]$IpAddress = "Iets"   
                                 )
-                                $InformationPreference = "Continue"
-                                $WarningPreference = "Continue"
+                                
                                 $ErrorActionPreference = "Stop"
         
                                 try {
@@ -309,7 +321,7 @@ try {
                                 return $returnobj
                     
                     }
-                    Report "I" "==> Remote job $jobname started for Ip Address $ipaddr"  
+                    Report "I" "==> Remote job $jobname started for Ip Address $ipaddr" $StatusObj $Tempfile
                     
                     if ($jobslot.Status -eq "INIT") {
                         $jobslot | Add-Member -NotePropertyName Job -NotePropertyValue $myjob 
@@ -333,14 +345,14 @@ try {
                     }
 
                 }
-                Report "I" "All jobs busy, wait $wait second(s)"
+                Report "I" "All jobs busy, wait $wait second(s)" $StatusObj $Tempfile
                 $nrofwaits += 1
                 Start-Sleep -s $wait  
             }
         }
         else {
             $allIPsprocessed = $true 
-            Report "I" "Almost ready, waiting for all jobs to complete"
+            Report "I" "Almost ready, waiting for all jobs to complete" $StatusObj $Tempfile
             $nrofwaits += 1
             Start-Sleep -s $wait  
         }
@@ -368,7 +380,7 @@ try {
                 $jobslot.Status = "FREE"
                 
                 $ia = $Response.IpAddress
-                Report "I" "==> Remote job $mj ended with status $mystate for Ip Address $ia"
+                Report "I" "==> Remote job $mj ended with status $mystate for Ip Address $ia" $StatusObj $Tempfile
 
                 # set response in IPlist
                 foreach ($ip in $iplist) {
@@ -392,7 +404,7 @@ try {
                             }
                             else {
                                 $m = $Response.Message
-                                Report "W" "Unexpected message encountered: '$m'" 
+                                Report "W" "Unexpected message encountered: '$m'"  $StatusObj $Tempfile
                                 $ip.Processed = $true;  
                             }  
                         }
@@ -414,8 +426,8 @@ try {
     foreach ($entry in $joblist) {
         $freq = $entry.usecount
         $name = $entry.jobname
-        Report "I" "Job $name has been used $freq times"
-        WriteLog "UseCount" "$Name :  $freq"
+        Report "I" "Job $name has been used $freq times" $StatusObj $Tempfile
+        WriteLog "UseCount" "$Name :  $freq" $StatusObj $templog
     }
 
         
@@ -423,7 +435,7 @@ try {
 }
 catch {
     
-    $global:scripterror = $true
+    $StatusObj.scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
@@ -433,13 +445,13 @@ finally {
     # $iplist | Out-Gridview
 
     foreach ($result in $iplist) {
-        Totals $result.IpAddress $Result.Pingable $Result.Message $Result.Trycount
+        Totals $result.IpAddress $Result.Pingable $Result.Message $Result.Trycount $ListOBJ
 
         if ($result.Trycount -gt 1) {
             $i = $result.IPaddress
             $c = $Result.Trycount
             $m = $Result.Message
-            Report "A" "IP Address $i with try count $c has return message '$m'"
+            Report "A" "IP Address $i with try count $c has return message '$m'" $StatusObj $Tempfile
 
         }
 
@@ -484,9 +496,9 @@ finally {
            
             
     }
-    # $global:Totalslist | Out-GridView
-    Report "I" "Statistics:" 
-    foreach ($tot in $global:Totalslist) {
+    # $Totalslist | Out-GridView
+    Report "I" "Statistics:"  $StatusObj $Tempfile
+    foreach ($tot in $ListOBJ.Totalslist) {
         
         $t = $tot.Total 
         if ($tot.Pingable) {
@@ -496,41 +508,41 @@ finally {
             $p = "NOT pingable"
         }
         $m = $tot.Message
-        Report "B" "$t IP Addresses are $p with message: $m"
-        WriteLog "Statistics" "$t IP Addresses are $p with message: $m"
+        Report "B" "$t IP Addresses are $p with message: $m" $StatusObj $Tempfile
+        WriteLog "Statistics" "$t IP Addresses are $p with message: $m" $StatusObj $templog
     }
-    foreach ($ret in $global:Retrylist) {
+    foreach ($ret in $ListOBJ.Retrylist) {
         
         $r = $ret.Total 
         $c = $ret.Retrycount
-        Report "B" "$r IP Addresses needed $c tries"
-        WriteLog "Statistics" "$r IP Addresses needed $c tries"
+        Report "B" "$r IP Addresses needed $c tries" $StatusObj $Tempfile
+        WriteLog "Statistics" "$r IP Addresses needed $c tries" $StatusObj $templog
     }
-    Report "B" "Number of waits for busy jobs: $nrofwaits"
-    WriteLog "Statistics" "Number of waits for busy jobs: $nrofwaits"
+    Report "B" "Number of waits for busy jobs: $nrofwaits" $StatusObj $Tempfile
+    WriteLog "Statistics" "Number of waits for busy jobs: $nrofwaits" $StatusObj $templog
     $edt = Get-Date
     $diff = NEW-TIMESPAN –Start $sdt –End $edt
     $sec = $diff.Seconds
     $min = $diff.Minutes
-    WriteLog "Duration" "Script execution took $min minutes and $sec seconds"
-    Report "I" "$Script execution took $min minutes and $sec seconds"
-    Report "I" ">>>>> End $edt"
-    WriteLog "END" $mline
+    WriteLog "Duration" "Script execution took $min minutes and $sec seconds" $StatusObj $templog
+    Report "I" "$Script execution took $min minutes and $sec seconds" $StatusObj $Tempfile
+    Report "I" ">>>>> End $edt" $StatusObj $Tempfile
+    WriteLog "END" $mline $StatusObj $templog
 
     # Copy temp log to definitive BEFORE DEQ
-    if ($global:recordslogged) {
-        & $ADHC_CopyMoveScript  $Templog $deflog "MOVE" "REPLACE" $TempFile | Out-Null
+    if ($StatusObj.recordslogged) {
+        $CopMov = & $ADHC_CopyMoveScript  $Templog $deflog "MOVE" "REPLACE" $TempFile 
     }
     else {
-        Report "I" "No records logged, delete $templog without copy-back"
+        Report "I" "No records logged, delete $templog without copy-back" $StatusObj $Tempfile
         Remove-Item $templog
     }
 
-    $m = & $ADHC_LockScript "Free" "IpScan" "$enqprocess"
-    foreach ($msgentry in $m) {
+    $m = & $ADHC_LockScript "Free" "IpScan" "$enqprocess" 10 "OBJECT"
+    foreach ($msgentry in $m.MessageList) {
         $msglvl = $msgentry.level
         $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
+        Report $msglvl $msgtext $StatusObj $Tempfile
     }
     # Init jobstatus file
     $dir = $ADHC_OutputDirectory + $ADHC_Jobstatus
@@ -539,14 +551,14 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
 
     $returncode = 99
 
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
-        Report "E" $msg
-        Report "N" " "
+        Report "E" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -555,16 +567,16 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode = 12       
 
     }
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
-        Report "E" ">>> Script ended abnormally"
-        Report "N" " "
+    if (($StatusObj.scripterror) -and ($returncode -eq 99)) {
+        Report "E" ">>> Script ended abnormally" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -574,15 +586,15 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode = 16        
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
-        Report "W" ">>> Script ended normally with action required"
-        Report "N" " "
+    if (($StatusObj.scriptaction) -and ($returncode -eq 99)) {
+        Report "W" ">>> Script ended normally with action required" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -591,9 +603,9 @@ finally {
         $returncode = 8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
-        Report "C" ">>> Script ended normally with reported changes, but no action required"
-        Report "N" " "
+    if (($StatusObj.scriptchange) -and ($returncode -eq 99)) {
+        Report "C" ">>> Script ended normally with reported changes, but no action required" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -603,8 +615,8 @@ finally {
     }
 
     if ($returncode -eq 99) {
-        Report "I" ">>> Script ended normally without reported changes, and no action required"
-        Report "N" " "
+        Report "I" ">>> Script ended normally without reported changes, and no action required" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
    
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -612,17 +624,11 @@ finally {
        
         $returncode = 0
     }
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    Report "N" $scriptmsg
-    Report "N" " "
-
+   
     try { # Free resource and copy temp file
         
         $deffile = $ADHC_OutputDirectory + $ADHC_IpScan.Directory + $ADHC_IpScan.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "IpScan,$enqprocess"  | Out-Null
+        $CopMOv = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "IpScan,$enqprocess"  
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -638,7 +644,13 @@ finally {
 
     }
     Finally {
-        Write-Information $Scriptmsg 
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+        $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+        Report "N" $scriptmsg $StatusObj $deffile 
+        Report "N" " " $StatusObj $deffile
+        Write-Host $scriptmsg
         Exit $Returncode
         
     }  

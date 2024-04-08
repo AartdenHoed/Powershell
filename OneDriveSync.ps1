@@ -1,15 +1,22 @@
-﻿$Version = " -- Version: 1.0.2"
-
+﻿$Version = " -- Version: 1.1"
 # COMMON coding
 CLS
 
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          }
+
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
-function Report ([string]$level, [string]$line) {
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
+        ("H") {
+            $rptline = "-------->".Padright(10," ") + $line
+        }
         ("I") {
             $rptline = "Info    *".Padright(10," ") + $line
         }
@@ -21,25 +28,25 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $obj.scriptchange = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $obj.scriptaction = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
+            $obj.scripterror = $true
         }
         ("G") {
             $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $Obj.Scripterror = $true
         }
     }
-    Add-Content $tempfile $rptline
+    Add-Content $file $rptline
 
 }
 
@@ -57,18 +64,15 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
+    $InitObj = & "$LocalInitVar" "OBJECT"
 
-    if (!$ADHC_InitSuccessfull) {
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
+        throw "INIT script $LocalInitVar Failed"
+
     }
 
-     # init flags
-    $global:scripterror = $false
-    $global:scriptaction = $false
-    $global:scriptchange = $false
-
+    
 # END OF COMMON CODING   
 
     # Init reporting file
@@ -77,6 +81,10 @@ try {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $Tempfile = $dir + $ADHC_OneDriveSync.NAme
     Set-Content $Tempfile $Scriptmsg -force
+
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
 
     $ODlist = Get-ChildItem "$ADHC_OneDrive" -file -recurse -force | Select-Object FullName,Attributes 
     # $ODlist | Out-GridView
@@ -87,9 +95,9 @@ try {
 
     $attrlist = @()
     
-    Report "I" "OneDrive directory $ADHC_OneDrive contains $totaal files"
+    Report "I" "OneDrive directory $ADHC_OneDrive contains $totaal files" $StatusObj $Tempfile
     $start = Get-DAte
-    Report "I" "Reading all files starts: $start"
+    Report "I" "Reading all files starts: $start"  $StatusObj $Tempfile
 
     foreach ($file in $ODlist) {
     $attr = $file.Attributes
@@ -109,20 +117,20 @@ try {
             $x = Get-Content $f
         }
         catch {
-            Report "A" "Could not read $f (attribute = $attr)"
+            Report "A" "Could not read $f (attribute = $attr)" $StatusObj $Tempfile
         }
         #if ($n -eq 256) {break} 
     }
     $end = Get-Date 
-    Report "I" "Reading all files ends  : $end"
-    Report "I" "Files read: $n"
-    Report "I" "Attributes encountered: "
+    Report "I" "Reading all files ends  : $end" $StatusObj $Tempfile
+    Report "I" "Files read: $n" $StatusObj $Tempfile
+    Report "I" "Attributes encountered: " $StatusObj $Tempfile
     foreach ($at in $attrlist) {
-        Report "B" "-  $at "
+        Report "B" "-  $at " $StatusObj $Tempfile
     } 
 } 
 catch {
-    $global:scripterror = $true
+    $StatusObj.scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
@@ -136,13 +144,13 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N"  " "
+    Report "N"  " " $StatusObj $Tempfile
     $returncode = 99
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
+    if (($StatusObj.scripterror) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended abnormally"
-        Report "N"  $msg
-        Report "N"  " "
+        Report "N"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -151,16 +159,16 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode =  16        
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
+    if (($StatusObj.scriptaction) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with action required"
-        Report "W"  $msg
-        Report "N"  " "
+        Report "W"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -168,10 +176,10 @@ finally {
         $returncode =  8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
+    if (($StatusObj.scriptchange) -and ($returncode -eq 99)) {
         $msg = ">>> Script ended normally with reported changes, but no action required"
-        Report "C"  $msg
-        Report "N"  " "
+        Report "C"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -182,8 +190,8 @@ finally {
     if ($returncode -eq 99) {
 
         $msg = ">>> Script ended normally without reported changes, and no action required"
-        Report "I"  $msg
-        Report "N"  " "
+        Report "I"  $msg $StatusObj $Tempfile
+        Report "N"  " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -191,17 +199,10 @@ finally {
         $returncode = 0
     }
 
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    Report "N" $scriptmsg
-    Report "N" " "
-
     try { # Free resource and copy temp file        
         
         $deffile = $ADHC_OutputDirectory + $ADHC_OneDriveSync.Directory + $ADHC_OneDriveSync.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
+        $CopMov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile 
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -217,7 +218,13 @@ finally {
 
     }
     Finally {
-        Write-Information $Scriptmsg
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+        $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+        Report "N" $scriptmsg $StatusObj $deffile $StatusObj $Tempfile
+        Report "N" " " $StatusObj $deffile $StatusObj $Tempfile
+        Write-Host $scriptmsg
         Exit $Returncode
         
     }  

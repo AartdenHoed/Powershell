@@ -4,7 +4,7 @@ Clear-Host
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 
-$Version = " -- Version: 1.5"
+$Version = " -- Version: 1.6"
 $Node = " -- Node: " + $env:COMPUTERNAME
 $d = Get-Date
 $Datum = " -- Date: " + $d.ToShortDateString()
@@ -17,9 +17,16 @@ Write-Information "..."
 
 $FullScriptName = $MyInvocation.MyCommand.Definition
 $ScriptName = $MyInvocation.MyCommand.Name
-$ADHC_PsPath = $FullScriptName.Replace($ScriptName, "")
-$ADHC_InitVar = $ADHC_PsPath + "InitVar.PS1"
-& "$ADHC_InitVar"
+$My_PsPath = $FullScriptName.Replace($ScriptName, "")
+$My_InitVar = $My_PsPath + "InitVar.PS1"
+
+$InitObj = & "$My_InitVar" "MSG"
+
+if ($Initobj.Abend) {
+    # Write-Warning "YES"
+    throw "INIT script $LocalInitVar Failed"
+
+}
 
 
 $msg = "Hello " + $ADHC_User + " on computer " + $ADHC_Computer

@@ -1,14 +1,16 @@
 ﻿# Dit script checkt de PTG database op onregelmatigheden
 
 cls
-$Version = " -- Version: 1.4.1"
+$Version = " -- Version: 1.5"
+
 
 # init flags
-$global:scripterror = $false
-$global:scriptaction = $false
-$global:scriptchange = $false
+$StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
+                                          ScriptChange = $false;
+                                          ScriptAction = $false;
+                                          }
 
-function Report ([string]$level, [string]$line) {
+function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
         ("I") {
@@ -22,31 +24,31 @@ function Report ([string]$level, [string]$line) {
         }
         ("C") {
             $rptline = "Change  *".Padright(10," ") + $line
-            $global:scriptchange = $true
+            $obj.scriptchange = $true
         }
         ("W") {
             $rptline = "Warning *".Padright(10," ") + $line
-            $global:scriptaction = $true
+            $obj.scriptaction = $true
         }
         ("E") {
             $rptline = "Error   *".Padright(10," ") + $line
-            $global:scripterror = $true
+            $obj.scripterror = $true
         }
         ("G") {
             $rptline = "GIT:    *".Padright(10," ") + $line
         }
         default {
             $rptline = "Error   *".Padright(10," ") + "Messagelevel $level is not valid"
-            $global:scripterror = $true
+            $Obj.Scripterror = $true
         }
     }
-    Add-Content $tempfile $rptline
+    Add-Content $file $rptline
 
 }
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"             
+$ErrorActionPreference = "Continue"             
 
 try { 
     $line = "=".PadRight(120,"=")                                            
@@ -63,33 +65,39 @@ try {
     $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     Write-Information $Scriptmsg 
 
-    $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar" 
     
-    if (!$ADHC_InitSuccessfull) {
-        # Write-Warning "YES"
-        throw $ADHC_InitError
-    } 
-    $m = & $ADHC_LockScript "Lock" "PRTG" "$enqprocess"     
+    
+    $LocalInitVar = $mypath + "InitVar.PS1"
+    $InitObj = & "$LocalInitVar" "OBJECT"
 
+    if ($Initobj.AbEnd) {
+        # Write-Warning "YES"
+        throw "INIT script $LocalInitVar Failed"
+
+    }
+    $m = & $ADHC_LockScript "Lock" "PRTG" "$enqprocess" 10 "OBJECT" 
+   
 # END OF COMMON CODING
 
     # Init reporting file
     $odir = $ADHC_TempDirectory + $ADHC_PrtgDbCheck.Directory
     New-Item -ItemType Directory -Force -Path $odir | Out-Null
     $tempfile = $odir + $ADHC_PrtgDbCheck.Name
-
     Set-Content $tempfile $Scriptmsg -force
 
+    foreach ($entry in $InitObj.MessageList){
+        Report $entry.Level $entry.Message $StatusObj $Tempfile
+    }
+
     $ENQfailed = $false 
-    foreach ($msgentry in $m) {
+    foreach ($msgentry in $m.MessageList) {
         $msglvl = $msgentry.level
         if ($msglvl -eq "E") {
             # ENQ failed
             $ENQfailed = $true
         }
         $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
+        Report $msglvl $msgtext $StatusObj $Tempfile
     }
     
     if ($ENQfailed) {
@@ -103,43 +111,43 @@ try {
     $result = invoke-sqlcmd -ServerInstance '.\sqlexpress' -Database "PRTG" `
                         -Query "$query" `
                         -ErrorAction Stop
-    Report "N" $line
+    Report "N" $line $StatusObj $Tempfile
     
     if ($result -eq $null) {
-        Report "B" " "
-        Report "I" "No invalid sensor states found"
+        Report "B" " " $StatusObj $Tempfile
+        Report "I" "No invalid sensor states found" $StatusObj $Tempfile
         
     }                        
     else {
         foreach ($rec in $result) {
-            Report "B" " "
+            Report "B" " " $StatusObj $Tempfile
             if ($rec.Lastvalue -match "geconfigureerde lookup") {
-                Report "W" "Invalid Sensor State"
+                Report "W" "Invalid Sensor State" $StatusObj $Tempfile
             } 
             else {
-                Report "C" "Invalid Sensor State"
+                Report "C" "Invalid Sensor State" $StatusObj $Tempfile
             } 
             $msg = "Sensor ID    = " + $rec.ID 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Group/Device = " + $rec.Group_Device             
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Sensor Name  = " + $rec.Sensor 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Object       = " + $rec.Object
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Type         = " + $rec.Type
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Status       = " + $rec.Status
-            Report "B" $msg 
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Message      = " + $rec.Message_Raw
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Last Value   = " + $rec.Lastvalue
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
         }
        
     }
-    Report "B" " "
-    Report "N" $line
+    Report "B" " " $StatusObj $Tempfile
+    Report "N" $line $StatusObj $Tempfile
     
 
     # Check for non-standard sensor attributes
@@ -172,41 +180,41 @@ try {
         }
         if (!$standaard) {
             $nonstandardfound = $true
-            Report "B" " "
-            Report "W" "Sensor Attributes not Standard"
+            Report "B" " " $StatusObj $Tempfile
+            Report "W" "Sensor Attributes not Standard" $StatusObj $Tempfile
             $msg = "Sensor       = " + $rec.ID 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Group/Device = " + $rec.Group_Device             
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Sensor Name  = " + $rec.Sensor 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Object       = " + $rec.Object
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Type         = " + $rec.Type 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             if ($rec.Interval -ne $std_Interval) {
                 $msg = "Interval     = " + $rec.Interval + " ====> Should be: " + $std_Interval
-                Report "B" $msg 
+                Report "B" $msg $StatusObj $Tempfile
             }
             if ($rec.Priority -ne $std_Priority) {
                 $msg = "Priority     = " + $rec.Priority + " ====> Should be: " + $std_Priority
-                Report "B" $msg 
+                Report "B" $msg $StatusObj $Tempfile
             }
             if ($rec.Tags -ne $std_Tags) {
                 $msg = "Tags         = " + $rec.Tags + " ====> Should be: " + $std_Tags
-                Report "B" $msg 
+                Report "B" $msg $StatusObj $Tempfile
             }
 
         }
  
     }
     if (!$nonstandardfound) {
-        Report "B" " "
-        Report "I" "No nonstandard sensor attributes found"
+        Report "B" " " $StatusObj $Tempfile
+        Report "I" "No nonstandard sensor attributes found" $StatusObj $Tempfile
         
     }
-    Report "B" " "
-    Report "N" $line
+    Report "B" " " $StatusObj $Tempfile
+    Report "N" $line $StatusObj $Tempfile
    
 
     # Check fot empty channels
@@ -223,36 +231,36 @@ try {
                         -Query "$query" `
                         -ErrorAction Stop
     if ($result -eq $null) {
-        Report "B" " "
-        Report "I" "No empty channels found on healthy sensors"
+        Report "B" " " $StatusObj $Tempfile
+        Report "I" "No empty channels found on healthy sensors" $StatusObj $Tempfile
         
     }                        
     else {
          foreach ($rec in $result) {
-            Report "B" " "
-            Report "W" "Empty channel"
+            Report "B" " " $StatusObj $Tempfile
+            Report "W" "Empty channel" $StatusObj $Tempfile
             
             $msg = "Sensor ID    = " + $rec.SensorID 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Group/Device = " + $rec.Group_Device             
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Sensor Name  = " + $rec.Sensor 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Object       = " + $rec.Object
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Type         = " + $rec.Type
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Channel name = " + $rec.Name
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Channel nr.  = " + $rec.Number
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Last Value   = " + $rec.Lastvalue
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
         }
         
     }
-    Report "B" " "
-    Report "N" $line
+    Report "B" " " $StatusObj $Tempfile
+    Report "N" $line $StatusObj $Tempfile
 
 
     # Check whether all CORE equipment is presented as DEVICE
@@ -268,30 +276,30 @@ try {
                         -ErrorAction Stop
         if ($result2 -eq $null) {
             $unmonitored = $true
-            Report "B" " "
-            Report "W" "Core device not being monitored in PRTG"
+            Report "B" " " $StatusObj $Tempfile
+            Report "W" "Core device not being monitored in PRTG" $StatusObj $Tempfile
             $msg = "Naam         = " + $ip.Naam 
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "IP Address   = " + $ip.IPaddress
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
             $msg = "Type         = " + $ip.Type
-            Report "B" $msg
+            Report "B" $msg $StatusObj $Tempfile
         }
     }
     if (!$unmonitored) {
-        Report "B" " "
-        Report "I" "All core equipment is being monitored"
+        Report "B" " " $StatusObj $Tempfile
+        Report "I" "All core equipment is being monitored" $StatusObj $Tempfile
          
     }
-    Report "B" " "
-    Report "N" $line
+    Report "B" " " $StatusObj $Tempfile
+    Report "N" $line $StatusObj $Tempfile
    
     
 
 }
 
 catch {
-        $global:scripterror = $true
+        $StatusObj.scripterror = $true
         
         $ErrorMessage = $_.Exception.Message
         $FailedItem = $_.Exception.ItemName
@@ -302,11 +310,11 @@ catch {
 finally { 
 
 
-    $m = & $ADHC_LockScript "Free" "PRTG" "$enqprocess"
-    foreach ($msgentry in $m) {
+    $m = & $ADHC_LockScript "Free" "PRTG" "$enqprocess" 10 "OBJECT" 
+    foreach ($msgentry in $m.MessgeList) {
         $msglvl = $msgentry.level
         $msgtext = $msgentry.Message
-        Report $msglvl $msgtext
+        Report $msglvl $msgtext $StatusObj $Tempfile
     }
     # Init jobstatus file
     $dir = $ADHC_OutputDirectory + $ADHC_Jobstatus
@@ -315,14 +323,14 @@ finally {
     $process = $p[0]
     $jobstatus = $ADHC_OutputDirectory + $ADHC_Jobstatus + $ADHC_Computer + "_" + $Process + ".jst" 
     
-    Report "N" " "
+    Report "N" " " $StatusObj $Tempfile
 
     $returncode = 99
 
     if ($ENQfailed) {
         $msg = ">>> Script could not run"
-        Report "E" $msg
-        Report "N" " "
+        Report "E" $msg $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "7" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
         Set-Content $jobstatus $jobline
@@ -331,16 +339,16 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode = 12       
 
     }
         
-    if (($global:scripterror) -and ($returncode -eq 99)) {
-        Report "E" ">>> Script ended abnormally"
-        Report "N" " "
+    if (($StatusObj.scripterror) -and ($returncode -eq 99)) {
+        Report "E" ">>> Script ended abnormally" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "9" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -350,15 +358,15 @@ finally {
         Add-Content $jobstatus "Errormessage = $ErrorMessage"
         Add-Content $jobstatus "Dump info = $dump"
 
-        Report "E" "Failed item = $FailedItem"
-        Report "E" "Errormessage = $ErrorMessage"
-        Report "E" "Dump info = $dump"
+        Report "E" "Failed item = $FailedItem" $StatusObj $Tempfile
+        Report "E" "Errormessage = $ErrorMessage" $StatusObj $Tempfile
+        Report "E" "Dump info = $dump" $StatusObj $Tempfile
         $returncode = 16        
     }
    
-    if (($global:scriptaction) -and ($returncode -eq 99)) {
-        Report "W" ">>> Script ended normally with action required"
-        Report "N" " "
+    if (($StatusObj.scriptaction) -and ($returncode -eq 99)) {
+        Report "W" ">>> Script ended normally with action required" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "6" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -367,9 +375,9 @@ finally {
         $returncode = 8
     }
 
-    if (($global:scriptchange) -and ($returncode -eq 99)) {
-        Report "C" ">>> Script ended normally with reported changes, but no action required"
-        Report "N" " "
+    if (($StatusObj.scriptchange) -and ($returncode -eq 99)) {
+        Report "C" ">>> Script ended normally with reported changes, but no action required" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
         
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "3" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -379,8 +387,8 @@ finally {
     }
 
     if ($returncode -eq 99) {
-        Report "I" ">>> Script ended normally without reported changes, and no action required"
-        Report "N" " "
+        Report "I" ">>> Script ended normally without reported changes, and no action required" $StatusObj $Tempfile
+        Report "N" " " $StatusObj $Tempfile
    
         $dt = Get-Date
         $jobline = $ADHC_Computer + "|" + $process + "|" + "0" + "|" + $version + "|" + $dt.ToString("dd-MM-yyyy HH:mm:ss")
@@ -388,17 +396,11 @@ finally {
        
         $returncode = 0
     }
-    $d = Get-Date
-    $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
-    $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
-    $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
-    Report "N" $scriptmsg
-    Report "N" " "
-
+   
     try { # Free resource and copy temp file
         
         $deffile = $ADHC_OutputDirectory + $ADHC_PrtgDbCheck.Directory + $ADHC_PrtgDbCheck.Name 
-        & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "PRTG,$enqprocess"  
+        $CopMov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile "PRTG,$enqprocess"  
     }
     Catch {
         $ErrorMessage = $_.Exception.Message
@@ -414,7 +416,13 @@ finally {
 
     }
     Finally {
-        Write-Information $Scriptmsg 
+        $d = Get-Date
+        $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
+        $Tijd = " -- Time: " + $d.ToString("HH:mm:ss") 
+        $Scriptmsg = "*** ENDED ***** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
+        Report "N" $scriptmsg $StatusObj $deffile
+        Report "N" " " $StatusObj $deffile
+        Write-Host $scriptmsg
         Exit $Returncode
         
     }  

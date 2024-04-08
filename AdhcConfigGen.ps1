@@ -1,13 +1,13 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 4.0"
+$Version = " -- Version: 4.1"
 
 # COMMON coding
 CLS
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 
 $Node = " -- Node: " + $env:COMPUTERNAME
@@ -23,11 +23,12 @@ $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName +
 Write-Information $Scriptmsg 
 
 $LocalInitVar = $mypath + "InitVar.PS1"
-& "$LocalInitVar"
+$InitObj = & "$LocalInitVar" "MSG"
 
-if (!$ADHC_InitSuccessfull) {
+if ($Initobj.Abend) {
     # Write-Warning "YES"
-    throw $ADHC_InitError
+    throw "INIT script $LocalInitVar Failed"
+
 }
 
 # END OF COMMON CODING

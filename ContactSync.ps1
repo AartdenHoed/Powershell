@@ -1,18 +1,18 @@
-﻿$Version = " -- Version: 1.1.1"
+﻿$Version = " -- Version: 1.2"
 
 # COMMON coding
 CLS
 
 # init flags
-$global:scripterror = $false
-$global:scriptaction = $false
-$global:scriptchange = $false
+$scripterror = $false
+$scriptaction = $false
+$scriptchange = $false
 
-$global:recordslogged = $false
+$recordslogged = $false
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 
 
@@ -49,11 +49,12 @@ try {
     Write-Information $Scriptmsg 
 
     $LocalInitVar = $mypath + "InitVar.PS1"
-    & "$LocalInitVar"
+    $InitObj = & "$LocalInitVar" "MSG"
 
-    if (!$ADHC_InitSuccessfull) {
+    if ($Initobj.AbEnd) {
         # Write-Warning "YES"
-        throw $ADHC_InitError
+        throw "INIT script $LocalInitVar Failed"
+
     }
    
     # END OF COMMON CODING   
@@ -253,13 +254,13 @@ try {
 
 catch {
     write-warning "Catch"
-    $global:scripterror = $true
+    $scripterror = $true
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
 }
 finally {
-    if ($global:scripterror) {
+    if ($scripterror) {
         Write-Host ">>> Script ended abnormally"
                
         Write-Host $jobstatus "Failed item = $FailedItem"
