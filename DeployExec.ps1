@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 4.5"
+﻿$Version = " -- Version: 4.5.2"
 
 # COMMON coding
 CLS
@@ -115,7 +115,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
         "DELETE" { 
             Report "C" "Module $tobedeleted will be deleted directly from computer $ADHC_Computer" $Obj0 $file0
             Remove-Item "$tobedeleted" -force
-            WriteLog "Directly DELETED" $tobedeleted $log0
+            WriteLog "Directly DELETED" $tobedeleted $log0 $obj0
         }
         "DELETED" {            
             $delyear = $delname.Substring(14,4)
@@ -132,7 +132,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                 Report "C" "Renamed module $tobedeleted will be deleted directly from computer $ADHC_Computer (Delay $thisdelay has elapsed)" $Obj0 $file0
                 Remove-Item "$tobedeleted" -force
                
-                WriteLog "Deferred DELETED" $tobedeleted $log0
+                WriteLog "Deferred DELETED" $tobedeleted $log0 $obj0 
             }
             else {
                 $wt = $thisdelay - $diff.Days
@@ -159,7 +159,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
             Report "C" "Module $tobedeleted will be renamed to $deletename and removed later from computer $ADHC_Computer" $Obj0 $file0
             Rename-Item "$tobedeleted" "$deletename" -force
             
-            WriteLOg "Staged for DELETION" $tobedeleted $log0
+            WriteLOg "Staged for DELETION" $tobedeleted $log0 $obj0
           
                         
         }
@@ -193,7 +193,7 @@ function DeleteNow([string]$action, [string]$tobedeleted, [string]$delname, [Sys
                 Write-Warning $msg
                 Report "C" $msg $Obj0 $file0
 
-                WriteLog "UNREGISTERED" $TaskName $log0
+                WriteLog "UNREGISTERED" $TaskName $log0 $obj0
             }
             else {
                 Report "I" "$xmlname is not an valid XML file, $process processing skipped" $Obj0 $file0
@@ -297,14 +297,14 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                     Report "C" "Directory $dirbase does not exist and will be created on computer $ADHC_COmputer prior to COPY/ADD" $Obj0 $file0
                 
                     New-Item -ItemType Directory -Force -Path "$dirbase"
-                    Writelog "CREATED" $dirbase $log0
+                    Writelog "CREATED" $dirbase $log0 $obj0
                 }
 
                 Report "C" "Module $to does not exist and will be added to computer $ADHC_Computer" $Obj0 $file0
 
                 Copy-Item "$from" "$to" -force 
                 
-                Writelog "ADDED" $to $log0
+                Writelog "ADDED" $to $log0 $obj0
             }
             else {
                 Report "I" "Module $from will be copied to $to in $waitTime days" $Obj0 $file0
@@ -325,7 +325,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 Report "C" "Module $to has been updated and will be replaced on computer $ADHC_Computer" $Obj0 $file0
                 Copy-Item "$from" "$to" -force 
                 
-                WriteLog "REPLACED" $to $log0
+                WriteLog "REPLACED" $to $log0 $obj0
             }
             else {
                 Report "I" "Module $from will replace $to in $waitTime days" $Obj0 $file0
@@ -426,7 +426,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
                 $msg = "Scheduled task '" + $taskName + "' registered now."
                 Report "C" $msg $Obj0 $file0
                 
-                WriteLog "REGISTERED" $taskname $log0
+                WriteLog "REGISTERED" $taskname $log0 $obj0
             }
             else {
                 Report "I" "$from is not an valid XML file, $process processing skipped" $Obj0 $file0
@@ -440,6 +440,7 @@ function DeployNow([string]$action, [string]$shortname, [string]$from, [string]$
         }
     }
 }
+
 function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
@@ -479,14 +480,14 @@ function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
 
 }
 
-function WriteLog ([string]$Action, [string]$line, [string]$logfile) {
+function WriteLog ([string]$Action, [string]$line, [string]$logfile, [object]$obj) {
     $oldrecords = Get-Content $logfile
 
     $logdate = Get-Date
     $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
                     (" *** " + $Action + " *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
-    Set-Content $logfile$logrec
-    $StatusObj.recordslogged = $true
+    Set-Content $logfile $logrec
+    $obj.recordslogged = $true
 
     $now = Get-Date
 
@@ -508,7 +509,7 @@ function WriteLog ([string]$Action, [string]$line, [string]$logfile) {
             }
         }
         if ($keeprecord) {
-            Add-Content $logfile$record
+            Add-Content $logfile $record
         }
         
     }
@@ -518,7 +519,7 @@ function WriteLog ([string]$Action, [string]$line, [string]$logfile) {
         $logrec = $logdate.ToSTring("yyyy-MMM-dd HH:mm:ss").PadRight(24," ") + $ADHC_Computer.PadRight(24," ") +
                     (" *** Log Record Purge *** ").Padright(40," ") + $line.PadRight(160," ") + $logdate.ToString("dd-MM-yyyy HH:mm:ss")
         
-        Add-Content $logfile$logrec 
+        Add-Content $logfile $logrec 
     } 
 
 }
