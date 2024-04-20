@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 6.3"
+﻿$Version = " -- Version: 6.3.1"
 
 # COMMON coding
 CLS
@@ -11,7 +11,7 @@ $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 function WriteLog ([string]$Action, [string]$line, [object]$obj, [string]$logfile) {
     $oldrecords = Get-Content $logfile 

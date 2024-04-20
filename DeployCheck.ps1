@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 3.4"
+﻿$Version = " -- Version: 3.4.1"
 
 # COMMON coding
 CLS
@@ -9,7 +9,7 @@ $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {

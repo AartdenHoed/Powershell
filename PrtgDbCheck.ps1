@@ -1,7 +1,7 @@
 ﻿# Dit script checkt de PTG database op onregelmatigheden
 
 cls
-$Version = " -- Version: 1.5"
+$Version = " -- Version: 1.5.1"
 
 
 # init flags
@@ -48,7 +48,7 @@ function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"             
+$ErrorActionPreference = "Stop"             
 
 try { 
     $line = "=".PadRight(120,"=")                                            

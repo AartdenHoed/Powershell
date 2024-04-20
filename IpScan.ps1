@@ -6,7 +6,7 @@
 
 # COMMON coding
 CLS
-$Version = " -- Version: 2.4"
+$Version = " -- Version: 2.4.2"
 
 # init flags
 $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
@@ -288,6 +288,7 @@ try {
         }
 
         # Schedule unprocessed IP in free jobs
+        
         if ($ipfound) {
             $ipaddr = $currentip.IPaddress
             write-Host "Processing $ipaddr"
@@ -299,11 +300,10 @@ try {
                                 param (
                                     [string]$IpAddress = "Iets"   
                                 )
-                                
-                                $ErrorActionPreference = "Stop"
-        
+                                $ErrorActionPreference = "Stop"     
                                 try {
-                                    $t = (Test-Connection -ComputerName $ipaddress -Count 2   | Measure-Object -Property ResponseTime -Average).average  
+                                    
+                                    $t = (Test-Connection -ComputerName $ipaddress -Count 2  | Measure-Object -Property ResponseTime -Average).average  
                                     $ping = $true   
                                     $em = "OK"
                                 }
@@ -356,7 +356,7 @@ try {
             $nrofwaits += 1
             Start-Sleep -s $wait  
         }
-
+        
         # check all jobs on completion 
         $busyjobsfound = $false       
         foreach ($jobslot in $joblist) {

@@ -1,13 +1,13 @@
 ﻿# Mass update of GIT config files
 
-$Version = " -- Version: 4.1"
+$Version = " -- Version: 4.1.1"
 
 # COMMON coding
 CLS
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 
 $Node = " -- Node: " + $env:COMPUTERNAME

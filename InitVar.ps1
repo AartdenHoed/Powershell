@@ -12,7 +12,7 @@ param (
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 $scripterror = $false
 $mode = $mode.ToUpper()
 $msglist = @()
@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.1"
+    $Version = " -- Version: 10.2.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -84,7 +84,7 @@ try {
             switch ($ADHC_Computer)
             {         
                 "ADHC-2"     {&subst o: "c:\Data\Sync ADHC\OneDrive" } 
-                "HOLIDAY"    {&subst o: "c:\Data\Sync ADHC\OneDrive" }
+                "HOLIDAY"    {&subst o: "d:\Data\Sync ADHC\OneDrive" }
                 default      {&subst o: "d:\Data\Sync ADHC\OneDrive"}
 
             }

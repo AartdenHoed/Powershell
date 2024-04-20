@@ -1,11 +1,11 @@
-﻿$Version = " -- Version: 1.1"
+﻿$Version = " -- Version: 1.1.1"
 
 # COMMON coding
 CLS
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
                                           ScriptChange = $false;

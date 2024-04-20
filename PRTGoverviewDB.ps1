@@ -3,7 +3,7 @@
 # Channel in JSON: https://prtg.shl-groep.nl/api/table.json?noraw=0&content=channels&columns=name,objid,type,active,tags,minimum,maximum,condition,lastvalue&id=1001
 
 cls
-$Version = " -- Version: 3.2"
+$Version = " -- Version: 3.2.1"
 class TrustAllCertsPolicy : System.Net.ICertificatePolicy {
     [bool] CheckValidationResult([System.Net.ServicePoint] $a,
                                  [System.Security.Cryptography.X509Certificates.X509Certificate] $b,
@@ -36,7 +36,7 @@ class TrustAllCertsPolicy : System.Net.ICertificatePolicy {
 #}
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"  
+$ErrorActionPreference = "Stop"  
 
 # init flags
 $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;

@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.2"
+﻿$Version = " -- Version: 1.2.1"
 
 # COMMON coding
 CLS
@@ -12,7 +12,7 @@ $recordslogged = $false
 
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 
 
