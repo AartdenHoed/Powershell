@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.2.1"
+    $Version = " -- Version: 10.3.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -240,6 +240,13 @@ try {
                                        Name = $ipclname }
     Remove-Variable -Name "ADHC_IpScanLog" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_IpScanLog" -Value $ipcl -Option readonly -Scope global -Description "Scan of home IP addresses" -force
+
+    $lucdir = "LuchtClub\"
+    $lucname = $ADHC_Computer + "_LuchtClub.txt"
+    $luc = [PSCustomObject] [ordered] @{Directory = $lucdir;
+                                       Name = $lucname }
+    Remove-Variable -Name "ADHC_LuchtClub" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_LuchtClub" -Value $luc -Option readonly -Scope global -Description "LuchtClub reports" -force
     
     $movdir = "MovieIsoCheck\" 
     $movname = $ADHC_Computer + "_MovieIsoCheck.txt"
