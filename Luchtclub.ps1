@@ -1,4 +1,4 @@
-﻿$ScriptVersion = " -- Version: 1.1"
+﻿$ScriptVersion = " -- Version: 1.2"
 
 # COMMON coding
 CLS
@@ -9,6 +9,9 @@ $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
+$myhost = $ADHC_Computer.ToUpper()
+
+
 function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
         ("N") {$rptline = $line}
@@ -117,6 +120,8 @@ try {
     write-host "$Totalsensors sensors found"
     Report "I" "$Totalsensors sensors found" $StatusObj $Tempfile
 
+    $excluded = 0
+
     $templist = @()
     $Currentdate = Get-Date
     $CurrentTime = $Currentdate.ToString()
@@ -213,17 +218,26 @@ try {
             
      
         }
-        $ReportObj = [PSCustomObject] [ordered] @{SensorID = $sensorid;
+
+        if (($sensorgemeente -ne "Gemeente Rotterdam") -or ($sensorproject -ne "Luchtclub")) {
+            Report "W" "$sensorName (ID = $sensorid) excluded: gemeente = $sensorgemeente and project = $sensorproject"
+            $exclude = $excluded + 1
+        }
+        else {
+
+
+            $ReportObj = [PSCustomObject] [ordered] @{SensorID = $sensorid;
                           SensorName = $sensorname;
                           OosterLengte = $oosterlengte;
                           NoorderBreedte = $noorderbreedte;
                           Gemeente = $sensorgemeente;
                           Project = $sensorproject;
                           Metingen = $metingen
-                           }
+                          }        
 
-        $templist += $ReportObj
-
+            $templist += $ReportObj
+        }
+        # for test purposes limit the numer of sensors
         # if ($templist.count -eq 20) { break }
     }
 
@@ -372,9 +386,48 @@ try {
 
     Report "N" " " $StatusObj $Tempfile
 
+    # Init luchtclub info file if not existent
+    $timestamp = Get-Date
+    $str = $ADHC_LuchtClubInfo.Split("\")
+    $dir = $ADHC_OutputDirectory + $str[0] + "\" + $str[1]
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    $LuchtClubInfoFile = $ADHC_OutputDirectory + $ADHC_LuchtClubInfo.Replace($ADHC_Computer, $myHost)
+    $dr = Test-Path $LuchtClubInfoFile
+    if (!$dr) { 
+        $r = "0|0|Total|"   + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")       
+        Set-Content $LuchtClubInfoFile $r -force
+        $r =  "0|0|Active"   + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")
+        Add-Content $LuchtClubInfoFile $r
+        $r = "0|0|InActive" + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")
+        Add-Content $LuchtClubInfoFile $r
+        $r = "0|0|Excluded" + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")
+        Add-Content $LuchtClubInfoFile $r
+    }
+
+    # Update info file (will be read by prtg sensor)
+    
+    $luchtlines = Get-Content $LuchtClubInfoFile
+        
+    $lastlist = @() 
+    $i = 0     
+    foreach ($line in $luchtlines) {
+        $split = $line.Split("|")
+        $last = $split[0]
+        $lastlist += $last
+    } 
+    $r =  "$Totalsensors|" + $lastlist[0] + "|Total|"   + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")
+    Set-Content $LuchtClubInfoFile $r
+    $r = "$Active|"       + $lastlist[1] + "|Active|"   + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")
+    Add-Content $LuchtClubInfoFile $r
+    $r = "$InActive|"     + $lastlist[2] + "|InActive|" + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")
+    Add-Content $LuchtClubInfoFile $r
+    $r = "$excluded|"     + $lastlist[3] + "|Excluded|" + $timestamp.ToString("dd-MM-yyyy HH:mm:ss")  
+    Add-Content $LuchtClubInfoFile $r
+     
+    
+
 
 }
-
 
 catch {
     $StatusObj.scripterror = $true

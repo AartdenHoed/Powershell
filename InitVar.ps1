@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.3.2"
+    $Version = " -- Version: 10.4"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -193,6 +193,10 @@ try {
     $drive = "PRTG\DriveInfo\" + $ADHC_Computer + "_DriveInfo.txt"
     Remove-Variable -Name "ADHC_DriveInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DriveInfo" -Value "$drive" -Option readonly -Scope global -Description "Drive info file" -force
+
+    $LuchtTotal = "PRTG\LuchtClubInfo\" + $ADHC_Computer + "_LuchtClubInfo.txt"
+    Remove-Variable -Name "ADHC_LuchtClubInfo" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_LuchtClubInfo" -Value "$LuchtTotal" -Option readonly -Scope global -Description "Luchtclub info file" -force
 
     $outp = "PRTG\OutputCheck\" + "OutputCheck.txt"
     Remove-Variable -Name "ADHC_OutputCheck" -force -ErrorAction SilentlyContinue
