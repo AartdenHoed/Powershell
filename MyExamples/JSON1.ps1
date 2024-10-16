@@ -2,7 +2,7 @@
 
 $mode = "JSON"
 
-$result = & "D:\Data\Sync ADHC\OneDrive\ADHC Development\Powershell.git\MyExamples\JSON2.ps1" "$Mode"
+$result = & "C:\Data\Sync ADHC\OneDrive\ADHC Development\Powershell.git\MyExamples\JSON2.ps1" "$Mode"
 
 if ($Mode -eq "JSON") {
 
