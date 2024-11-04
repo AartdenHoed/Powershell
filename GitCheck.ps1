@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 10.5.1"
+﻿$Version = " -- Version: 10.5.2"
 
 # COMMON coding
 CLS
@@ -256,8 +256,9 @@ try {
         Write-Host ">>> $rdir"
 
         $ErrorActionPreference = "Continue"  
-       
-        & {git rev-parse --is-bare-repository} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
+
+        $gitdir = '"' + $rdir + '"'       
+        & {git --git-dir=$gitdir rev-parse --is-bare-repository} 6>&1 5>&1 4>&1 3>&1 2>&1 | Tee-Object -Variable a
 
         $ErrorActionPreference = "Stop"  
         
