@@ -417,7 +417,7 @@ if ($Initobj.AbEnd) {
 
 $A = Invoke-WebRequest -Uri https://app.slimmemeterportal.nl/userapi/v1/connections -Method Get `
                -ContentType "application/json" `
-               -H @{'API-Key'='JwCf7CT9IvdYg+wHlXhwEzMc+rFYOTVPr7SMfNjzOsUEcykfw34XNKCMZI5whQc7zXyKJVmKEee+uwXAk9l60w=='}
+               -H @{'API-Key'=''}
 $obj1 = convertFrom-Json($A.Content)
 
 # per meter (gas + elektriciteit) de uurgegevens + referentiegegevens per meter ophalen van de afgelopen week
@@ -451,7 +451,7 @@ foreach ($entry in $obj1) {
             
             $R = Invoke-WebRequest -Uri $url -Method Get `
                    -ContentType "application/json" `
-                   -H @{'API-Key'='JwCf7CT9IvdYg+wHlXhwEzMc+rFYOTVPr7SMfNjzOsUEcykfw34XNKCMZI5whQc7zXyKJVmKEee+uwXAk9l60w=='}
+                   -H @{'API-Key'=''}
             $obj3 = convertFrom-Json($R.Content)            
             
             switch ($metertype) {
@@ -490,7 +490,7 @@ foreach ($entry in $obj1) {
 
         $B = Invoke-WebRequest -Uri $url -Method Get `
                    -ContentType "application/json" `
-                   -H @{'API-Key'='JwCf7CT9IvdYg+wHlXhwEzMc+rFYOTVPr7SMfNjzOsUEcykfw34XNKCMZI5whQc7zXyKJVmKEee+uwXAk9l60w=='}
+                   -H @{'API-Key'=''}
         $obj2 = convertFrom-Json($B.Content)
         # $obj2.meter_identifier
 
