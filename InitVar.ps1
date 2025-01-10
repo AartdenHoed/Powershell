@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.4"
+    $Version = " -- Version: 10.5"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -272,6 +272,13 @@ try {
                                        Name = $soname }
     Remove-Variable -Name "ADHC_OneDriveSync" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDriveSync" -Value $so -Option readonly -Scope global -Description "Force OneDrive synchronisation" -force
+
+    $slimdir = "SlimmeMeterPortaal\" 
+    $slimapi = "SlimmeMeterPortaal.api"
+    $slim = [PSCustomObject] [ordered] @{Directory = $slimdir;
+                                       APIKEY = $slimapi }
+    Remove-Variable -Name "ADHC_SlimmeMeterPortaal" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_SlimmeMeterPortaal" -Value $slim -Option readonly -Scope global -Description "Slimme Meter Portaal" -force
 
     $encoder = new-object System.Text.UTF8Encoding
     $regx = Get-ItemProperty -path HKLM:\SOFTWARE\ADHC | Select-Object -ExpandProperty "SecurityString"

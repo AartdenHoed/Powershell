@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 1.1"
 
 # COMMON coding
 CLS
@@ -64,9 +64,10 @@ Function Report ($MyObj,$Reference) {
 
             if ($upper -ne 24) {
                 # Last day was not complete
-                $lower
-                $upper
-                Write-Warning "Ontbrekende gegevens na uur $uurdigit ($mt) onder datum $datum"
+                #$lower
+                #$upper
+                $datumstr = $datum.ToString("yyyy-MM-dd HH:mm")
+                Write-Warning "Ontbrekende gegevens na uur $uurdigit ($mt) onder datum $datumstr"
                 $regel = $regel + 1
                 for ($z = $lower; $z -lt 24; $z++) {
                     $reportarray[$kolom,$regel] =  "n/a"
@@ -110,8 +111,8 @@ Function Report ($MyObj,$Reference) {
         }
 
         if ($upper -gt $lower) {
-
-            Write-Warning "In regel met uur $uurdigit ($mt) komt een waarneming met uur $uurwaarneming, onder datum $datum"
+            $datumstr = $datum.ToString("yyyy-MM-dd HH:mm")
+            Write-Warning "In regel met uur $uurdigit ($mt) komt een waarneming met uur $uurwaarneming, onder datum $datumstr"
             
             for ($z = $lower; $z -lt $upper; $z++) {
                 $reportarray[$kolom,$regel] =  "n/a"
@@ -127,9 +128,10 @@ Function Report ($MyObj,$Reference) {
     }
     if ($upper -ne 24) {
         # Last day was not complete
-        $lower
-        $upper
-        Write-Warning "Ontbrekende gegevens na uur $uurdigit ($mt) onder datum $datum"
+        #$lower
+        #$upper
+        $datumstr = $datum.ToString("yyyy-MM-dd HH:mm")
+        Write-Warning "Ontbrekende gegevens na uur $uurdigit ($mt) onder datum $datumstr"
         $regel = $regel + 1
         for ($z = $lower; $z -lt 24; $z++) {
             $reportarray[$kolom,$regel] =  "n/a"
@@ -415,9 +417,13 @@ if ($Initobj.AbEnd) {
 
 # krijg de meter gegevens
 
+$apifile = $ADHC_OutputDirectory + $ADHC_SlimmeMeterPortaal.Directory + $ADHC_SlimmeMeterPortaal.APIKEY 
+$apikey = Get-Content $apifile
+$H = @{'API-Key'="$apikey"}
+
 $A = Invoke-WebRequest -Uri https://app.slimmemeterportal.nl/userapi/v1/connections -Method Get `
                -ContentType "application/json" `
-               -H @{'API-Key'=''}
+               -H $H 
 $obj1 = convertFrom-Json($A.Content)
 
 # per meter (gas + elektriciteit) de uurgegevens + referentiegegevens per meter ophalen van de afgelopen week
@@ -447,12 +453,17 @@ foreach ($entry in $obj1) {
             #$strdate = "14-01-2024"
             #$meterid = "871689290200620802"
             $url = "https://app.slimmemeterportal.nl/userapi/v1/connections/" + $meterID + "/usage/" + $strdate
-
-            
-            $R = Invoke-WebRequest -Uri $url -Method Get `
-                   -ContentType "application/json" `
-                   -H @{'API-Key'=''}
-            $obj3 = convertFrom-Json($R.Content)            
+                       
+            try {
+                $R = Invoke-WebRequest -Uri $url -Method Get `
+                       -ContentType "application/json" `
+                       -H $H
+                $obj3 = convertFrom-Json($R.Content)  
+            } 
+            catch {
+                Write-Warning "URL $url failed"
+                continue
+            }         
             
             switch ($metertype) {
                 # create reference lists
@@ -486,12 +497,19 @@ foreach ($entry in $obj1) {
         $cdate = (Get-Date).AddDays($d) 
         $strdate = $cdate.ToString("dd-MM-yyyy")
         $strdate
-        $url = "https://app.slimmemeterportal.nl/userapi/v1/connections/" + $meterID + "/usage/" + $strdate
+        $url = "https://app.slimmemeterportal.nl/userapi/v1/connections/" + $meterID + "/usage/" + $strdate        
 
-        $B = Invoke-WebRequest -Uri $url -Method Get `
-                   -ContentType "application/json" `
-                   -H @{'API-Key'=''}
-        $obj2 = convertFrom-Json($B.Content)
+        try {
+            $B = Invoke-WebRequest -Uri $url -Method Get `
+                -ContentType "application/json" `
+                -H $H
+            $obj2 = convertFrom-Json($B.Content)
+        } 
+        catch {
+            Write-Warning "URL $url failed"
+            continue
+        }         
+
         # $obj2.meter_identifier
 
         if ($firstpass) {
