@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1"
+﻿$Version = " -- Version: 1.2"
 
 # COMMON coding
 CLS
@@ -40,7 +40,7 @@ Function Report ($MyObj,$Reference) {
     #exit
     # Write report
     Write-Host "REPORT"
-    $reportarray = New-Object 'object[,]' 16,25
+    $reportarray = New-Object 'object[,]' 16,26
                
     $reportarray[0,0] = "Uur"
     $reportarray[1,0] = " "
@@ -48,6 +48,9 @@ Function Report ($MyObj,$Reference) {
         $reportarray[0,$u] = $u.ToString()
         $reportarray[1,$u] = " "
     }
+    $reportarray[0,25] = "Dagtotaal"
+    $reportarray[1,25] = " "
+
     $mt = $MyObj.MeterType
     $regel = 0
     $kolom = 0
@@ -82,6 +85,14 @@ Function Report ($MyObj,$Reference) {
             $curday = $entry.Datumtijd.Day
             $curyear = $entry.Datumtijd.Year
 
+            if ($kolom -ge 2) {
+                $reportarray[$kolom,25] = "{0:N2}" -f $dagverbruik
+                $w = $kolom + 1
+                $reportarray[$w,25] = Get_Percentiel $dagverbruik $Reference.Percentielen[24]
+                $dagverbruik = 0     
+
+            } 
+              
             $kolom = $kolom + 2
             $regel = 0
             $reportarray[$kolom,$regel] = $entry.Datumtijd.ToString('yyyy-MM-dd')
@@ -119,7 +130,9 @@ Function Report ($MyObj,$Reference) {
                 $regel = $regel + 1
             }
         }
+        
         $reportarray[$kolom,$regel] =  "{0:N2}" -f $entry.Uurverbruik 
+        $dagverbruik = $dagverbruik + $entry.Uurverbruik
         $p = $uurwaarneming - 1
         $x = $kolom + 1        
         $reportarray[$x,$regel] = Get_Percentiel $entry.Uurverbruik $Reference.Percentielen[$p]
@@ -142,8 +155,13 @@ Function Report ($MyObj,$Reference) {
         }
     }
 
+    $reportarray[$kolom,25] = "{0:N2}" -f $dagverbruik
+    $w = $kolom + 1
+    $reportarray[$w,25] = Get_Percentiel $dagverbruik $Reference.Percentielen[24]
+    $dagverbruik = 0     
+
     $reportobject = @()
-    for ($r = 0;  $r -lt 25; $r++) {
+    for ($r = 0;  $r -lt 26; $r++) {
         $regelobject = [PSCustomObject] [ordered] @{c0 = $reportarray[0,$r];
                                                     p0 = $reportarray[1,$r];
                                                     c1 = $reportarray[2,$r];
@@ -174,16 +192,28 @@ Function Fill($MyObj) {
     # Create reference data
     Write-Host "FILL"
     
-    $listofref_usages = New-Object 'object[]' 24
-    $listofref_percentielen = New-Object 'object[]' 24
-    $nextindex = New-Object 'object[]' 24
+    $listofref_usages = New-Object 'object[]' 25
+    $listofref_percentielen = New-Object 'object[]' 25
+    $nextindex = New-Object 'object[]' 25
     
 
-    for ($i = 0; $i -lt 24; $i++) {
+    for ($i = 0; $i -lt 25; $i++) {
         $nextindex[$i] = 0
     }
     
+    $dagverbruik = 0
+    $curyear = 0
+    $curmonth = 0
+    $curday = 0
+    $init = $true
     foreach ($entry in $MyObj) {
+        if ($init) {
+            $curyear = $entry.Datumtijd.Year
+            $curmonth = $entry.Datumtijd.Month
+            $curday = $entry.Datumtijd.Day
+            $init = $false
+        }
+    # Plaats elke meting in de lijst van het betreffende uur 
         $i = $entry.uurnummer - 1
         $j = $nextindex[$i]
         if ($j -eq 0 ) {
@@ -194,7 +224,46 @@ Function Fill($MyObj) {
             $listofref_usages[$i] += $entry
         }
         $nextindex[$i]++
-    
+
+        $dagverbruik = $dagverbruik + $entry.uurverbruik 
+        if (($curyear -ne $entry.Datumtijd.Year) -or 
+            ($curmonth -ne $entry.Datumtijd.Month) -or 
+            ($curday -ne $entry.Datumtijd.Day)) {
+            
+            $p = 24
+            $q = $nextindex[$p]
+            $totalentry = [PSCustomObject] [ordered] @{Datumtijd = $entry.datumtijd;
+                                                        Uurverbruik = $dagverbruik;
+                                                        Uurnummer = 25;
+                                                        Aantalmetingen = 24                                                              
+                                                        }
+            if ($q -eq 0 ) {
+                $listofref_usages[$p] = @()
+                $listofref_usages[$p] += $totalentry
+            }
+            else {        
+                $listofref_usages[$p] += $totalentry
+            }
+            $nextindex[$p]++
+            $dagverbruik = 0
+            $curyear = $entry.Datumtijd.Year
+            $curmonth = $entry.Datumtijd.Month
+            $curday = $entry.Datumtijd.Day
+        }
+    }
+    $p = 24
+    $q = $nextindex[$p]
+    $totalentry = [PSCustomObject] [ordered] @{Datumtijd = $entry.datumtijd;
+                                                    Uurverbruik = $dagverbruik;
+                                                    Uurnummer = 25;
+                                                    Aantalmetingen = 24                                                              
+                                                    }
+    if ($q -eq 0 ) {
+        $listofref_usages[$p] = @()
+        $listofref_usages[$p] += $totalentry
+    }
+    else {        
+        $listofref_usages[$p] += $totalentry
     }
       
 
@@ -203,7 +272,7 @@ Function Fill($MyObj) {
     foreach ($reflist in $listofref_usages) {
     
         $hulplist = @()
-        if ($reflist.uurnummer -eq $u) {
+        if (($reflist.uurnummer -eq $u) -or ($reflist.uurnummer -eq 25))  {
             $hulplist += $reflist.uurverbruik        
         }
         if ($hulplist.count -gt 0) {
