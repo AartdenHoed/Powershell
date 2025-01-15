@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.2"
+﻿$Version = " -- Version: 1.3"
 
 # COMMON coding
 CLS
@@ -232,7 +232,8 @@ Function Fill($MyObj) {
             
             $p = 24
             $q = $nextindex[$p]
-            $totalentry = [PSCustomObject] [ordered] @{Datumtijd = $entry.datumtijd;
+            $mydate = $entry.datumtijd.AddMinutes(-61)
+            $totalentry = [PSCustomObject] [ordered] @{Datumtijd = $mydate;
                                                         Uurverbruik = $dagverbruik;
                                                         Uurnummer = 25;
                                                         Aantalmetingen = 24                                                              
@@ -253,7 +254,8 @@ Function Fill($MyObj) {
     }
     $p = 24
     $q = $nextindex[$p]
-    $totalentry = [PSCustomObject] [ordered] @{Datumtijd = $entry.datumtijd;
+    $mydate = $entry.datumtijd.AddMinutes(-61)
+    $totalentry = [PSCustomObject] [ordered] @{Datumtijd = $mydate;
                                                     Uurverbruik = $dagverbruik;
                                                     Uurnummer = 25;
                                                     Aantalmetingen = 24                                                              
