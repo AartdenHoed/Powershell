@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.3"
+﻿$Version = " -- Version: 1.3.1"
 
 # COMMON coding
 CLS
@@ -12,22 +12,22 @@ $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
 Function Get_Percentiel ($Uurverbruik, $Percentielreeks) {
 
-    if ($Uurverbruik -le $Percentielreeks.perc00) {
+    if ($Uurverbruik -lt $Percentielreeks.perc00) {
         return "Zeer laag"
     }
-    if ($Uurverbruik -le $Percentielreeks.perc20) {
+    if ($Uurverbruik -lt $Percentielreeks.perc20) {
         return "Laag"
     }
-    if ($Uurverbruik -le $Percentielreeks.perc40) {
+    if ($Uurverbruik -lt $Percentielreeks.perc40) {
        return "Verlaagd"
     }
-    if ($Uurverbruik -lt $Percentielreeks.perc60) {
+    if ($Uurverbruik -le $Percentielreeks.perc60) {
         return "Normaal"
     }
-    if ($Uurverbruik -lt $Percentielreeks.perc80) {
+    if ($Uurverbruik -le $Percentielreeks.perc80) {
         return "Verhoogd"
     }
-    if ($Uurverbruik -lt $Percentielreeks.perc100) {
+    if ($Uurverbruik -le $Percentielreeks.perc100) {
         return "Hoog"
     }
     return "Zeer hoog"
@@ -575,6 +575,9 @@ foreach ($entry in $obj1) {
                 -ContentType "application/json" `
                 -H $H
             $obj2 = convertFrom-Json($B.Content)
+            if ($obj2.usages.count -eq 0) {
+                throw "No usages found for date " + $strdate
+            }
         } 
         catch {
             Write-Warning "URL $url failed"
