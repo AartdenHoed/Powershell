@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.5"
+    $Version = " -- Version: 10.6"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -77,19 +77,29 @@ try {
     Remove-Variable -Name "ADHC_Hoststring" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Hoststring" -Value $hoststring -Option readonly -Scope global -Description "List of known hosts (string)" -force
 
-    # ONEDRIVE
     try {
+        # ONEDRIVE
         If (!(Test-Path O:)) {
-            &subst o: /d
+            &subst O: /d
             switch ($ADHC_Computer)
             {         
-                "ADHC-2"     {&subst o: "c:\Data\Sync ADHC\OneDrive" } 
-                "HOLIDAY"    {&subst o: "d:\Data\Sync ADHC\OneDrive" }
-                default      {&subst o: "d:\Data\Sync ADHC\OneDrive"}
+                "ADHC-2"     {&subst O: "c:\Data\Sync ADHC\OneDrive" } 
+                "HOLIDAY"    {&subst O: "d:\Data\Sync ADHC\OneDrive" }
+                default      {&subst O: "d:\Data\Sync ADHC\OneDrive"}
 
             }
 
 
+        }
+        # PROTONDRIVE 
+        If (!(Test-Path P:)) {
+            &subst P: /d
+            switch ($ADHC_Computer)
+            {         
+                "ADHC-2"     {&subst P: "C:\Data\Sync ADHC\ProtonDrive\My files\ADHC"} 
+                "HOLIDAY"    {&subst P: "D:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
+                default      {&subst P: "D:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
+            }
         }
     }
     catch {$Scriptmsg = "SUBST command has failed"
@@ -109,14 +119,18 @@ try {
 
     switch ($ADHC_Computer)
         {         
-            "xxxx"     {$OneDrive = "O:\"}
-            default    {$OneDrive = "O:\"}
-
+            "xxxx"     {$OneDrive = "O:\"
+                        $ProtonDrive = "P:\"}
+            default    {$OneDrive = "O:\"
+                        $ProtonDrive = "P:\"}
         }
 
     
     Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force    
+    Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force 
+    Remove-Variable -Name "ADHC_ProtonDrive" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ProtonDrive" -Value $ProtonDrive -Option readonly -Scope global -Description "Name of ProtonDrive share" -force    
+   
 
     $remdir = $OneDrive + "ADHC RemoteRepository\"
     Remove-Variable -Name "ADHC_RemoteDir" -force -ErrorAction SilentlyContinue
@@ -178,7 +192,7 @@ try {
     Remove-Variable -Name "ADHC_TempDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_TempDirectory" -Value $temp -Option readonly -Scope global -Description "Common root directory for temp files" -force
       
-    $output = $ADHC_OneDrive + "ADHC Output\"
+    $output = $ADHC_ProtonDrive + "Output\"
     Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
         
