@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1.1"
+﻿$Version = " -- Version: 1.1.3"
 
 # COMMON coding
 CLS
@@ -84,6 +84,9 @@ $dir = $ADHC_TempDirectory + $ADHC_BootTimeLog.Directory
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
 $tempfile = $dir + $ADHC_BootTimeLog.Name
 
+Set-Content $tempfile "Started... up time monitoring" -Force
+$tempset = $true
+
 foreach ($entry in $InitObj.MessageList){
         Report $entry.Level $entry.Message $StatusObj $tempfile
 }
@@ -102,9 +105,6 @@ $myname = $MyInvocation.MyCommand.Name
 $FullScriptName = $MyInvocation.MyCommand.Definition
 $mypath = $FullScriptName.Replace($MyName, "")
 
-
-Set-Content $tempfile "Started... up time monitoring" -Force
-
 foreach ($entry in $InitObj.MessageList) {
     Report $entry.Level $entry.Message $StatusObj $Tempfile
 }
@@ -115,6 +115,15 @@ do {
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
     $Tijd = " -- Time: " + $d.ToString("HH:mm:ss")
     $loop = $loop + 1
+
+    if ($tempset) {
+        Add-Content $tempfile "..." 
+    }
+    else {
+        Set-Content $tempfile "..." -Force
+    }
+    $tempset = $false
+
     Report "N" $Separator $StatusObj $Tempfile
     $Scriptmsg = "*** STARTED *** " + $mypath + " -- PowerShell script " + $MyName + $Version + $Datum + $Tijd +$Node
     Report "N" $Scriptmsg $StatusObj $Tempfile
