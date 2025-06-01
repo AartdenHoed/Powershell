@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.6"
+    $Version = " -- Version: 10.6.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -97,7 +97,7 @@ try {
             switch ($ADHC_Computer)
             {         
                 "ADHC-2"     {&subst P: "C:\Data\Sync ADHC\ProtonDrive\My files\ADHC"} 
-                "HOLIDAY"    {&subst P: "D:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
+                "HOLIDAY"    {&subst P: "C:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
                 default      {&subst P: "D:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
             }
         }
@@ -128,8 +128,8 @@ try {
     
     Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force 
-    Remove-Variable -Name "ADHC_ProtonDrive" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_ProtonDrive" -Value $ProtonDrive -Option readonly -Scope global -Description "Name of ProtonDrive share" -force    
+    # Remove-Variable -Name "ADHC_ProtonDrive" -force -ErrorAction SilentlyContinue
+    # Set-Variable -Name "ADHC_ProtonDrive" -Value $ProtonDrive -Option readonly -Scope global -Description "Name of ProtonDrive share" -force    
    
 
     $remdir = $OneDrive + "ADHC RemoteRepository\"
@@ -192,7 +192,7 @@ try {
     Remove-Variable -Name "ADHC_TempDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_TempDirectory" -Value $temp -Option readonly -Scope global -Description "Common root directory for temp files" -force
       
-    $output = $ADHC_ProtonDrive + "Output\"
+    $output = $ProtonDrive + "Output\"
     Remove-Variable -Name "ADHC_OutputDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OutputDirectory" -Value $output -Option readonly -Scope global -Description "Common root directory for output files" -force
         
