@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 10.6.2"
+    $Version = " -- Version: 11.0"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -132,11 +132,11 @@ try {
     # Set-Variable -Name "ADHC_ProtonDrive" -Value $ProtonDrive -Option readonly -Scope global -Description "Name of ProtonDrive share" -force    
    
 
-    $remdir = $OneDrive + "ADHC RemoteRepository\"
+    $remdir = $ProtonDrive + "SourceControl\RemoteRepository\"
     Remove-Variable -Name "ADHC_RemoteDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_RemoteDir" -Value $remdir -Option readonly -Scope global -Description "Remote repository root directory" -force
 
-    $devdir = $OneDrive + "ADHC Development\"
+    $devdir = $ProtonDrive + "SourceControl\Development\"
     Remove-Variable -Name "ADHC_DevelopDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_DevelopDir" -Value $devdir -Option readonly -Scope global -Description "Development root directory" -force
 
@@ -289,10 +289,14 @@ try {
 
     $slimdir = "SlimmeMeterPortaal\" 
     $slimapi = "SlimmeMeterPortaal.api"
-    $slim = [PSCustomObject] [ordered] @{Directory = $slimdir;
-                                       APIKEY = $slimapi }
-    Remove-Variable -Name "ADHC_SlimmeMeterPortaal" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_SlimmeMeterPortaal" -Value $slim -Option readonly -Scope global -Description "Slimme Meter Portaal" -force
+    
+    $apifile = $ADHC_OutputDirectory + $slimdir + $slimapi
+    $apikey = Get-Content $apifile
+    $apikey2 = $apikey.ToString()
+    # apikey2 is nodig om extra Powershell informatie die anders wordt opgenomen in het return object/json te verwijderen
+
+    Remove-Variable -Name "ADHC_SMPapikey" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_SMPapikey" -Value $apikey2 -Option readonly -Scope global -Description "Slimme Meter Portaal apikey" -force
 
     $encoder = new-object System.Text.UTF8Encoding
     $regx = Get-ItemProperty -path HKLM:\SOFTWARE\ADHC | Select-Object -ExpandProperty "SecurityString"
@@ -394,7 +398,7 @@ try {
 
     # STAGING DIRECTORY
    
-    $staging = $OneDrive + "ADHC StagingLibrary\"
+    $staging = $ProtonDrive + "SourceControl\StagingLibrary\"
     Remove-Variable -Name "ADHC_StagingDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_StagingDir" -Value $staging -Option readonly -Scope global -Description "Staging root directory" -force
 
@@ -405,8 +409,8 @@ try {
     # DSL directory 
      switch ($ADHC_Computer)
         {         
-            "ADHC-2"          {$dsl = "O:\DSL\"}
-            default           {$dsl = "O:\DSL\"}
+            "ADHC-2"          {$dsl = $ProtonDrive + "SourceControl\DSL\"}
+            default           {$dsl = $ProtonDrive + "SourceControl\DSL\"}
 
         }  
 
@@ -523,6 +527,7 @@ Catch {
 }
 $ReturnOBJ = [PSCustomObject] [ordered] @{AbEnd = $scripterror;
                                                   MessageList = $msglist;
+                                                  ADHC_SMPapikey = $ADHC_SMPapikey;
                                                   ADHC_Computer = $ADHC_Computer;
                                                   ADHC_User = $ADHC_User;
                                                   ADHC_WmicGenerations = $ADHC_WmicGenerations
