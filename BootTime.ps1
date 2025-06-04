@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.1.3"
+﻿$Version = " -- Version: 1.2"
 
 # COMMON coding
 CLS
@@ -105,10 +105,6 @@ $myname = $MyInvocation.MyCommand.Name
 $FullScriptName = $MyInvocation.MyCommand.Definition
 $mypath = $FullScriptName.Replace($MyName, "")
 
-foreach ($entry in $InitObj.MessageList) {
-    Report $entry.Level $entry.Message $StatusObj $Tempfile
-}
-
 
 do {
     $d = Get-Date
@@ -133,7 +129,7 @@ do {
 
     Report "I" "Process name = $ProcessName, proces ID = $ProcessID" $StatusObj $Tempfile
 
-    Report "I"  "Iteration number $loop" $StatusObj $Tempfile
+    Report "I"  "Iteration number $loop ($errorcount errors until now)" $StatusObj $Tempfile
         
     try {
         # get boottime of machine
@@ -213,12 +209,9 @@ do {
         try { #  copy temp file
         
             $deffile = $ADHC_OutputDirectory + $ADHC_BootTimeLog.Directory + $ADHC_BootTimeLog.Name 
-            if ($loop -eq 1) {
-                $Copmov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "REPLACE" $TempFile  
-            }
-            else {
-                $Copmov = & $ADHC_CopyMoveScript $TempFile $deffile "MOVE" "APPEND" $TempFile  
-            }
+            
+            $Copmov = & $ADHC_CopyMoveScript $TempFile $deffile "COPY" "REPLACE" $TempFile  
+            
         }
         Catch {
             $ErrorMessage = $_.Exception.Message
