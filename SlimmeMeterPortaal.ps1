@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.3.1"
+﻿$Version = " -- Version: 1.3.2"
 
 # COMMON coding
 CLS
@@ -488,8 +488,7 @@ if ($Initobj.AbEnd) {
 
 # krijg de meter gegevens
 
-$apifile = $ADHC_OutputDirectory + $ADHC_SlimmeMeterPortaal.Directory + $ADHC_SlimmeMeterPortaal.APIKEY 
-$apikey = Get-Content $apifile
+$apikey = $ADHC_SMPapikey
 $H = @{'API-Key'="$apikey"}
 
 $A = Invoke-WebRequest -Uri https://app.slimmemeterportal.nl/userapi/v1/connections -Method Get `
