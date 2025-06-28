@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 11.0"
+    $Version = " -- Version: 11.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -128,8 +128,9 @@ try {
     
     Remove-Variable -Name "ADHC_OneDrive" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDrive" -Value $OneDrive -Option readonly -Scope global -Description "Name of OneDrive share" -force 
-    # Remove-Variable -Name "ADHC_ProtonDrive" -force -ErrorAction SilentlyContinue
-    # Set-Variable -Name "ADHC_ProtonDrive" -Value $ProtonDrive -Option readonly -Scope global -Description "Name of ProtonDrive share" -force    
+
+    Remove-Variable -Name "ADHC_ProtonDrive" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ProtonDrive" -Value $ProtonDrive -Option readonly -Scope global -Description "Name of ProtonDrive share" -force    
    
 
     $remdir = $ProtonDrive + "SourceControl\RemoteRepository\"
@@ -286,6 +287,13 @@ try {
                                        Name = $soname }
     Remove-Variable -Name "ADHC_OneDriveSync" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OneDriveSync" -Value $so -Option readonly -Scope global -Description "Force OneDrive synchronisation" -force
+
+    $sncdir = "SyncCheck\" 
+    $sncname = $ADHC_Computer + "_SyncCheck.txt"
+    $snc = [PSCustomObject] [ordered] @{Directory = $sncdir;
+                                       Name = $sncname }
+    Remove-Variable -Name "ADHC_SyncCheck" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_SyncCheck" -Value $snc -Option readonly -Scope global -Description "Check synchronisation" -force
 
     $slimdir = "SlimmeMeterPortaal\" 
     $slimapi = "SlimmeMeterPortaal.api"
