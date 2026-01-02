@@ -1,4 +1,4 @@
-﻿$Version = " -- Version: 1.0"
+﻿$Version = " -- Version: 1.1"
 
 # COMMON coding
 CLS
@@ -11,6 +11,8 @@ $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
 $InformationPreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorActionPreference = "Stop"
+
+$DeleteSwitch = $false
 
 function Report ([string]$level, [string]$line, [object]$Obj, [string]$file ) {
     switch ($level) {
@@ -78,7 +80,7 @@ try {
 # END OF COMMON CODING
 
     $ProtonDrive = $ADHC_ProtonDrive
-    $FileList = Get-ChildItem $ProtonDrive -recurse  -name -force
+    $FileList = Get-ChildItem $ProtonDrive -recurse  -Name -force
     # $FileList | Out-Gridview
 
     # Init temporary reporting file
@@ -102,7 +104,9 @@ try {
 
     $searchlist = @()
     $SearchFor1 = "Edit conflict"
-    $searchlist += $searchfor1        
+    $searchlist += $searchfor1   
+    $SearchFor2 = "Name clash"
+    $searchlist += $searchfor2          
                
     $ConflictsFound = $false
     foreach ($pattern in $searchlist) {
@@ -114,8 +118,14 @@ try {
             if ($a) {
                 $ConflictsFound = $true
                 Report "W" "==> $FileName" $StatusObj $Tempfile
-                
+                if ($DeleteSwitch) {
+                    $dfile = $protondrive + $FileName
+                    Remove-Item -Path $dfile -Force
+                    Report "A" "==> $FileName *** DELETED **" $StatusObj $Tempfile
+                    # $DeleteSwitch = $false
+                }                
             }
+            
         
         }
     }

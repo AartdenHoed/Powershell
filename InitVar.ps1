@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 11.1"
+    $Version = " -- Version: 12.0"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -83,9 +83,9 @@ try {
             &subst O: /d
             switch ($ADHC_Computer)
             {         
-                "ADHC-2"     {&subst O: "c:\Data\Sync ADHC\OneDrive" } 
-                "HOLIDAY"    {&subst O: "d:\Data\Sync ADHC\OneDrive" }
-                default      {&subst O: "d:\Data\Sync ADHC\OneDrive"}
+                "ADHC-2"     {&subst O: "c:\Data\OneDrive" } 
+                "HOLIDAY"    {&subst O: "d:\Data\OneDrive" }
+                default      {&subst O: "d:\Data\OneDrive"}
 
             }
 
@@ -96,9 +96,9 @@ try {
             &subst P: /d
             switch ($ADHC_Computer)
             {         
-                "ADHC-2"     {&subst P: "C:\Data\Sync ADHC\ProtonDrive\My files\ADHC"} 
-                "HOLIDAY"    {&subst P: "C:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
-                default      {&subst P: "D:\Data\Sync ADHC\ProtonDrive\My files\ADHC"}
+                "ADHC-2"     {&subst P: "C:\Data\ProtonDrive\My files\ADHC"} 
+                "HOLIDAY"    {&subst P: "C:\Data\ProtonDrive\My files\ADHC"}
+                default      {&subst P: "D:\Data\ProtonDrive\My files\ADHC"}
             }
         }
     }
