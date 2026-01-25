@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 12.0"
+    $Version = " -- Version: 12.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -96,9 +96,9 @@ try {
             &subst P: /d
             switch ($ADHC_Computer)
             {         
-                "ADHC-2"     {&subst P: "C:\Data\ProtonDrive\My files\ADHC"} 
-                "HOLIDAY"    {&subst P: "C:\Data\ProtonDrive\My files\ADHC"}
-                default      {&subst P: "D:\Data\ProtonDrive\My files\ADHC"}
+                "ADHC-2"     {&subst P: "C:\Data\ProtonDrive\My files"} 
+                "HOLIDAY"    {&subst P: "C:\Data\ProtonDrive\My files"}
+                default      {&subst P: "D:\Data\ProtonDrive\My files"}
             }
         }
     }
