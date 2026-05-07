@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 12.1"
+    $Version = " -- Version: 12.2"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -295,6 +295,15 @@ try {
     Remove-Variable -Name "ADHC_SyncCheck" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_SyncCheck" -Value $snc -Option readonly -Scope global -Description "Check synchronisation" -force
 
+    $f1 = $ADHC_OutputDirectory + "PRTG\AlphaESS\" + "AppId.txt"
+    $f2 = $ADHC_OutputDirectory + "PRTG\AlphaESS\" + "SecretKey.txt"
+    $ESSappID = Get-Content $f1
+    $ESSsecretKey = Get-Content $f2
+    Remove-Variable -Name "ADHC_ESSappId" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ESSappID" -Value $ESSappid -Option readonly -Scope global -Description "AlphaESS appId" -force
+    Remove-Variable -Name "ADHC_ESSsecretKey" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_ESSsecretKey" -Value $ESSsecretKey -Option readonly -Scope global -Description "AlphaESS secret Key" -force
+    
     $slimdir = "SlimmeMeterPortaal\" 
     $slimapi = "SlimmeMeterPortaal.api"
     
