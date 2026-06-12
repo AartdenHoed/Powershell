@@ -1,7 +1,7 @@
 ﻿# Dit script zowel in 32 als in 64 bit mode draaien, in ADMIN mode!
 
 # Set securuty string
-$Version = " -- Version: 1.1"
+$Version = " -- Version: 1.2"
 
 New-Item –Path "HKLM:\SOFTWARE\" –Name ADHC
 New-ItemProperty -Path "HKLM:\SOFTWARE\ADHC" -Name "SecurityString" -Value 'nZr4u7w!z%C*F-JaNdRgUkXp2s5v8y/A'  -PropertyType "String"
@@ -51,8 +51,8 @@ Write-Host "====================================================================
 Write-Host "Restart:"
 Restart-Service WinRM
 Write-Host "===================================================================================="
-Write-Host "Test connection Holiday:"
-Test-WsMan Holiday -port 5985
+Write-Host "Test connection Vacances-II:"
+Test-WsMan Vacances-II -port 5985
 Write-Host "===================================================================================="
 Write-Host "Test connection HoeSto:"
 Test-Wsman HoeSto -port 5985
@@ -60,8 +60,8 @@ Write-Host "====================================================================
 Write-Host "Test connection ADHC-2:"
 Test-Wsman ADHC-2 -port 5985
 Write-Host "===================================================================================="
-Write-Host "Test port 5985 Holiday:"
-Test-NetConnection Holiday -Port 5985
+Write-Host "Test port 5985 Vacances-II:"
+Test-NetConnection Vacances-II -Port 5985
 Write-Host "===================================================================================="
 Write-Host "Test port 5985 HoeSto:"
 Test-NetConnection HoeSto -Port 5985

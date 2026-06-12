@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 12.2"
+    $Version = " -- Version: 13.0"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -61,7 +61,7 @@ try {
     Remove-Variable -Name "ADHC_Computer" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Computer" -Value "$env:COMPUTERNAME" -Option readonly -Scope global -Description "Name of this computer" -force
 
-    $Hostlist = "Hoesto","Holiday","ADHC-2" 
+    $Hostlist = "Hoesto","Vacances-II","ADHC-2" 
     Remove-Variable -Name "ADHC_Hostlist" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Hostlist" -Value $Hostlist -Option readonly -Scope global -Description "List of known hosts" -force
 
@@ -84,7 +84,7 @@ try {
             switch ($ADHC_Computer)
             {         
                 "ADHC-2"     {&subst O: "c:\Data\OneDrive" } 
-                "HOLIDAY"    {&subst O: "d:\Data\OneDrive" }
+                "VACANCES-II"     {&subst O: "c:\Data\OneDrive" }
                 default      {&subst O: "d:\Data\OneDrive"}
 
             }
@@ -97,7 +97,7 @@ try {
             switch ($ADHC_Computer)
             {         
                 "ADHC-2"     {&subst P: "C:\Data\ProtonDrive\My files"} 
-                "HOLIDAY"    {&subst P: "C:\Data\ProtonDrive\My files"}
+                "VACANCES-II"    {&subst P: "C:\Data\ProtonDrive\My files"}
                 default      {&subst P: "D:\Data\ProtonDrive\My files"}
             }
         }
@@ -163,6 +163,7 @@ try {
     switch ($ADHC_Computer)
         {         
             "ADHC-2"          {$syncdrive = "C:\"}
+            "VACANCES-II"     {$syncdrive = "C:\"}
             default           {$syncdrive = "D:\"}
 
         }
@@ -186,6 +187,7 @@ try {
     switch ($ADHC_Computer)
         {         
             "ADHC-2"          {$temp = "C:\ADHC_Home\ADHC_Temp\"}
+            "VACANCES-II"     {$temp = "C:\ADHC_Home\ADHC_Temp\"}
             default           {$temp = "D:\ADHC_Home\ADHC_Temp\"}
 
         }
@@ -427,6 +429,7 @@ try {
      switch ($ADHC_Computer)
         {         
             "ADHC-2"          {$dsl = $ProtonDrive + "SourceControl\DSL\"}
+            "VACANCES-II"     {$dsl = $ProtonDrive + "SourceControl\DSL\"}
             default           {$dsl = $ProtonDrive + "SourceControl\DSL\"}
 
         }  
@@ -461,7 +464,7 @@ try {
     switch ($ADHC_Computer)
         {         
             
-            "Holiday"       {$PythonExec = "D:\Program Files\Python\pythonw.exe"}
+            "n/a"           {$PythonExec = "D:\Program Files\Python\pythonw.exe"}
                    
             default         {$PythonExec = "C:\Program Files\Python\pythonw.exe"} 
         }
@@ -471,8 +474,7 @@ try {
     switch ($ADHC_Computer)
         {         
             
-            "ADHC-2"       {$WmicDbload = "Y"}
-                   
+            "ADHC-2"       {$WmicDbload = "Y"}                   
             default        {$WmicDbload = "N"}
         }
     Remove-Variable -Name "ADHC_WmicDbload" -force -ErrorAction SilentlyContinue
