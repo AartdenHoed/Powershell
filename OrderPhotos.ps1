@@ -1,5 +1,5 @@
 ﻿# Rename photos so they can easily be sorted by date
-$Version = " -- Version: 1.5"
+$Version = " -- Version: 1.5.1"
 CLS
 Write-Warning "Dit script zet een datum prefix voor elke foto-bestandsnaam in de vorm 'yyyymmdd-hhmm-vv-'"
 Write-Warning "Die prefix wordt gehaald uit de foto attribuut 'GENOMEN OP' indien aanwezig."Write-Warning "Indien niet aanwezig dan wordt het attribuut 'GEWIJZIGD OP' gebruikt."
@@ -89,10 +89,11 @@ foreach ($dir in $Photodirs) {
     foreach ($File in $objFolder.items()) 
     {  
         $tot = $tot + 1
-        $myext = $File.Type.Substring(0,3).ToUpper()
+        $e = $File.Type.Split("-")
+        $myext = $e[0].ToUpper()
         
-        if (!(($myext -eq "JPG") -or ($myext -eq "PNG") -or ($myext -eq "MP4") -or ($myext -eq "MOV"))) {            
-            # SKIP files that are not JPG-PNG-MP4-MOV
+        if (!(($myext -eq "JPG") -or ($myext -eq "JPEG") -or ($myext -eq "PNG") -or ($myext -eq "MP4") -or ($myext -eq "MOV") -or ($myext -eq "HEIC"))) {            
+            # SKIP files that are not JPG-PNG-MP4-MOV-JPEG-HEIC
             continue
         } 
                 
