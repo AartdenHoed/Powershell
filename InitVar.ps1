@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 13.0"
+    $Version = " -- Version: 14.0"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -162,7 +162,7 @@ try {
     # OUTPUT FILES
     switch ($ADHC_Computer)
         {         
-            "ADHC-2"          {$syncdrive = "C:\"}
+            "ADHC-2"          {$syncdrive = "S:\"}
             "VACANCES-II"     {$syncdrive = "C:\"}
             default           {$syncdrive = "D:\"}
 
@@ -180,7 +180,7 @@ try {
     Remove-Variable -Name "ADHC_HolidayDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_HolidayDir" -Value $holdir -Option readonly -Scope global -Description "Vakantie directory" -force 
     
-    $isodir = "L:\Sync Films\Vakanties"
+    $isodir = "S:\Sync Films\Vakanties"
     Remove-Variable -Name "ADHC_IsoDirectory" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_IsoDirectory" -Value $isodir -Option readonly -Scope global -Description "Vakantie ISO bestanden" -force      
     
