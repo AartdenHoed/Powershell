@@ -20,7 +20,7 @@ $msglist = @()
 
  
 try {
-    $Version = " -- Version: 14.0"
+    $Version = " -- Version: 14.1"
     $Node = " -- Node: " + $env:COMPUTERNAME
     $d = Get-Date
     $Datum = " -- Date: " + $d.ToString("dd-MM-yyyy")
@@ -163,26 +163,35 @@ try {
     switch ($ADHC_Computer)
         {         
             "ADHC-2"          {$syncdrive = "S:\"}
-            "VACANCES-II"     {$syncdrive = "C:\"}
-            default           {$syncdrive = "D:\"}
+            "VACANCES-II"     {$syncdrive = "C:\Data\"}
+            default           {$syncdrive = "S:\"}
 
         }
-    $outlookinput = $syncdrive + "Data\Sync Gedeeld\Agenda & Mail\Outlook back-up\OUTLOOK.CSV"
+    $outlookinput = $syncdrive + "Sync Gedeeld\Agenda & Mail\Outlook back-up\OUTLOOK.CSV"
     Remove-Variable -Name "ADHC_OutlookInput" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_OutlookInput" -Value $outlookinput -Option readonly -Scope global -Description "Input CSV with iCloud contacts" -force
 
     $thisdate = Get-Date -Format "yyyyMMdd"
-    $outlookoutput = $syncdrive + "Data\Sync Gedeeld\Agenda & Mail\Outlook back-up\Upload XML " + $thisdate + ".xml"
+    $outlookoutput = $syncdrive + "Sync Gedeeld\Agenda & Mail\Outlook back-up\Upload XML " + $thisdate + ".xml"
     Remove-Variable -Name "ADHC_Outlookoutput" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_Outlookoutput" -Value $outlookoutput -Option readonly -Scope global -Description "output XML with contacts for Fritz!Box" -force
         
-    $holdir = $syncdrive + "Data\Sync Gedeeld\Vakanties"
+    $holdir = $syncdrive + "Sync Gedeeld\Vakanties"
     Remove-Variable -Name "ADHC_HolidayDir" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_HolidayDir" -Value $holdir -Option readonly -Scope global -Description "Vakantie directory" -force 
     
     $isodir = "S:\Sync Films\Vakanties"
     Remove-Variable -Name "ADHC_IsoDirectory" -force -ErrorAction SilentlyContinue
-    Set-Variable -Name "ADHC_IsoDirectory" -Value $isodir -Option readonly -Scope global -Description "Vakantie ISO bestanden" -force      
+    Set-Variable -Name "ADHC_IsoDirectory" -Value $isodir -Option readonly -Scope global -Description "Vakantie ISO bestanden" -force    
+    
+    switch ($ADHC_Computer)
+        {         
+            "Hoesto"          {$unlock = "F:\SanDisk Drive Unlock.exe"}
+            default           {$unlock = "D:\SanDisk Drive Unlock.exe"}
+        } 
+        
+    Remove-Variable -Name "ADHC_UnlockScript" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_UnlockScript" -Value $unlock -Option readonly -Scope global -Description "Unloch script SANDISK extreme" -force     
     
     switch ($ADHC_Computer)
         {         
@@ -214,6 +223,10 @@ try {
     $LuchtTotal = "PRTG\LuchtClubInfo\" + $ADHC_Computer + "_LuchtClubInfo.txt"
     Remove-Variable -Name "ADHC_LuchtClubInfo" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LuchtClubInfo" -Value "$LuchtTotal" -Option readonly -Scope global -Description "Luchtclub info file" -force
+
+    $RestorePointInfo = "PRTG\RestorePointInfo\" + $ADHC_Computer + "_RestorePointInfo.txt"
+    Remove-Variable -Name "ADHC_RestorePointInfo" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_RestorePointInfo" -Value "$RestorePointInfo" -Option readonly -Scope global -Description "Restore point info file" -force
 
     $outp = "PRTG\OutputCheck\" + "OutputCheck.txt"
     Remove-Variable -Name "ADHC_OutputCheck" -force -ErrorAction SilentlyContinue
@@ -268,6 +281,13 @@ try {
                                        Name = $lucname }
     Remove-Variable -Name "ADHC_LuchtClub" -force -ErrorAction SilentlyContinue
     Set-Variable -Name "ADHC_LuchtClub" -Value $luc -Option readonly -Scope global -Description "LuchtClub reports" -force
+
+    $rpdir = "RestorePoint\"
+    $rpname = $ADHC_Computer + "_RestorePoint.txt"
+    $rp = [PSCustomObject] [ordered] @{Directory = $rpdir;
+                                       Name = $rpname }
+    Remove-Variable -Name "ADHC_RestorePoint" -force -ErrorAction SilentlyContinue
+    Set-Variable -Name "ADHC_RestorePoint" -Value $rp -Option readonly -Scope global -Description "Restore Point report" -force
     
     $movdir = "MovieIsoCheck\" 
     $movname = $ADHC_Computer + "_MovieIsoCheck.txt"
