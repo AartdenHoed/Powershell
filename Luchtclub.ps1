@@ -1,4 +1,4 @@
-﻿$ScriptVersion = " -- Version: 1.2"
+﻿$ScriptVersion = " -- Version: 1.2.1"
 
 # COMMON coding
 CLS
@@ -90,6 +90,7 @@ try {
 
     # Get all sensors of luchtclub
     Report "I" "Get list of sensor objects (Thing) <$cururi> " $StatusObj $Tempfile
+    $HTTPcalls = 0
 
     $skip = 0
     $top = 100
@@ -102,6 +103,7 @@ try {
         $cururi = $uri           
         
         $SensorobjList = Invoke-RestMethod  -Uri $uri 
+        $HTTPcalls +=1 
 
         # $SensorobjList.value
         $skip = $skip + $top
@@ -154,7 +156,8 @@ try {
         $uri = $locationlink
         $cururi = $uri                
         
-        $Locationobj = Invoke-RestMethod  -Uri $uri 
+        $Locationobj = Invoke-RestMethod  -Uri $uri
+        $HTTPcalls +=1  
 
         $Oosterlengte = $locationobj.value.location.coordinates[0]
         $Noorderbreedte = $locationobj.value.location.coordinates[1]
@@ -164,6 +167,7 @@ try {
         $cururi = $uri
     
         $Datastreamobj = Invoke-RestMethod  -Uri $uri 
+        $HTTPcalls +=1 
     
         $Metingen = @()        
     
@@ -189,6 +193,7 @@ try {
             $cururi = $uri2
         
             $ObservationsObj = Invoke-RestMethod  -Uri $uri2 
+            $HTTPcalls +=1 
 
             # the first meting in the list is the most recent one
             if ($ObservationsObj.value[0].phenomenonTime) {
@@ -209,6 +214,7 @@ try {
             $cururi = $uri3
         
             $PropertyObj = Invoke-RestMethod  -Uri $uri3 
+            $HTTPcalls +=1 
 
             $MetingObj.Name = $PropertyObj.name
             $MetingObj.Description = $PropertyObj.description
@@ -431,7 +437,7 @@ try {
 
 catch {
     $StatusObj.scripterror = $true
-    $ErrorMessage = $_.Exception.Message
+    $ErrorMessage = $_.Exception.Message + " ==> " + $cururi + " Aantal HTTP-calls = " + $HTTPcalls 
     $FailedItem = $_.Exception.ItemName
     $Dump = $_.Exception.ToString()
 }
