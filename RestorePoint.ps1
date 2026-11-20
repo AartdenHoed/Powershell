@@ -1,4 +1,4 @@
-﻿$ScriptVersion = " -- Version: 1.2"
+﻿$ScriptVersion = " -- Version: 1.2.1"
 # COMMON coding
 CLS
 $StatusOBJ = [PSCustomObject] [ordered] @{Scripterror = $false;
@@ -143,18 +143,17 @@ try {
 
         # Update info file (will be read by prtg sensor)
 
-        $cnt = $crp.Count
-
-        if (!$cnt) {
+        
+        if (!$crp.Count) {
             $lastentry = $crp
-            $RP_count = 0
+            $RP_count = 1
             $realtime = [System.Management.ManagementDateTimeConverter]::ToDateTime($lastentry.CreationTime)             
     
             $r = $realtime.ToString("dd-MM-yyyy hh:mm:ss") + "|" + $lastentry.Description + "|" + $lastentry.EventType + "|" + $RP_count 
             Set-Content $RestorePointInfoFile $r -force
         }
         else {
-            $RP_count = $cnt
+            $RP_count = $crp.Count
 
             if ($RP_count -eq 0) {
                 
